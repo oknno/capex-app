@@ -198,7 +198,8 @@ function buildProjectByIdUrl(id: number, select: string): string {
 function isMissingFieldError(error: unknown, fieldName: string): boolean {
   if (!(error instanceof Error)) return false;
   const msg = error.message.toLowerCase();
-  return msg.includes("does not exist") && msg.includes(fieldName.toLowerCase());
+  const missingFieldMarkers = ["does not exist", "não existe", "nao existe"];
+  return missingFieldMarkers.some((marker) => msg.includes(marker)) && msg.includes(fieldName.toLowerCase());
 }
 
 function mapProjectRow(x: SpRecord): ProjectRow {
