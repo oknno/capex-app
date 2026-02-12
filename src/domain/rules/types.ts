@@ -1,4 +1,3 @@
-// src/domain/rules/types.ts
 export type RuleLevel = "ok" | "warn" | "error";
 
 export type RuleResult = {
@@ -8,16 +7,9 @@ export type RuleResult = {
   message?: string;
 };
 
-export type RulesSummary = {
-  ok: boolean;          // ✅ se não há errors
+export type RuleResultsSummary = {
+  ok: boolean;
   errors: RuleResult[];
   warns: RuleResult[];
   oks: RuleResult[];
 };
-
-export function summarizeRulesTypes(results: RuleResult[]): RulesSummary {
-  const errors = results.filter((r) => r.level === "error");
-  const warns  = results.filter((r) => r.level === "warn");
-  const oks    = results.filter((r) => r.level === "ok");
-  return { ok: errors.length === 0, errors, warns, oks };
-}
