@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { getProjectById } from "../../../services/sharepoint/projectsApi";
 import type { ProjectDraft, ProjectRow } from "../../../services/sharepoint/projectsApi";
@@ -40,6 +40,7 @@ import { moveProjectBackToDraft } from "../../../application/use-cases/backToDra
 import { normalizeError } from "../../../application/errors/appError";
 
 type StepKey = "project" | "structure" | "peps" | "review";
+type PendingItem = { id: string; section: Exclude<StepKey, "review">; message: string };
 
 export function ProjectWizardModal(props: {
   mode: "create" | "edit" | "view";
@@ -189,7 +190,7 @@ export function ProjectWizardModal(props: {
     setState((s) => ({ ...s, project: { ...s.project, ...patch } }));
   }
 
-  function normalizeProjectForCommit(p: ProjectDraft): ProjectDraft {
+  const normalizeProjectForCommit = useCallback((p: ProjectDraft): ProjectDraft => {
     const budget = toIntOrUndefined(p.budgetBrl);
     return {
       ...p,
@@ -201,7 +202,7 @@ export function ProjectWizardModal(props: {
       investmentLevel: calculateInvestmentLevel(budget),
       status: p.status ?? "Rascunho"
     };
-  }
+  }, []);
 
   const askConfirm = (message: string) =>
     new Promise<boolean>((resolve) => {
@@ -232,6 +233,84 @@ export function ProjectWizardModal(props: {
     () => (needStructure ? ["project", "structure", "peps", "review"] : ["project", "peps", "review"]),
     [needStructure]
   );
+
+  const projectRequiredFields = useMemo(
+    () => [
+      { key: "Title", label: "Título", filled: String(state.project.Title ?? "").trim().length > 0 },
+      { key: "approvalYear", label: "Ano de aprovação", filled: Boolean(state.project.approvalYear) },
+      { key: "budgetBrl", label: "Orçamento", filled: Number(state.project.budgetBrl ?? 0) > 0 },
+      { key: "startDate", label: "Data de início", filled: Boolean(state.project.startDate) },
+      { key: "endDate", label: "Data de término", filled: Boolean(state.project.endDate) },
+      { key: "projectLeader", label: "Líder do projeto", filled: String(state.project.projectLeader ?? "").trim().length > 0 },
+      { key: "projectUser", label: "Usuário do projeto", filled: String(state.project.projectUser ?? "").trim().length > 0 },
+      { key: "businessNeed", label: "Necessidade de negócio", filled: String(state.project.businessNeed ?? "").trim().length > 0 },
+      { key: "proposedSolution", label: "Solução proposta", filled: String(state.project.proposedSolution ?? "").trim().length > 0 },
+      { key: "investmentType", label: "Tipo de investimento", filled: String(state.project.investmentType ?? "").trim().length > 0 }
+    ],
+    [state.project]
+  );
+
+  const filledProjectFields = projectRequiredFields.filter((field) => field.filled).length;
+
+  const structureEssentialTotal = needStructure ? 4 : 2;
+  const structureFilledCount = useMemo(() => {
+    const base = [state.milestones.length > 0, state.activities.length > 0, state.activities.every((activity) => Number(activity.amountBrl ?? 0) > 0), state.activities.every((activity) => Boolean(activity.milestoneTempId))];
+    if (!needStructure) return 2;
+    return base.filter(Boolean).length;
+  }, [needStructure, state.activities, state.milestones.length]);
+
+  const pepRequiredFields = useMemo(
+    () => [
+      { label: "PEP cadastrado", filled: state.peps.length > 0 },
+      { label: "Todos os PEPs com valor > 0", filled: state.peps.every((pep) => Number(pep.amountBrl) > 0) },
+      { label: "Todos os PEPs vinculados a atividade", filled: state.peps.every((pep) => Boolean(pep.activityTempId)) }
+    ],
+    [state.peps]
+  );
+  const filledPepFields = pepRequiredFields.filter((field) => field.filled).length;
+
+  const pendingItems = useMemo<PendingItem[]>(() => {
+    const pendings: PendingItem[] = [];
+
+    try {
+      validateProjectBasics(normalizeProjectForCommit(state.project));
+    } catch (error: unknown) {
+      pendings.push({
+        id: "project-validation",
+        section: "project",
+        message: error instanceof Error && error.message ? error.message : "Existem campos pendentes em Projeto."
+      });
+    }
+
+    const missingProjectFields = projectRequiredFields.filter((field) => !field.filled);
+    if (missingProjectFields.length > 0) {
+      pendings.push({
+        id: "project-required-fields",
+        section: "project",
+        message: `Campos essenciais não preenchidos: ${missingProjectFields.map((field) => field.label).join(", ")}.`
+      });
+    }
+
+    try {
+      validateStructure(state);
+    } catch (error: unknown) {
+      const message = error instanceof Error && error.message ? error.message : "Existem pendências em Estrutura/PEPs.";
+      pendings.push({ id: "structure-validation", section: needStructure ? "structure" : "peps", message });
+    }
+
+    if (state.peps.length === 0) {
+      pendings.push({ id: "pep-empty", section: "peps", message: "Cadastre ao menos 1 PEP para avançar." });
+    }
+
+    if (needStructure) {
+      if (state.milestones.length === 0) pendings.push({ id: "structure-milestone", section: "structure", message: "Inclua ao menos 1 milestone." });
+      if (state.activities.length === 0) pendings.push({ id: "structure-activity", section: "structure", message: "Inclua ao menos 1 activity." });
+    }
+
+    return pendings;
+  }, [needStructure, normalizeProjectForCommit, projectRequiredFields, state]);
+
+  const reviewCountText = `${pendingItems.length === 0 ? "Pronto para commit" : `${pendingItems.length} pendência(s)`}`;
 
   const currentStepIndex = stepOrder.indexOf(step);
 
@@ -320,23 +399,65 @@ export function ProjectWizardModal(props: {
           {!readOnly && <span style={{ marginLeft: 8, fontSize: 12, color: uiTokens.colors.textMuted }}>Dica: use principalmente os botões Próximo/Voltar.</span>}
         </div>
 
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 10, padding: "10px 12px", borderBottom: `1px solid ${uiTokens.colors.border}` }}>
+          {[
+            { key: "project", title: "Projeto", subtitle: `${filledProjectFields}/${projectRequiredFields.length} campos essenciais preenchidos`, done: pendingItems.every((pending) => pending.section !== "project") },
+            {
+              key: "structure",
+              title: "Estrutura",
+              subtitle: `${Math.min(structureFilledCount, structureEssentialTotal)}/${structureEssentialTotal} checks essenciais`,
+              done: pendingItems.every((pending) => pending.section !== "structure")
+            },
+            { key: "peps", title: "PEPs", subtitle: `${filledPepFields}/${pepRequiredFields.length} checks essenciais`, done: pendingItems.every((pending) => pending.section !== "peps") },
+            { key: "review", title: "Revisão", subtitle: reviewCountText, done: pendingItems.length === 0 }
+          ].map((panel) => (
+            <div key={panel.key} style={{ border: `1px solid ${uiTokens.colors.border}`, borderRadius: 8, padding: 10, background: panel.done ? uiTokens.colors.accentSoft : uiTokens.colors.surface }}>
+              <div style={{ fontSize: 12, color: uiTokens.colors.textMuted }}>{panel.title}</div>
+              <div style={{ marginTop: 4, fontSize: 13, fontWeight: 700, color: uiTokens.colors.textStrong }}>{panel.subtitle}</div>
+              <div style={{ marginTop: 6, fontSize: 12, color: panel.done ? uiTokens.stateTones.success.fg : uiTokens.stateTones.warning.fg }}>{panel.done ? "Concluído" : "Com pendências"}</div>
+            </div>
+          ))}
+        </div>
+
         <div style={styles.body}>
           {step === "project" && <ProjectStep draft={state.project} readOnly={readOnly} onChange={patchProject} />}
           {step === "structure" && needStructure && <StructureStep readOnly={readOnly} projectStartDate={state.project.startDate} projectEndDate={state.project.endDate} milestones={state.milestones} activities={state.activities} onValidationError={(message) => notify(message, "error")} onChange={(next) => setState((s) => ({ ...s, ...next }))} />}
           {step === "peps" && <PepStep readOnly={readOnly} needStructure={needStructure} milestones={state.milestones} activities={state.activities} peps={state.peps} defaultYear={Number(state.project.approvalYear ?? new Date().getFullYear())} onValidationError={(message) => notify(message, "error")} onChange={(nextPeps) => setState((s) => ({ ...s, peps: nextPeps }))} />}
-          {step === "review" && <ReviewStep readOnly={readOnly} projectId={projectId} totals={totals} onBackToDraft={async () => {
-            if (!projectId) return;
-            const confirmed = await askConfirm("Voltar status para Rascunho?");
-            if (!confirmed) return;
-            try {
-              const p = await getProjectById(projectId);
-              await moveProjectBackToDraft(p);
-              notify("Status alterado para Rascunho.", "success");
-            } catch (e: unknown) {
-              const appError = normalizeError(e, "Não foi possível voltar para rascunho.");
-              notify(appError.technicalDetails ? `${appError.userMessage} (${appError.technicalDetails})` : appError.userMessage, "error");
-            }
-          }} />}
+          {step === "review" && (
+            <>
+              {pendingItems.length > 0 && (
+                <div style={{ margin: "14px 16px 0", border: `1px solid ${uiTokens.colors.border}`, borderRadius: 8, padding: 12, background: uiTokens.colors.surfaceMuted }}>
+                  <div style={{ fontWeight: 700, color: uiTokens.colors.textStrong, marginBottom: 8 }}>Pendências para envio</div>
+                  <div style={{ display: "grid", gap: 8 }}>
+                    {pendingItems.map((pending) => (
+                      <div key={pending.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: 13, color: uiTokens.colors.textStrong }}>{pending.message}</span>
+                        <Button onClick={() => {
+                          void tryStepChange(pending.section, "tab");
+                        }}>
+                          Ir para seção
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <ReviewStep readOnly={readOnly} projectId={projectId} totals={totals} onBackToDraft={async () => {
+                if (!projectId) return;
+                const confirmed = await askConfirm("Voltar status para Rascunho?");
+                if (!confirmed) return;
+                try {
+                  const p = await getProjectById(projectId);
+                  await moveProjectBackToDraft(p);
+                  notify("Status alterado para Rascunho.", "success");
+                } catch (e: unknown) {
+                  const appError = normalizeError(e, "Não foi possível voltar para rascunho.");
+                  notify(appError.technicalDetails ? `${appError.userMessage} (${appError.technicalDetails})` : appError.userMessage, "error");
+                }
+              }} />
+            </>
+          )}
         </div>
 
         <div style={styles.footer}>
