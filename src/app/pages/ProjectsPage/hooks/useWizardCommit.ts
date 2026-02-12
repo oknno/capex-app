@@ -53,7 +53,18 @@ export function useWizardCommit(params: {
       validateProjectBasics(normalizedProject);
       validateStructure({ ...params.state, project: normalizedProject });
 
-      const confirmed = await params.askConfirm("Confirmar COMMIT? Isso vai gravar projeto + estrutura + PEPs no SharePoint e enviar para Aprovação.");
+      const structureSummary = params.needStructure
+        ? `${params.state.milestones.length} marcos e ${params.state.activities.length} atividades`
+        : "não obrigatória para este projeto";
+      const confirmationMessage = [
+        "Confirma o envio final deste projeto?",
+        `• Status após envio: Em Aprovação`,
+        `• Estrutura: ${structureSummary}`,
+        `• PEPs: ${params.state.peps.length} registro(s) serão persistidos`,
+        "• Envio: projeto, estrutura e PEPs serão gravados no SharePoint e encaminhados para Aprovação"
+      ].join("\n");
+
+      const confirmed = await params.askConfirm(confirmationMessage);
       if (!confirmed) return;
 
       let id = params.projectId;

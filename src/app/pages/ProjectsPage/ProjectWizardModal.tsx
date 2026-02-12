@@ -362,10 +362,25 @@ export function ProjectWizardModal(props: {
 
   const stepLabel = (k: StepKey) => {
     if (k === "project") return "Projeto";
-    if (k === "structure") return `KEY Projects (${ONE_MILLION.toLocaleString("pt-BR")}+)`;
-    if (k === "peps") return "Elemento PEP";
+    if (k === "structure") return `Estrutura (${ONE_MILLION.toLocaleString("pt-BR")}+)`;
+    if (k === "peps") return "PEP";
     return "Revisão";
   };
+
+  const footerAlert = useMemo(() => {
+    if (readOnly) return { state: "empty" as const, message: "Visualização apenas." };
+    if (step !== "review") return { state: "empty" as const, message: "Rascunho não enviado ainda." };
+    if (pendingItems.length > 0) return { state: "error" as const, message: "Revise pendências antes de enviar." };
+    return { state: "success" as const, message: "Pronto para enviar para aprovação." };
+  }, [pendingItems.length, readOnly, step]);
+
+  const nextCtaLabel = useMemo(() => {
+    const nextStep = stepOrder[currentStepIndex + 1];
+    if (!nextStep) return "Continuar";
+    if (nextStep === "structure") return "Avançar para Estrutura";
+    if (nextStep === "peps") return "Avançar para PEP";
+    return "Revisar e enviar para aprovação";
+  }, [currentStepIndex, stepOrder]);
 
   return (
     <div style={styles.overlay}>
@@ -461,11 +476,11 @@ export function ProjectWizardModal(props: {
         </div>
 
         <div style={styles.footer}>
-          <StateMessage state="success" message="Agora: nada é salvo até o Commit final." />
+          <StateMessage state={footerAlert.state} message={footerAlert.message} />
           <div style={{ display: "flex", gap: 8 }}>
             <Button onClick={goBack} disabled={step === "project"}>Voltar</Button>
-            {!readOnly && step !== "review" && <Button tone="primary" onClick={goNext} disabled={transitioning}>{transitioning ? "Validando..." : "Próximo"}</Button>}
-            {!readOnly && step === "review" && <Button tone="primary" onClick={commitAll} disabled={committing}>{committing ? "Commit..." : "Commit + Enviar p/ Aprovação"}</Button>}
+            {!readOnly && step !== "review" && <Button tone="primary" onClick={goNext} disabled={transitioning}>{transitioning ? "Validando..." : nextCtaLabel}</Button>}
+            {!readOnly && step === "review" && <Button tone="primary" onClick={commitAll} disabled={committing}>{committing ? "Enviando..." : "Confirmar envio para aprovação"}</Button>}
           </div>
         </div>
       </div>
