@@ -17,6 +17,10 @@ export function StructureStep(props: {
 }) {
   const [msTitle, setMsTitle] = useState("");
   const [acTitle, setAcTitle] = useState("");
+  const [acStartDate, setAcStartDate] = useState("");
+  const [acEndDate, setAcEndDate] = useState("");
+  const [acSupplier, setAcSupplier] = useState("");
+  const [acDescription, setAcDescription] = useState("");
   const [selectedMs, setSelectedMs] = useState<string>("");
 
   useEffect(() => {
@@ -46,9 +50,34 @@ export function StructureStep(props: {
 
           <input value={acTitle} onChange={(e) => setAcTitle(e.target.value)} placeholder="Nova activity..." style={wizardLayoutStyles.input} />
 
+          <input type="date" value={acStartDate} onChange={(e) => setAcStartDate(e.target.value)} style={{ ...wizardLayoutStyles.input, width: 170 }} />
+
+          <input type="date" value={acEndDate} onChange={(e) => setAcEndDate(e.target.value)} style={{ ...wizardLayoutStyles.input, width: 170 }} />
+
+          <input value={acSupplier} onChange={(e) => setAcSupplier(e.target.value)} placeholder="Supplier" style={{ ...wizardLayoutStyles.input, width: 220 }} />
+
+          <input value={acDescription} onChange={(e) => setAcDescription(e.target.value)} placeholder="activityDescription" style={{ ...wizardLayoutStyles.input, width: 260 }} />
+
           <Button tone="primary" disabled={props.readOnly || !selectedMs || !acTitle.trim()} onClick={() => {
-            props.onChange({ activities: [...props.activities, { tempId: uid("ac"), Title: acTitle.trim().toUpperCase(), milestoneTempId: selectedMs }] });
+            props.onChange({
+              activities: [
+                ...props.activities,
+                {
+                  tempId: uid("ac"),
+                  Title: acTitle.trim().toUpperCase(),
+                  milestoneTempId: selectedMs,
+                  startDate: acStartDate || undefined,
+                  endDate: acEndDate || undefined,
+                  supplier: acSupplier.trim() || undefined,
+                  activityDescription: acDescription.trim() || undefined
+                }
+              ]
+            });
             setAcTitle("");
+            setAcStartDate("");
+            setAcEndDate("");
+            setAcSupplier("");
+            setAcDescription("");
           }}>Adicionar Activity</Button>
         </div>
       </div>
@@ -62,7 +91,7 @@ export function StructureStep(props: {
           <div style={wizardLayoutStyles.boxHead}>Activities ({props.activities.length})</div>
           {!props.activities.length ? <div style={wizardLayoutStyles.empty}><StateMessage state="empty" message="Nenhuma activity." /></div> : props.activities.map((a) => {
             const ms = props.milestones.find((m) => m.tempId === a.milestoneTempId);
-            return <div key={a.tempId} style={wizardLayoutStyles.row}><b>{a.Title}</b><div style={{ fontSize: 12, color: "#6b7280" }}>{ms?.Title ?? "(milestone?)"}</div></div>;
+            return <div key={a.tempId} style={wizardLayoutStyles.row}><b>{a.Title}</b><div style={{ fontSize: 12, color: "#6b7280" }}>{ms?.Title ?? "(milestone?)"}</div><div style={{ fontSize: 12, color: "#6b7280" }}>{a.startDate ?? ""}{a.endDate ? ` → ${a.endDate}` : ""}{a.supplier ? ` • ${a.supplier}` : ""}</div></div>;
           })}
         </div>
       </div>
