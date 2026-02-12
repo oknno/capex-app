@@ -54,11 +54,13 @@ type SpListResponse = {
   __next?: unknown;
 };
 
-const PROJECT_SELECT =
+const PROJECT_SELECT_BASE =
   "Id,Title,approvalYear,budgetBrl,status,investmentLevel,fundingSource,company,center,unit,location," +
   "depreciationCostCenter,category,investmentType,assetType,projectFunction,projectLeader,projectUser," +
-  "startDate,endDate,businessNeed,proposedSolution,kpiType,kpiName,kpiDescription,kpiCurrent,kpiExpected,roce," +
+  "startDate,endDate,businessNeed,proposedSolution,kpiType,kpiName,kpiDescription,kpiCurrent,kpiExpected," +
   "roceGain,roceGainDescription,roceLoss,roceLossDescription,roceClassification";
+
+const PROJECT_SELECT_WITH_ROCE = `${PROJECT_SELECT_BASE},roce`;
 
 function asRecord(value: unknown): SpRecord {
   return value && typeof value === "object" ? (value as SpRecord) : {};
@@ -122,21 +124,16 @@ export async function getProjectsPage(args: {
   if (args.statusEquals?.trim()) filters.push(`status eq '${escapeODataString(args.statusEquals.trim())}'`);
   if (args.unitEquals?.trim()) filters.push(`unit eq '${escapeODataString(args.unitEquals.trim())}'`);
 
-  const url =
-    `${spConfig.siteUrl}/_api/web/lists/getbytitle('${encodeURIComponent(spConfig.projectsListTitle)}')/items` +
-    `?$select=${PROJECT_SELECT}&$orderby=${orderExpr}&$top=${top}` +
-    (filters.length ? `&$filter=${filters.join(" and ")}` : "");
-
-  const data = await spGetJson<SpListResponse>(url);
+  const data = await fetchProjectsPage({
+    top,
+    orderExpr,
+    filters: filters.length ? filters.join(" and ") : undefined
+  });
   return { items: readItems(data).map(mapProjectRow), nextLink: pickNextLink(data) };
 }
 
 export async function getProjectById(id: number): Promise<ProjectRow> {
-  const url =
-    `${spConfig.siteUrl}/_api/web/lists/getbytitle('${encodeURIComponent(spConfig.projectsListTitle)}')/items(${id})` +
-    `?$select=${PROJECT_SELECT}`;
-
-  const data = await spGetJson<SpRecord>(url);
+  const data = await fetchProjectById(id);
   return mapProjectRow(data);
 }
 
@@ -156,6 +153,52 @@ export async function updateProject(id: number, patch: ProjectUpdate): Promise<v
 
 function escapeODataString(v: string) {
   return v.replace(/'/g, "''");
+}
+
+async function fetchProjectsPage(args: {
+  top: number;
+  orderExpr: string;
+  filters?: string;
+}): Promise<SpListResponse> {
+  try {
+    return await spGetJson<SpListResponse>(buildProjectsPageUrl(args, PROJECT_SELECT_WITH_ROCE));
+  } catch (error: unknown) {
+    if (!isMissingFieldError(error, "roce")) throw error;
+    return spGetJson<SpListResponse>(buildProjectsPageUrl(args, PROJECT_SELECT_BASE));
+  }
+}
+
+function buildProjectsPageUrl(
+  args: { top: number; orderExpr: string; filters?: string },
+  select: string
+): string {
+  return (
+    `${spConfig.siteUrl}/_api/web/lists/getbytitle('${encodeURIComponent(spConfig.projectsListTitle)}')/items` +
+    `?$select=${select}&$orderby=${args.orderExpr}&$top=${args.top}` +
+    (args.filters ? `&$filter=${args.filters}` : "")
+  );
+}
+
+async function fetchProjectById(id: number): Promise<SpRecord> {
+  try {
+    return await spGetJson<SpRecord>(buildProjectByIdUrl(id, PROJECT_SELECT_WITH_ROCE));
+  } catch (error: unknown) {
+    if (!isMissingFieldError(error, "roce")) throw error;
+    return spGetJson<SpRecord>(buildProjectByIdUrl(id, PROJECT_SELECT_BASE));
+  }
+}
+
+function buildProjectByIdUrl(id: number, select: string): string {
+  return (
+    `${spConfig.siteUrl}/_api/web/lists/getbytitle('${encodeURIComponent(spConfig.projectsListTitle)}')/items(${id})` +
+    `?$select=${select}`
+  );
+}
+
+function isMissingFieldError(error: unknown, fieldName: string): boolean {
+  if (!(error instanceof Error)) return false;
+  const msg = error.message.toLowerCase();
+  return msg.includes("does not exist") && msg.includes(fieldName.toLowerCase());
 }
 
 function mapProjectRow(x: SpRecord): ProjectRow {
