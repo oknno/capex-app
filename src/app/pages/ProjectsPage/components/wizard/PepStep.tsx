@@ -35,7 +35,7 @@ export function PepStep(props: {
 
   return (
     <div style={{ padding: 14, display: "grid", gap: 12 }}>
-      <SectionTitle title="Elemento PEP" subtitle={props.needStructure ? "Projeto ≥ 1M: vincule cada PEP a uma atividade." : "Projeto < 1M: preencha apenas tipo, ano e valor do PEP."} />
+      <SectionTitle title={props.needStructure ? "Elemento PEP (rateio das atividades)" : "5. Elemento PEP (projeto abaixo de 1M)"} subtitle={props.needStructure ? "Projeto ≥ 1M: vincule cada PEP a uma atividade." : "Projeto < 1M: preencha apenas elemento, ano e valor do PEP."} />
 
       {props.needStructure && (
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>

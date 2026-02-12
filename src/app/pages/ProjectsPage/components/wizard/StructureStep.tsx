@@ -40,7 +40,7 @@ export function StructureStep(props: {
 
   return (
     <div style={{ padding: 14, display: "grid", gap: 14 }}>
-      <SectionTitle title="KEY Projects" subtitle="Disponível para projetos com orçamento igual ou superior a R$ 1.000.000,00." />
+      <SectionTitle title="8. KEY Projects" subtitle="Disponível para projetos com orçamento igual ou superior a R$ 1.000.000,00." />
 
       <div style={{ display: "grid", gap: 10 }}>
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>

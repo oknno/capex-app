@@ -39,7 +39,7 @@ import { uiTokens } from "../../components/ui/tokens";
 import { moveProjectBackToDraft } from "../../../application/use-cases/backToDraft";
 import { normalizeError } from "../../../application/errors/appError";
 
-type StepKey = "project" | "structure" | "peps" | "review";
+type StepKey = "project" | "execution" | "review";
 type PendingItem = { id: string; section: Exclude<StepKey, "review">; message: string };
 
 export function ProjectWizardModal(props: {
@@ -222,17 +222,8 @@ export function ProjectWizardModal(props: {
     notify
   });
 
-  const totals = {
-    milestones: state.milestones.length,
-    activities: state.activities.length,
-    peps: state.peps.length,
-    totalPeps: state.peps.reduce((acc, x) => acc + (Number(x.amountBrl) || 0), 0)
-  };
 
-  const stepOrder = useMemo<StepKey[]>(
-    () => (needStructure ? ["project", "structure", "peps", "review"] : ["project", "peps", "review"]),
-    [needStructure]
-  );
+  const stepOrder = useMemo<StepKey[]>(() => ["project", "execution", "review"], []);
 
   const projectRequiredFields = useMemo(
     () => [
@@ -258,16 +249,6 @@ export function ProjectWizardModal(props: {
     if (!needStructure) return 2;
     return base.filter(Boolean).length;
   }, [needStructure, state.activities, state.milestones.length]);
-
-  const pepRequiredFields = useMemo(
-    () => [
-      { label: "PEP cadastrado", filled: state.peps.length > 0 },
-      { label: "Todos os PEPs com valor > 0", filled: state.peps.every((pep) => Number(pep.amountBrl) > 0) },
-      { label: "Todos os PEPs vinculados a atividade", filled: state.peps.every((pep) => Boolean(pep.activityTempId)) }
-    ],
-    [state.peps]
-  );
-  const filledPepFields = pepRequiredFields.filter((field) => field.filled).length;
 
   const pendingItems = useMemo<PendingItem[]>(() => {
     const pendings: PendingItem[] = [];
@@ -295,16 +276,16 @@ export function ProjectWizardModal(props: {
       validateStructure(state);
     } catch (error: unknown) {
       const message = error instanceof Error && error.message ? error.message : "Existem pendências em Estrutura/PEPs.";
-      pendings.push({ id: "structure-validation", section: needStructure ? "structure" : "peps", message });
+      pendings.push({ id: "structure-validation", section: "execution", message });
     }
 
     if (state.peps.length === 0) {
-      pendings.push({ id: "pep-empty", section: "peps", message: "Cadastre ao menos 1 PEP para avançar." });
+      pendings.push({ id: "pep-empty", section: "execution", message: "Cadastre ao menos 1 PEP para avançar." });
     }
 
     if (needStructure) {
-      if (state.milestones.length === 0) pendings.push({ id: "structure-milestone", section: "structure", message: "Inclua ao menos 1 milestone." });
-      if (state.activities.length === 0) pendings.push({ id: "structure-activity", section: "structure", message: "Inclua ao menos 1 activity." });
+      if (state.milestones.length === 0) pendings.push({ id: "structure-milestone", section: "execution", message: "Inclua ao menos 1 milestone." });
+      if (state.activities.length === 0) pendings.push({ id: "structure-activity", section: "execution", message: "Inclua ao menos 1 activity." });
     }
 
     return pendings;
@@ -316,8 +297,7 @@ export function ProjectWizardModal(props: {
 
   function validateCurrentStep(currentStep: StepKey) {
     if (currentStep === "project") validateProjectBasics(normalizeProjectForCommit(state.project));
-    if (currentStep === "structure" && needStructure) validateStructure(state);
-    if (currentStep === "peps") validateStructure(state);
+    if (currentStep === "execution") validateStructure(state);
   }
 
   async function tryStepChange(nextStep: StepKey, trigger: "tab" | "button") {
@@ -361,10 +341,9 @@ export function ProjectWizardModal(props: {
   }
 
   const stepLabel = (k: StepKey) => {
-    if (k === "project") return "Projeto";
-    if (k === "structure") return `Estrutura (${ONE_MILLION.toLocaleString("pt-BR")}+)`;
-    if (k === "peps") return "PEP";
-    return "Revisão";
+    if (k === "project") return "Toda a informação do projeto";
+    if (k === "execution") return "PEPs acima ou abaixo de 1000000";
+    return "Resumo para validar";
   };
 
   const footerAlert = useMemo(() => {
@@ -377,8 +356,7 @@ export function ProjectWizardModal(props: {
   const nextCtaLabel = useMemo(() => {
     const nextStep = stepOrder[currentStepIndex + 1];
     if (!nextStep) return "Continuar";
-    if (nextStep === "structure") return "Avançar para Estrutura";
-    if (nextStep === "peps") return "Avançar para PEP";
+    if (nextStep === "execution") return "Avançar para PEPs / KEY Projects";
     return "Revisar e enviar para aprovação";
   }, [currentStepIndex, stepOrder]);
 
@@ -414,17 +392,16 @@ export function ProjectWizardModal(props: {
           {!readOnly && <span style={{ marginLeft: 8, fontSize: 12, color: uiTokens.colors.textMuted }}>Dica: use principalmente os botões Próximo/Voltar.</span>}
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 10, padding: "10px 12px", borderBottom: `1px solid ${uiTokens.colors.border}` }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 10, padding: "10px 12px", borderBottom: `1px solid ${uiTokens.colors.border}` }}>
           {[
-            { key: "project", title: "Projeto", subtitle: `${filledProjectFields}/${projectRequiredFields.length} campos essenciais preenchidos`, done: pendingItems.every((pending) => pending.section !== "project") },
+            { key: "project", title: "Toda a informação do projeto", subtitle: `${filledProjectFields}/${projectRequiredFields.length} campos essenciais preenchidos`, done: pendingItems.every((pending) => pending.section !== "project") },
             {
-              key: "structure",
-              title: "Estrutura",
-              subtitle: `${Math.min(structureFilledCount, structureEssentialTotal)}/${structureEssentialTotal} checks essenciais`,
-              done: pendingItems.every((pending) => pending.section !== "structure")
+              key: "execution",
+              title: needStructure ? `PEPs e KEY Projects (≥ ${ONE_MILLION.toLocaleString("pt-BR")})` : `PEPs (< ${ONE_MILLION.toLocaleString("pt-BR")})`,
+              subtitle: `${Math.min(structureFilledCount, structureEssentialTotal)}/${structureEssentialTotal} checks estruturais • ${state.peps.length} PEP(s)`,
+              done: pendingItems.every((pending) => pending.section !== "execution")
             },
-            { key: "peps", title: "PEPs", subtitle: `${filledPepFields}/${pepRequiredFields.length} checks essenciais`, done: pendingItems.every((pending) => pending.section !== "peps") },
-            { key: "review", title: "Revisão", subtitle: reviewCountText, done: pendingItems.length === 0 }
+            { key: "review", title: "Resumo para validar", subtitle: reviewCountText, done: pendingItems.length === 0 }
           ].map((panel) => (
             <div key={panel.key} style={{ border: `1px solid ${uiTokens.colors.border}`, borderRadius: 8, padding: 10, background: panel.done ? uiTokens.colors.accentSoft : uiTokens.colors.surface }}>
               <div style={{ fontSize: 12, color: uiTokens.colors.textMuted }}>{panel.title}</div>
@@ -436,8 +413,12 @@ export function ProjectWizardModal(props: {
 
         <div style={styles.body}>
           {step === "project" && <ProjectStep draft={state.project} readOnly={readOnly} onChange={patchProject} />}
-          {step === "structure" && needStructure && <StructureStep readOnly={readOnly} projectStartDate={state.project.startDate} projectEndDate={state.project.endDate} milestones={state.milestones} activities={state.activities} onValidationError={(message) => notify(message, "error")} onChange={(next) => setState((s) => ({ ...s, ...next }))} />}
-          {step === "peps" && <PepStep readOnly={readOnly} needStructure={needStructure} milestones={state.milestones} activities={state.activities} peps={state.peps} defaultYear={Number(state.project.approvalYear ?? new Date().getFullYear())} onValidationError={(message) => notify(message, "error")} onChange={(nextPeps) => setState((s) => ({ ...s, peps: nextPeps }))} />}
+          {step === "execution" && (
+            <div style={{ display: "grid", gap: 12 }}>
+              {needStructure && <StructureStep readOnly={readOnly} projectStartDate={state.project.startDate} projectEndDate={state.project.endDate} milestones={state.milestones} activities={state.activities} onValidationError={(message) => notify(message, "error")} onChange={(next) => setState((s) => ({ ...s, ...next }))} />}
+              <PepStep readOnly={readOnly} needStructure={needStructure} milestones={state.milestones} activities={state.activities} peps={state.peps} defaultYear={Number(state.project.approvalYear ?? new Date().getFullYear())} onValidationError={(message) => notify(message, "error")} onChange={(nextPeps) => setState((s) => ({ ...s, peps: nextPeps }))} />
+            </div>
+          )}
           {step === "review" && (
             <>
               {pendingItems.length > 0 && (
@@ -458,7 +439,7 @@ export function ProjectWizardModal(props: {
                 </div>
               )}
 
-              <ReviewStep readOnly={readOnly} projectId={projectId} totals={totals} onBackToDraft={async () => {
+              <ReviewStep readOnly={readOnly} projectId={projectId} state={state} needStructure={needStructure} onBackToDraft={async () => {
                 if (!projectId) return;
                 const confirmed = await askConfirm("Voltar status para Rascunho?");
                 if (!confirmed) return;
