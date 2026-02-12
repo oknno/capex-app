@@ -249,8 +249,8 @@ export function ProjectWizardModal(props: {
 
   const stepLabel = (k: StepKey) => {
     if (k === "project") return "1. Projeto";
-    if (k === "structure") return `2. Estrutura (${ONE_MILLION.toLocaleString("pt-BR")}+)`;
-    if (k === "peps") return needStructure ? "3. PEPs" : "2. PEPs";
+    if (k === "structure") return `2. KEY Projects (${ONE_MILLION.toLocaleString("pt-BR")}+)`;
+    if (k === "peps") return needStructure ? "3. Elemento PEP" : "2. Elemento PEP";
     return needStructure ? "4. Revisão" : "3. Revisão";
   };
 

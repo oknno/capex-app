@@ -29,34 +29,34 @@ export function StructureStep(props: {
 
   return (
     <div style={{ padding: 14, display: "grid", gap: 14 }}>
-      <SectionTitle title="Estrutura (Milestones + Activities)" subtitle="Obrigatório para projetos ≥ 1.000.000." />
+      <SectionTitle title="KEY Projects" subtitle="Disponível para projetos com orçamento igual ou superior a R$ 1.000.000,00." />
 
       <div style={{ display: "grid", gap: 10 }}>
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-          <input value={msTitle} onChange={(e) => setMsTitle(e.target.value)} placeholder="Novo milestone..." style={wizardLayoutStyles.input} />
+          <input value={msTitle} onChange={(e) => setMsTitle(e.target.value)} placeholder="Nome do marco" style={wizardLayoutStyles.input} />
           <Button tone="primary" disabled={props.readOnly || !msTitle.trim()} onClick={() => {
             const next = [...props.milestones, { tempId: uid("ms"), Title: msTitle.trim().toUpperCase() }];
             props.onChange({ milestones: next });
             setMsTitle("");
             if (!selectedMs) setSelectedMs(next[0].tempId);
-          }}>Adicionar Milestone</Button>
+          }}>Adicionar Marco</Button>
         </div>
 
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
           <select value={selectedMs} onChange={(e) => setSelectedMs(e.target.value)} disabled={props.readOnly || props.milestones.length === 0} style={{ ...wizardLayoutStyles.input, width: 260 }}>
-            <option value="">Selecione milestone...</option>
+            <option value="">Selecione o marco...</option>
             {props.milestones.map((m) => <option key={m.tempId} value={m.tempId}>{m.Title}</option>)}
           </select>
 
-          <input value={acTitle} onChange={(e) => setAcTitle(e.target.value)} placeholder="Nova activity..." style={wizardLayoutStyles.input} />
+          <input value={acTitle} onChange={(e) => setAcTitle(e.target.value)} placeholder="Título da atividade" style={wizardLayoutStyles.input} />
 
           <input type="date" value={acStartDate} onChange={(e) => setAcStartDate(e.target.value)} style={{ ...wizardLayoutStyles.input, width: 170 }} />
 
           <input type="date" value={acEndDate} onChange={(e) => setAcEndDate(e.target.value)} style={{ ...wizardLayoutStyles.input, width: 170 }} />
 
-          <input value={acSupplier} onChange={(e) => setAcSupplier(e.target.value)} placeholder="Supplier" style={{ ...wizardLayoutStyles.input, width: 220 }} />
+          <input value={acSupplier} onChange={(e) => setAcSupplier(e.target.value)} placeholder="Fornecedor" style={{ ...wizardLayoutStyles.input, width: 220 }} />
 
-          <input value={acDescription} onChange={(e) => setAcDescription(e.target.value)} placeholder="activityDescription" style={{ ...wizardLayoutStyles.input, width: 260 }} />
+          <input value={acDescription} onChange={(e) => setAcDescription(e.target.value)} placeholder="Descrição geral da atividade" style={{ ...wizardLayoutStyles.input, width: 260 }} />
 
           <Button tone="primary" disabled={props.readOnly || !selectedMs || !acTitle.trim()} onClick={() => {
             props.onChange({
@@ -78,20 +78,20 @@ export function StructureStep(props: {
             setAcEndDate("");
             setAcSupplier("");
             setAcDescription("");
-          }}>Adicionar Activity</Button>
+          }}>Adicionar Atividade</Button>
         </div>
       </div>
 
       <div style={wizardLayoutStyles.grid2}>
         <div style={wizardLayoutStyles.box}>
-          <div style={wizardLayoutStyles.boxHead}>Milestones ({props.milestones.length})</div>
-          {!props.milestones.length ? <div style={wizardLayoutStyles.empty}><StateMessage state="empty" message="Nenhum milestone." /></div> : props.milestones.map((m) => <div key={m.tempId} style={wizardLayoutStyles.row}>{m.Title}</div>)}
+          <div style={wizardLayoutStyles.boxHead}>Marcos ({props.milestones.length})</div>
+          {!props.milestones.length ? <div style={wizardLayoutStyles.empty}><StateMessage state="empty" message="Nenhum marco cadastrado." /></div> : props.milestones.map((m) => <div key={m.tempId} style={wizardLayoutStyles.row}>{m.Title}</div>)}
         </div>
         <div style={wizardLayoutStyles.box}>
-          <div style={wizardLayoutStyles.boxHead}>Activities ({props.activities.length})</div>
-          {!props.activities.length ? <div style={wizardLayoutStyles.empty}><StateMessage state="empty" message="Nenhuma activity." /></div> : props.activities.map((a) => {
+          <div style={wizardLayoutStyles.boxHead}>Atividades ({props.activities.length})</div>
+          {!props.activities.length ? <div style={wizardLayoutStyles.empty}><StateMessage state="empty" message="Nenhuma atividade cadastrada." /></div> : props.activities.map((a) => {
             const ms = props.milestones.find((m) => m.tempId === a.milestoneTempId);
-            return <div key={a.tempId} style={wizardLayoutStyles.row}><b>{a.Title}</b><div style={{ fontSize: 12, color: "#6b7280" }}>{ms?.Title ?? "(milestone?)"}</div><div style={{ fontSize: 12, color: "#6b7280" }}>{a.startDate ?? ""}{a.endDate ? ` → ${a.endDate}` : ""}{a.supplier ? ` • ${a.supplier}` : ""}</div></div>;
+            return <div key={a.tempId} style={wizardLayoutStyles.row}><b>{a.Title}</b><div style={{ fontSize: 12, color: "#6b7280" }}>{ms?.Title ?? "(marco não informado)"}</div><div style={{ fontSize: 12, color: "#6b7280" }}>{a.startDate ?? ""}{a.endDate ? ` → ${a.endDate}` : ""}{a.supplier ? ` • ${a.supplier}` : ""}</div></div>;
           })}
         </div>
       </div>
