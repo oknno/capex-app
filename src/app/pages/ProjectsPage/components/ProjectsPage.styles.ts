@@ -1,8 +1,10 @@
+import { uiTokens } from "../../../components/ui/tokens";
+
 export const projectsPageStyles = {
   pageWrap: {
-    background: "#f8fafc",
+    background: uiTokens.colors.appBackground,
     height: "100vh",
-    padding: 16,
+    padding: uiTokens.spacing.xl,
     overflow: "hidden",
     display: "grid",
     gridTemplateRows: "auto 1fr"
@@ -10,13 +12,12 @@ export const projectsPageStyles = {
   grid: {
     display: "grid",
     gridTemplateColumns: "1.6fr 1fr",
-    gap: 12,
-    marginTop: 12,
+    gap: uiTokens.spacing.md,
+    marginTop: uiTokens.spacing.md,
     overflow: "hidden"
   },
   listCard: { display: "flex", flexDirection: "column", overflow: "hidden" },
   footerRow: { display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10 },
-  helperText: { fontSize: 12, color: "#6b7280" },
+  helperText: { fontSize: uiTokens.typography.xs, color: uiTokens.colors.textMuted },
   summaryCard: { overflow: "auto" },
-  summaryHeader: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }
 } as const;

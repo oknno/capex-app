@@ -20,6 +20,7 @@ import { ProjectSummarySection } from "./components/ProjectSummarySection";
 import { projectsPageStyles as styles } from "./components/ProjectsPage.styles";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { useToast } from "../../components/notifications/useToast";
+import { Button } from "../../components/ui/Button";
 
 export function ProjectsPage(props: { onWantsRefreshHeader?: () => void; onRegisterRefresh?: (fn: () => void) => void }) {
   const list = useProjectsList({ searchTitle: "", status: "", unit: "", sortBy: "Id", sortDir: "desc" });
@@ -160,9 +161,9 @@ export function ProjectsPage(props: { onWantsRefreshHeader?: () => void; onRegis
           />
           <div style={styles.footerRow as any}>
             <div style={styles.helperText as any}>Itens carregados: <b>{list.items.length}</b></div>
-            <button className="btn" onClick={list.loadMore} disabled={!list.nextLink || list.state === "loading"}>
+            <Button onClick={list.loadMore} disabled={!list.nextLink || list.state === "loading"}>
               {list.nextLink ? (list.state === "loading" ? "Carregando..." : "Carregar mais") : "Fim"}
-            </button>
+            </Button>
           </div>
         </Card>
 

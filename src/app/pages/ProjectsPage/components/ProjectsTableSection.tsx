@@ -1,20 +1,13 @@
 import type { ReactNode } from "react";
 import type { ProjectRow } from "../../../../services/sharepoint/projectsApi";
+import { StateMessage } from "../../../components/ui/StateMessage";
+import { uiTokens } from "../../../components/ui/tokens";
 
 const styles = {
-  errorBox: {
-    padding: 10,
-    borderRadius: 10,
-    border: "1px solid #f5c2c7",
-    background: "#f8d7da",
-    color: "#842029",
-    marginBottom: 10
-  },
-  tableWrap: { border: "1px solid #e5e7eb", borderRadius: 12, overflow: "hidden" },
-  headerRow: { display: "grid", gridTemplateColumns: "90px 1fr 220px 160px", background: "#f9fafb", borderBottom: "1px solid #e5e7eb" },
+  tableWrap: { border: `1px solid ${uiTokens.colors.border}`, borderRadius: uiTokens.radius.md, overflow: "hidden" },
+  headerRow: { display: "grid", gridTemplateColumns: "90px 1fr 220px 160px", background: uiTokens.colors.surfaceMuted, borderBottom: `1px solid ${uiTokens.colors.border}` },
   body: { maxHeight: "calc(100vh - 260px)", overflowY: "auto" },
-  row: { display: "grid", gridTemplateColumns: "90px 1fr 220px 160px", cursor: "pointer", borderBottom: "1px solid #f3f4f6" },
-  noData: { padding: 12, color: "#6b7280" }
+  row: { display: "grid", gridTemplateColumns: "90px 1fr 220px 160px", cursor: "pointer", borderBottom: `1px solid ${uiTokens.colors.borderMuted}` },
 } as const;
 
 export function ProjectsTableSection(props: {
@@ -26,14 +19,8 @@ export function ProjectsTableSection(props: {
 }) {
   return (
     <>
-      {props.state === "error" && (
-        <div style={styles.errorBox as any}>
-          <b>Erro:</b> {props.errorMsg}
-          <div style={{ marginTop: 6, fontSize: 12, opacity: 0.9 }}>
-            Dica: confirme <code>spConfig.ts</code> (siteUrl e nome da lista).
-          </div>
-        </div>
-      )}
+      {props.state === "error" && <StateMessage state="error" message={`Erro: ${props.errorMsg}`} />}
+      <div style={{ marginTop: 10 }} />
 
       <div style={styles.tableWrap as any}>
         <div style={styles.headerRow as any}>
@@ -47,7 +34,7 @@ export function ProjectsTableSection(props: {
           {props.items.map((p) => {
             const active = p.Id === props.selectedId;
             return (
-              <div key={p.Id} onClick={() => props.onSelect(p.Id)} style={{ ...styles.row, background: active ? "#eef2ff" : "#fff" } as any}>
+              <div key={p.Id} onClick={() => props.onSelect(p.Id)} style={{ ...styles.row, background: active ? uiTokens.colors.accentSoft : uiTokens.colors.surface } as any}>
                 <Cell>{p.Id}</Cell>
                 <Cell>{p.Title}</Cell>
                 <Cell>{p.unit ?? "-"}</Cell>
@@ -56,7 +43,8 @@ export function ProjectsTableSection(props: {
             );
           })}
 
-          {!props.items.length && props.state !== "loading" && <div style={styles.noData as any}>Nenhum item encontrado.</div>}
+          {!props.items.length && props.state !== "loading" && <div style={{ padding: 12 }}><StateMessage state="empty" message="Nenhum item encontrado." /></div>}
+          {props.state === "loading" && <div style={{ padding: 12 }}><StateMessage state="loading" message="Carregando lista..." /></div>}
         </div>
       </div>
     </>
@@ -64,9 +52,9 @@ export function ProjectsTableSection(props: {
 }
 
 function CellHeader({ children }: { children: ReactNode }) {
-  return <div style={{ padding: "10px 10px", fontSize: 12, fontWeight: 700, color: "#374151" }}>{children}</div>;
+  return <div style={{ padding: "10px 10px", fontSize: 12, fontWeight: 700, color: uiTokens.colors.text }}>{children}</div>;
 }
 
 function Cell({ children }: { children: ReactNode }) {
-  return <div style={{ padding: "10px 10px", fontSize: 13, color: "#111827", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{children}</div>;
+  return <div style={{ padding: "10px 10px", fontSize: 13, color: uiTokens.colors.textStrong, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{children}</div>;
 }
