@@ -69,6 +69,29 @@ export async function createPep(draft: PepDraft): Promise<number> {
   return Number(created?.Id);
 }
 
+
+export async function deletePep(id: number): Promise<void> {
+  const siteUrl = spConfig.siteUrl;
+  const listTitle = spConfig.pepsListTitle;
+
+  const url = `${siteUrl}/_api/web/lists/getbytitle('${encodeURIComponent(listTitle)}')/items(${id})`;
+  const digest = await getDigest();
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      Accept: "application/json;odata=nometadata",
+      "X-RequestDigest": digest,
+      "IF-MATCH": "*",
+      "X-HTTP-Method": "DELETE"
+    }
+  });
+
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(`DELETE ${res.status}: ${txt}`);
+  }
+}
 export async function updatePep(id: number, patch: Partial<PepDraft>): Promise<void> {
   const siteUrl = spConfig.siteUrl;
   const listTitle = spConfig.pepsListTitle;
