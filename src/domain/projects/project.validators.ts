@@ -13,6 +13,8 @@ export type ActivityDraftLocal = {
   tempId: string;
   Title: string;
   milestoneTempId: string;
+  amountBrl?: number;
+  pepElement?: string;
   startDate?: string;
   endDate?: string;
   supplier?: string;
@@ -20,10 +22,30 @@ export type ActivityDraftLocal = {
 };
 export type PepDraftLocal = { tempId: string; Title: string; year: number; amountBrl: number; activityTempId?: string };
 
+function isValidYearRange(year?: number) {
+  if (!year) return false;
+  const current = new Date().getFullYear();
+  return Number(year) >= current && Number(year) <= current + 5;
+}
+
+function todayIsoDate() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 export function validateProjectBasics(p: ProjectDraft) {
   if (!String(p.Title ?? "").trim()) throw new Error("Title é obrigatório.");
+  if (String(p.Title ?? "").trim().length > 25) throw new Error("Nome do Projeto deve ter no máximo 25 caracteres.");
+  if (String(p.projectFunction ?? "").trim().length > 35) throw new Error("Função do Projeto deve ter no máximo 35 caracteres.");
+
   const b = toIntOrUndefined(p.budgetBrl);
   if (b === undefined || b <= 0) throw new Error("budgetBrl deve ser um inteiro > 0.");
+
+  if (!isValidYearRange(p.approvalYear)) throw new Error("Ano de Aprovação deve estar entre o ano atual e +5 anos.");
+
+  if (!p.startDate) throw new Error("Data de Início é obrigatória.");
+  const today = todayIsoDate();
+  if (p.startDate < today) throw new Error("Data de Início deve ser maior ou igual a hoje.");
+  if (p.endDate && p.endDate < p.startDate) throw new Error("Data de Término não pode ser menor que a Data de Início.");
 }
 
 export function validateStructure(state: WizardDraftState) {
@@ -43,11 +65,30 @@ export function validateStructure(state: WizardDraftState) {
   if (state.milestones.length === 0) throw new Error("Projetos ≥ 1M exigem Milestones.");
   if (state.activities.length === 0) throw new Error("Projetos ≥ 1M exigem Activities.");
 
-  // garantia mínima: toda activity aponta pra milestone existente
   const milestoneSet = new Set(state.milestones.map((m) => m.tempId));
+  const projectStart = p.startDate;
+  const projectEnd = p.endDate;
+
+  const totalActivities = state.activities.reduce((acc, x) => acc + (Number(x.amountBrl) || 0), 0);
+  if (totalActivities !== budget) throw new Error(`Soma das Atividades (${totalActivities}) deve ser igual ao budgetBrl (${budget}).`);
+
   for (const a of state.activities) {
     if (!milestoneSet.has(a.milestoneTempId)) {
       throw new Error("Activity com milestone inválido (consistência interna).");
+    }
+
+    if (!a.amountBrl || a.amountBrl <= 0) throw new Error("Toda atividade deve possuir Valor da Atividade inteiro > 0.");
+
+    if (projectStart && a.startDate && a.startDate < projectStart) {
+      throw new Error("Início da atividade não pode ser antes da Data de Início do Projeto.");
+    }
+
+    if (a.startDate && a.endDate && a.endDate < a.startDate) {
+      throw new Error("Término da atividade não pode ser antes do início da atividade.");
+    }
+
+    if (projectEnd && a.endDate && a.endDate > projectEnd) {
+      throw new Error("Término da atividade não pode ser após a Data de Término do Projeto.");
     }
   }
 }

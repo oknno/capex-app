@@ -18,7 +18,7 @@ export function SectionTitle(props: { title: string; subtitle?: string }) {
   return <Section title={props.title} subtitle={props.subtitle} />;
 }
 
-function FieldInput(props: { label: string; value: any; placeholder?: string; disabled?: boolean; onChange: (v: string) => void; inputMode?: "numeric" | "text" }) {
+function FieldInput(props: { label: string; value: any; placeholder?: string; disabled?: boolean; onChange: (v: string) => void; inputMode?: "numeric" | "text"; type?: "text" | "number" | "date"; min?: string; max?: string; maxLength?: number; step?: string }) {
   return (
     <Field label={props.label}>
       <input
@@ -26,6 +26,11 @@ function FieldInput(props: { label: string; value: any; placeholder?: string; di
         placeholder={props.placeholder}
         disabled={props.disabled}
         inputMode={props.inputMode}
+        type={props.type ?? "text"}
+        min={props.min}
+        max={props.max}
+        maxLength={props.maxLength}
+        step={props.step}
         onChange={(e) => props.onChange(e.target.value)}
         style={styles.input}
       />
@@ -33,12 +38,12 @@ function FieldInput(props: { label: string; value: any; placeholder?: string; di
   );
 }
 
-export function FieldText(props: { label: string; value: any; placeholder?: string; disabled?: boolean; onChange: (v: string) => void }) {
+export function FieldText(props: { label: string; value: any; placeholder?: string; disabled?: boolean; maxLength?: number; onChange: (v: string) => void }) {
   return <FieldInput {...props} />;
 }
 
-export function FieldNumber(props: { label: string; value: any; placeholder?: string; disabled?: boolean; onChange: (v: string) => void }) {
-  return <FieldInput {...props} inputMode="numeric" />;
+export function FieldNumber(props: { label: string; value: any; placeholder?: string; disabled?: boolean; min?: string; max?: string; onChange: (v: string) => void }) {
+  return <FieldInput {...props} inputMode="numeric" type="number" step="1" />;
 }
 
 export const wizardLayoutStyles = {
@@ -60,3 +65,19 @@ const styles = {
   tab: { borderRadius: uiTokens.radius.pill, padding: "8px 12px" },
   input: wizardLayoutStyles.input,
 } as const;
+
+
+export function FieldDate(props: { label: string; value: any; disabled?: boolean; min?: string; max?: string; onChange: (v: string) => void }) {
+  return <FieldInput {...props} type="date" />;
+}
+
+export function FieldSelect(props: { label: string; value: any; disabled?: boolean; options: Array<{ value: string; label: string }>; placeholder?: string; onChange: (v: string) => void }) {
+  return (
+    <Field label={props.label}>
+      <select value={String(props.value ?? "")} disabled={props.disabled} onChange={(e) => props.onChange(e.target.value)} style={styles.input}>
+        <option value="">{props.placeholder ?? "Selecione..."}</option>
+        {props.options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+      </select>
+    </Field>
+  );
+}

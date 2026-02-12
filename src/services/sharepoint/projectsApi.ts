@@ -29,6 +29,7 @@ export type ProjectRow = {
   kpiDescription?: string;
   kpiCurrent?: string;
   kpiExpected?: string;
+  roce?: number;
   roceGain?: number;
   roceGainDescription?: string;
   roceLoss?: number;
@@ -56,7 +57,7 @@ type SpListResponse = {
 const PROJECT_SELECT =
   "Id,Title,approvalYear,budgetBrl,status,investmentLevel,fundingSource,company,center,unit,location," +
   "depreciationCostCenter,category,investmentType,assetType,projectFunction,projectLeader,projectUser," +
-  "startDate,endDate,businessNeed,proposedSolution,kpiType,kpiName,kpiDescription,kpiCurrent,kpiExpected," +
+  "startDate,endDate,businessNeed,proposedSolution,kpiType,kpiName,kpiDescription,kpiCurrent,kpiExpected,roce," +
   "roceGain,roceGainDescription,roceLoss,roceLossDescription,roceClassification";
 
 function asRecord(value: unknown): SpRecord {
@@ -186,6 +187,7 @@ function mapProjectRow(x: SpRecord): ProjectRow {
     kpiDescription: readString(x, "kpiDescription"),
     kpiCurrent: readString(x, "kpiCurrent"),
     kpiExpected: readString(x, "kpiExpected"),
+    roce: readNumber(x, "roce"),
     roceGain: readNumber(x, "roceGain"),
     roceGainDescription: readString(x, "roceGainDescription"),
     roceLoss: readNumber(x, "roceLoss"),

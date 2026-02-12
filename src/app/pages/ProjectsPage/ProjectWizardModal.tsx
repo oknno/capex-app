@@ -82,8 +82,9 @@ export function ProjectWizardModal(props: {
       kpiType: props.initial?.kpiType,
       kpiName: props.initial?.kpiName,
       kpiDescription: props.initial?.kpiDescription,
-      kpiCurrent: props.initial?.kpiCurrent,
-      kpiExpected: props.initial?.kpiExpected,
+      kpiCurrent: props.initial?.kpiCurrent ?? "0",
+      kpiExpected: props.initial?.kpiExpected ?? "0",
+      roce: props.initial?.roce,
       roceGain: props.initial?.roceGain,
       roceGainDescription: props.initial?.roceGainDescription,
       roceLoss: props.initial?.roceLoss,
@@ -128,7 +129,9 @@ export function ProjectWizardModal(props: {
             startDate: a.startDate ? String(a.startDate).slice(0, 10) : undefined,
             endDate: a.endDate ? String(a.endDate).slice(0, 10) : undefined,
             supplier: a.supplier ? String(a.supplier) : undefined,
-            activityDescription: a.activityDescription ? String(a.activityDescription) : undefined
+            activityDescription: a.activityDescription ? String(a.activityDescription) : undefined,
+            amountBrl: undefined,
+            pepElement: undefined
           };
           const key = Number(a.milestonesIdId ?? -1);
           const group = milestoneMap.get(key) ?? [];
@@ -276,7 +279,7 @@ export function ProjectWizardModal(props: {
 
         <div style={styles.body}>
           {step === "project" && <ProjectStep draft={state.project} readOnly={readOnly} onChange={patchProject} />}
-          {step === "structure" && needStructure && <StructureStep readOnly={readOnly} milestones={state.milestones} activities={state.activities} onChange={(next) => setState((s) => ({ ...s, ...next }))} />}
+          {step === "structure" && needStructure && <StructureStep readOnly={readOnly} projectStartDate={state.project.startDate} projectEndDate={state.project.endDate} milestones={state.milestones} activities={state.activities} onValidationError={(message) => notify(message, "error")} onChange={(next) => setState((s) => ({ ...s, ...next }))} />}
           {step === "peps" && <PepStep readOnly={readOnly} needStructure={needStructure} milestones={state.milestones} activities={state.activities} peps={state.peps} defaultYear={Number(state.project.approvalYear ?? new Date().getFullYear())} onValidationError={(message) => notify(message, "error")} onChange={(nextPeps) => setState((s) => ({ ...s, peps: nextPeps }))} />}
           {step === "review" && <ReviewStep readOnly={readOnly} projectId={projectId} totals={totals} onBackToDraft={async () => {
             if (!projectId) return;

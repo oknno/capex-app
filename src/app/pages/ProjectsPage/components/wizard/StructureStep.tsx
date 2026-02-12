@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
+import { toIntOrUndefined } from "../../../../../domain/projects/project.calculations";
 import type { ActivityDraftLocal, MilestoneDraftLocal } from "../../../../../domain/projects/project.validators";
+import { PEP_ELEMENT_OPTIONS } from "./wizardOptions";
 import { SectionTitle, wizardLayoutStyles } from "./WizardUi";
 import { Button } from "../../../../components/ui/Button";
 import { StateMessage } from "../../../../components/ui/StateMessage";
@@ -11,12 +13,17 @@ function uid(prefix: string) {
 
 export function StructureStep(props: {
   readOnly: boolean;
+  projectStartDate?: string;
+  projectEndDate?: string;
   milestones: MilestoneDraftLocal[];
   activities: ActivityDraftLocal[];
   onChange: (patch: Partial<{ milestones: MilestoneDraftLocal[]; activities: ActivityDraftLocal[] }>) => void;
+  onValidationError: (message: string) => void;
 }) {
   const [msTitle, setMsTitle] = useState("");
   const [acTitle, setAcTitle] = useState("");
+  const [acAmount, setAcAmount] = useState("");
+  const [acPepElement, setAcPepElement] = useState("");
   const [acStartDate, setAcStartDate] = useState("");
   const [acEndDate, setAcEndDate] = useState("");
   const [acSupplier, setAcSupplier] = useState("");
@@ -26,6 +33,10 @@ export function StructureStep(props: {
   useEffect(() => {
     if (!selectedMs && props.milestones.length) setSelectedMs(props.milestones[0].tempId);
   }, [props.milestones.length]);
+
+  const canAddActivity = useMemo(() => {
+    return Boolean(selectedMs && acTitle.trim() && acAmount.trim() && acPepElement);
+  }, [selectedMs, acTitle, acAmount, acPepElement]);
 
   return (
     <div style={{ padding: 14, display: "grid", gap: 14 }}>
@@ -42,23 +53,45 @@ export function StructureStep(props: {
           }}>Adicionar Marco</Button>
         </div>
 
-        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-          <select value={selectedMs} onChange={(e) => setSelectedMs(e.target.value)} disabled={props.readOnly || props.milestones.length === 0} style={{ ...wizardLayoutStyles.input, width: 260 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(180px, 1fr))", gap: 8 }}>
+          <select value={selectedMs} onChange={(e) => setSelectedMs(e.target.value)} disabled={props.readOnly || props.milestones.length === 0} style={wizardLayoutStyles.input}>
             <option value="">Selecione o marco...</option>
             {props.milestones.map((m) => <option key={m.tempId} value={m.tempId}>{m.Title}</option>)}
           </select>
 
           <input value={acTitle} onChange={(e) => setAcTitle(e.target.value)} placeholder="Título da atividade" style={wizardLayoutStyles.input} />
 
-          <input type="date" value={acStartDate} onChange={(e) => setAcStartDate(e.target.value)} style={{ ...wizardLayoutStyles.input, width: 170 }} />
+          <input
+            value={acAmount}
+            onChange={(e) => {
+              if (e.target.value === "" || /^\d+$/.test(e.target.value)) setAcAmount(e.target.value);
+            }}
+            placeholder="Valor da Atividade (R$)"
+            style={wizardLayoutStyles.input}
+          />
 
-          <input type="date" value={acEndDate} onChange={(e) => setAcEndDate(e.target.value)} style={{ ...wizardLayoutStyles.input, width: 170 }} />
+          <select value={acPepElement} onChange={(e) => setAcPepElement(e.target.value)} style={wizardLayoutStyles.input}>
+            <option value="">Elemento PEP...</option>
+            {PEP_ELEMENT_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+          </select>
 
-          <input value={acSupplier} onChange={(e) => setAcSupplier(e.target.value)} placeholder="Fornecedor" style={{ ...wizardLayoutStyles.input, width: 220 }} />
+          <input type="date" min={props.projectStartDate} max={props.projectEndDate} value={acStartDate} onChange={(e) => setAcStartDate(e.target.value)} style={wizardLayoutStyles.input} />
 
-          <input value={acDescription} onChange={(e) => setAcDescription(e.target.value)} placeholder="Descrição geral da atividade" style={{ ...wizardLayoutStyles.input, width: 260 }} />
+          <input type="date" min={acStartDate || props.projectStartDate} max={props.projectEndDate} value={acEndDate} onChange={(e) => setAcEndDate(e.target.value)} style={wizardLayoutStyles.input} />
 
-          <Button tone="primary" disabled={props.readOnly || !selectedMs || !acTitle.trim()} onClick={() => {
+          <input value={acSupplier} onChange={(e) => setAcSupplier(e.target.value)} placeholder="Fornecedor" style={wizardLayoutStyles.input} />
+
+          <input value={acDescription} onChange={(e) => setAcDescription(e.target.value)} placeholder="Descrição geral da atividade" style={wizardLayoutStyles.input} />
+        </div>
+
+        <div>
+          <Button tone="primary" disabled={props.readOnly || !canAddActivity} onClick={() => {
+            const amount = toIntOrUndefined(acAmount);
+            if (!amount || amount <= 0) return props.onValidationError("Valor da Atividade deve ser inteiro > 0.");
+            if (props.projectStartDate && acStartDate && acStartDate < props.projectStartDate) return props.onValidationError("Início da atividade não pode ser antes do início do projeto.");
+            if (acStartDate && acEndDate && acEndDate < acStartDate) return props.onValidationError("Término da atividade não pode ser antes do início.");
+            if (props.projectEndDate && acEndDate && acEndDate > props.projectEndDate) return props.onValidationError("Término da atividade não pode ser após término do projeto.");
+
             props.onChange({
               activities: [
                 ...props.activities,
@@ -66,6 +99,8 @@ export function StructureStep(props: {
                   tempId: uid("ac"),
                   Title: acTitle.trim().toUpperCase(),
                   milestoneTempId: selectedMs,
+                  amountBrl: amount,
+                  pepElement: acPepElement,
                   startDate: acStartDate || undefined,
                   endDate: acEndDate || undefined,
                   supplier: acSupplier.trim() || undefined,
@@ -74,6 +109,8 @@ export function StructureStep(props: {
               ]
             });
             setAcTitle("");
+            setAcAmount("");
+            setAcPepElement("");
             setAcStartDate("");
             setAcEndDate("");
             setAcSupplier("");
@@ -91,7 +128,7 @@ export function StructureStep(props: {
           <div style={wizardLayoutStyles.boxHead}>Atividades ({props.activities.length})</div>
           {!props.activities.length ? <div style={wizardLayoutStyles.empty}><StateMessage state="empty" message="Nenhuma atividade cadastrada." /></div> : props.activities.map((a) => {
             const ms = props.milestones.find((m) => m.tempId === a.milestoneTempId);
-            return <div key={a.tempId} style={wizardLayoutStyles.row}><b>{a.Title}</b><div style={{ fontSize: 12, color: "#6b7280" }}>{ms?.Title ?? "(marco não informado)"}</div><div style={{ fontSize: 12, color: "#6b7280" }}>{a.startDate ?? ""}{a.endDate ? ` → ${a.endDate}` : ""}{a.supplier ? ` • ${a.supplier}` : ""}</div></div>;
+            return <div key={a.tempId} style={wizardLayoutStyles.row}><b>{a.Title}</b><div style={{ fontSize: 12, color: "#6b7280" }}>{ms?.Title ?? "(marco não informado)"}</div><div style={{ fontSize: 12, color: "#6b7280" }}>Valor: {(a.amountBrl ?? 0).toLocaleString("pt-BR")} • PEP: {a.pepElement ?? "-"}</div><div style={{ fontSize: 12, color: "#6b7280" }}>{a.startDate ?? ""}{a.endDate ? ` → ${a.endDate}` : ""}{a.supplier ? ` • ${a.supplier}` : ""}</div></div>;
           })}
         </div>
       </div>
