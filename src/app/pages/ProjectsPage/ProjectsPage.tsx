@@ -1,8 +1,13 @@
 import { useEffect, useState } from "react";
 
-import { isLockedStatus, canSendToApproval, sendToApproval, canBackToDraft, backToDraft } from "../../../services/sharepoint/projectsWorkflow";
-import { createProject, updateProject, getProjectById } from "../../../services/sharepoint/projectsApi";
+import { isLockedStatus } from "../../../services/sharepoint/projectsWorkflow";
+import { getProjectById } from "../../../services/sharepoint/projectsApi";
 import type { ProjectDraft, ProjectRow } from "../../../services/sharepoint/projectsApi";
+import { createProject } from "../../../application/use-cases/createProject";
+import { editProject } from "../../../application/use-cases/editProject";
+import { sendProjectToApproval } from "../../../application/use-cases/sendToApproval";
+import { moveProjectBackToDraft } from "../../../application/use-cases/backToDraft";
+import { normalizeError } from "../../../application/errors/appError";
 
 import { ProjectWizardModal } from "./ProjectWizardModal";
 import { Card } from "../../components/ui/Card";
@@ -13,14 +18,17 @@ import { useProjectTimeline } from "./hooks/useProjectTimeline";
 import { ProjectsTableSection } from "./components/ProjectsTableSection";
 import { ProjectSummarySection } from "./components/ProjectSummarySection";
 import { projectsPageStyles as styles } from "./components/ProjectsPage.styles";
+import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { useToast } from "../../components/notifications/useToast";
 
 export function ProjectsPage(props: { onWantsRefreshHeader?: () => void; onRegisterRefresh?: (fn: () => void) => void }) {
   const list = useProjectsList({ searchTitle: "", status: "", unit: "", sortBy: "Id", sortDir: "desc" });
+  const { notify } = useToast();
   const [wizard, setWizard] = useState<{ mode: "create" | "edit" | "view"; initial?: ProjectRow } | null>(null);
   const [selectedFull, setSelectedFull] = useState<ProjectRow | null>(null);
   const [selectedFullState, setSelectedFullState] = useState<"idle" | "loading" | "error">("idle");
+  const [confirmState, setConfirmState] = useState<{ title: string; message: string; onConfirm: () => void; tone?: "danger" | "neutral" } | null>(null);
 
-  const backCheck = canBackToDraft(list.selected);
   const timeline = useProjectTimeline(list.selectedId);
 
   useEffect(() => {
@@ -53,41 +61,65 @@ export function ProjectsPage(props: { onWantsRefreshHeader?: () => void; onRegis
     const id = await createProject(draft);
     await list.loadFirstPage();
     list.setSelectedId(id);
+    notify("Projeto criado com sucesso.", "success");
     return id;
   }
 
   async function onEdit(draft: ProjectDraft): Promise<number> {
     if (!list.selected) throw new Error("Selecione um projeto.");
-    await updateProject(list.selected.Id, draft);
+    await editProject(list.selected.Id, draft);
     await list.loadFirstPage();
     list.setSelectedId(list.selected.Id);
+    notify("Projeto atualizado com sucesso.", "success");
     return list.selected.Id;
   }
 
-  async function onSendToApproval() {
-    if (!list.selected) return;
-    const check = canSendToApproval(list.selected);
-    if (!check.ok) return alert(check.reason ?? "Não é possível enviar para aprovação.");
-    if (!window.confirm(`Enviar o projeto #${list.selected.Id} para Aprovação?`)) return;
+  function requestConfirm(config: { title: string; message: string; onConfirm: () => void; tone?: "danger" | "neutral" }) {
+    setConfirmState(config);
+  }
 
-    try {
-      await sendToApproval(list.selected);
-      await list.loadFirstPage();
-      list.setSelectedId(list.selected.Id);
-    } catch (e: any) {
-      console.error(e);
-      alert(e?.message ? String(e.message) : "Erro ao enviar para aprovação.");
-    }
+  async function onSendToApproval() {
+    const selected = list.selected;
+    if (!selected) return;
+
+    requestConfirm({
+      title: "Enviar para aprovação",
+      message: `Enviar o projeto #${selected.Id} para Aprovação?`,
+      onConfirm: async () => {
+        setConfirmState(null);
+        try {
+          await sendProjectToApproval(selected);
+          await list.loadFirstPage();
+          list.setSelectedId(selected.Id);
+          notify("Projeto enviado para aprovação.", "success");
+        } catch (e) {
+          const appError = normalizeError(e, "Erro ao enviar para aprovação.");
+          notify(appError.technicalDetails ? `${appError.userMessage} (${appError.technicalDetails})` : appError.userMessage, "error");
+        }
+      }
+    });
   }
 
   async function onBackStatus() {
-    if (!list.selected) return;
-    if (!backCheck.ok) return alert(backCheck.reason);
-    if (!window.confirm(`Voltar o status do projeto #${list.selected.Id} para Rascunho?`)) return;
+    const selected = list.selected;
+    if (!selected) return;
 
-    await backToDraft(list.selected);
-    await list.loadFirstPage();
-    list.setSelectedId(list.selected.Id);
+    requestConfirm({
+      title: "Voltar para rascunho",
+      message: `Voltar o status do projeto #${selected.Id} para Rascunho?`,
+      onConfirm: async () => {
+        setConfirmState(null);
+        try {
+          await moveProjectBackToDraft(selected);
+          await list.loadFirstPage();
+          list.setSelectedId(selected.Id);
+          notify("Projeto retornou para rascunho.", "success");
+        } catch (e) {
+          const appError = normalizeError(e, "Erro ao voltar para rascunho.");
+          notify(appError.technicalDetails ? `${appError.userMessage} (${appError.technicalDetails})` : appError.userMessage, "error");
+        }
+      }
+    });
   }
 
   return (
@@ -105,13 +137,16 @@ export function ProjectsPage(props: { onWantsRefreshHeader?: () => void; onRegis
         onView={() => list.selected && setWizard({ mode: "view", initial: list.selected })}
         onEdit={() => {
           if (!list.selected) return;
-          if (isLockedStatus(list.selected.status)) return alert("Projeto travado (Em Aprovação / Aprovado).");
+          if (isLockedStatus(list.selected.status)) {
+            notify("Projeto travado (Em Aprovação / Aprovado).", "info");
+            return;
+          }
           setWizard({ mode: "edit", initial: list.selected });
         }}
-        onDelete={() => alert("Excluir já está funcionando no seu projeto — mantendo aqui como placeholder.")}
+        onDelete={() => notify("Excluir já está funcionando no seu projeto — mantendo aqui como placeholder.", "info")}
         onSendToApproval={onSendToApproval}
         onBackStatus={onBackStatus}
-        onExport={() => alert("Exportar já está funcionando no seu projeto — mantendo aqui como placeholder.")}
+        onExport={() => notify("Exportar já está funcionando no seu projeto — mantendo aqui como placeholder.", "info")}
       />
 
       <div style={styles.grid as any}>
@@ -152,6 +187,15 @@ export function ProjectsPage(props: { onWantsRefreshHeader?: () => void; onRegis
           onSubmitProject={wizard.mode === "edit" ? onEdit : onCreate}
         />
       )}
+
+      <ConfirmDialog
+        open={Boolean(confirmState)}
+        title={confirmState?.title ?? "Confirmar"}
+        message={confirmState?.message ?? ""}
+        tone={confirmState?.tone}
+        onClose={() => setConfirmState(null)}
+        onConfirm={() => confirmState?.onConfirm()}
+      />
     </div>
   );
 }

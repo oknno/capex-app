@@ -3,12 +3,17 @@ import { useCallback, useMemo, useState } from "react";
 import { getProjectsPage } from "../../../../services/sharepoint/projectsApi";
 import type { ProjectRow } from "../../../../services/sharepoint/projectsApi";
 import type { ProjectsFilters } from "../CommandBar";
+import { normalizeError } from "../../../../application/errors/appError";
 
 export type LoadState = "idle" | "loading" | "error";
 
+type UseProjectsListDeps = {
+  getProjectsPage: typeof getProjectsPage;
+};
+
 const PAGE_SIZE = 15;
 
-export function useProjectsList(initialFilters: ProjectsFilters) {
+export function useProjectsList(initialFilters: ProjectsFilters, deps: UseProjectsListDeps = { getProjectsPage }) {
   const [items, setItems] = useState<ProjectRow[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [nextLink, setNextLink] = useState<string | undefined>(undefined);
@@ -24,7 +29,7 @@ export function useProjectsList(initialFilters: ProjectsFilters) {
     setSelectedId(null);
 
     try {
-      const res = await getProjectsPage({
+      const res = await deps.getProjectsPage({
         top: PAGE_SIZE,
         searchTitle: filters.searchTitle,
         statusEquals: filters.status || undefined,
@@ -36,12 +41,13 @@ export function useProjectsList(initialFilters: ProjectsFilters) {
       setItems(res.items);
       setNextLink(res.nextLink);
       setState("idle");
-    } catch (e: any) {
+    } catch (e: unknown) {
+      const appError = normalizeError(e, "Erro ao carregar Projects.");
       setState("error");
-      setErrorMsg(e?.message ? String(e.message) : "Erro ao carregar Projects.");
+      setErrorMsg(appError.userMessage);
       console.error(e);
     }
-  }, [filters]);
+  }, [deps, filters]);
 
   const loadMore = useCallback(async () => {
     if (!nextLink) return;
@@ -50,16 +56,17 @@ export function useProjectsList(initialFilters: ProjectsFilters) {
     setErrorMsg("");
 
     try {
-      const res = await getProjectsPage({ nextLink });
+      const res = await deps.getProjectsPage({ nextLink });
       setItems((prev) => prev.concat(res.items));
       setNextLink(res.nextLink);
       setState("idle");
-    } catch (e: any) {
+    } catch (e: unknown) {
+      const appError = normalizeError(e, "Erro ao carregar mais Projects.");
       setState("error");
-      setErrorMsg(e?.message ? String(e.message) : "Erro ao carregar mais Projects.");
+      setErrorMsg(appError.userMessage);
       console.error(e);
     }
-  }, [nextLink]);
+  }, [deps, nextLink]);
 
   const clearFilters = useCallback(() => {
     setFilters({ searchTitle: "", status: "", unit: "", sortBy: "Id", sortDir: "desc" });
