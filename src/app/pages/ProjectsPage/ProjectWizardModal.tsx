@@ -33,6 +33,9 @@ import { ReviewStep } from "./components/wizard/ReviewStep";
 import { Tab, wizardLayoutStyles as styles } from "./components/wizard/WizardUi";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { useToast } from "../../components/notifications/useToast";
+import { Button } from "../../components/ui/Button";
+import { StateMessage } from "../../components/ui/StateMessage";
+import { uiTokens } from "../../components/ui/tokens";
 import { moveProjectBackToDraft } from "../../../application/use-cases/backToDraft";
 import { normalizeError } from "../../../application/errors/appError";
 
@@ -252,12 +255,12 @@ export function ProjectWizardModal(props: {
       <div style={styles.modal}>
         <div style={styles.modalHeader}>
           <div>
-            <div style={{ fontSize: 14, fontWeight: 800, color: "#111827" }}>{props.mode === "create" ? "Novo Projeto" : props.mode === "view" ? `Visualizar Projeto #${props.initial?.Id ?? ""}` : `Editar Projeto #${props.initial?.Id ?? ""}`}</div>
-            <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>{readOnly ? "Modo visualização: campos bloqueados." : "Preencha, revise e faça commit no final."}</div>
-            {loadingHeader && <div style={{ fontSize: 12, color: "#6b7280", marginTop: 4 }}>Carregando dados do BD…</div>}
-            {errHeader && <div style={{ fontSize: 12, color: "#b91c1c", marginTop: 4 }}>{errHeader}</div>}
+            <div style={{ fontSize: 14, fontWeight: 800, color: uiTokens.colors.textStrong }}>{props.mode === "create" ? "Novo Projeto" : props.mode === "view" ? `Visualizar Projeto #${props.initial?.Id ?? ""}` : `Editar Projeto #${props.initial?.Id ?? ""}`}</div>
+            <div style={{ fontSize: 12, color: uiTokens.colors.textMuted, marginTop: 2 }}>{readOnly ? "Modo visualização: campos bloqueados." : "Preencha, revise e faça commit no final."}</div>
+            {loadingHeader && <div style={{ marginTop: 4 }}><StateMessage state="loading" message="Carregando dados do BD…" /></div>}
+            {errHeader && <div style={{ marginTop: 4 }}><StateMessage state="error" message={errHeader} /></div>}
           </div>
-          <button className="btn" onClick={props.onClose}>Fechar</button>
+          <Button onClick={props.onClose}>Fechar</Button>
         </div>
 
         <div style={styles.tabsRow}>
@@ -287,11 +290,11 @@ export function ProjectWizardModal(props: {
         </div>
 
         <div style={styles.footer}>
-          <div style={{ fontSize: 12, color: "#6b7280" }}>✅ Agora: nada é salvo até o Commit final.</div>
+          <StateMessage state="success" message="Agora: nada é salvo até o Commit final." />
           <div style={{ display: "flex", gap: 8 }}>
-            <button className="btn" onClick={goBack} disabled={step === "project"}>Voltar</button>
-            {!readOnly && step !== "review" && <button className="btn primary" onClick={goNext} disabled={transitioning}>{transitioning ? "Validando..." : "Próximo"}</button>}
-            {!readOnly && step === "review" && <button className="btn primary" onClick={commitAll} disabled={committing}>{committing ? "Commit..." : "Commit + Enviar p/ Aprovação"}</button>}
+            <Button onClick={goBack} disabled={step === "project"}>Voltar</Button>
+            {!readOnly && step !== "review" && <Button tone="primary" onClick={goNext} disabled={transitioning}>{transitioning ? "Validando..." : "Próximo"}</Button>}
+            {!readOnly && step === "review" && <Button tone="primary" onClick={commitAll} disabled={committing}>{committing ? "Commit..." : "Commit + Enviar p/ Aprovação"}</Button>}
           </div>
         </div>
       </div>

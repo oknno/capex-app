@@ -1,3 +1,4 @@
+import { Button } from "../../../../components/ui/Button";
 import { SectionTitle, SummaryBadge } from "./WizardUi";
 
 export function ReviewStep(props: {
@@ -19,7 +20,7 @@ export function ReviewStep(props: {
 
       {props.projectId && <div style={{ fontSize: 12, color: "#6b7280" }}>Edit/View: ProjectId atual no SharePoint: <b>{props.projectId}</b></div>}
 
-      {!props.readOnly && props.projectId && <button className="btn" onClick={props.onBackToDraft}>Voltar para Rascunho (SharePoint)</button>}
+      {!props.readOnly && props.projectId && <Button onClick={props.onBackToDraft}>Voltar para Rascunho (SharePoint)</Button>}
       {!props.readOnly && <div style={{ fontSize: 12, color: "#6b7280" }}>O commit cria/atualiza o projeto, cria estrutura e PEPs e envia para Aprovação.</div>}
     </div>
   );
