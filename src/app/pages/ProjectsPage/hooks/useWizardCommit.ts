@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 import { getProjectById, updateProject } from "../../../../services/sharepoint/projectsApi";
 import type { ProjectDraft } from "../../../../services/sharepoint/projectsApi";
@@ -23,10 +23,12 @@ export function useWizardCommit(params: {
   onClose: () => void;
 }) {
   const [committing, setCommitting] = useState(false);
+  const commitInFlightRef = useRef(false);
 
   const commitAll = useCallback(async () => {
-    if (params.readOnly || committing) return;
+    if (params.readOnly || committing || commitInFlightRef.current) return;
 
+    commitInFlightRef.current = true;
     setCommitting(true);
     try {
       const normalizedProject = params.normalizeProjectForCommit(params.state.project);
@@ -57,9 +59,11 @@ export function useWizardCommit(params: {
         const createdAc = actsNow.find((a) => String(a.Title ?? "").toUpperCase().includes("PEP DIRETO"));
         if (!createdAc) throw new Error("Falha ao criar activity técnica.");
 
-        for (const p of params.state.peps) {
-          await createPep({ Title: p.Title.trim(), year: p.year, amountBrl: Math.round(p.amountBrl), projectsIdId: id, activitiesIdId: createdAc.Id } as PepDraft);
-        }
+        await Promise.all(
+          params.state.peps.map((p) =>
+            createPep({ Title: p.Title.trim(), year: p.year, amountBrl: Math.round(p.amountBrl), projectsIdId: id, activitiesIdId: createdAc.Id } as PepDraft),
+          ),
+        );
       } else {
         for (const m of params.state.milestones) {
           const draft: MilestoneDraft = { Title: m.Title.trim().toUpperCase(), projectsIdId: id };
@@ -82,11 +86,20 @@ export function useWizardCommit(params: {
           activityIdMap.set(a.tempId, created.Id);
         }
 
-        for (const p of params.state.peps) {
-          const activityId = activityIdMap.get(p.activityTempId ?? "");
-          if (!activityId) throw new Error("PEP com Activity inválida (commit).");
-          await createPep({ Title: p.Title.trim(), year: p.year, amountBrl: Math.round(p.amountBrl), projectsIdId: id, activitiesIdId: activityId } as PepDraft);
-        }
+        await Promise.all(
+          params.state.peps.map((p) => {
+            const activityId = activityIdMap.get(p.activityTempId ?? "");
+            if (!activityId) throw new Error("PEP com Activity inválida (commit).");
+
+            return createPep({
+              Title: p.Title.trim(),
+              year: p.year,
+              amountBrl: Math.round(p.amountBrl),
+              projectsIdId: id,
+              activitiesIdId: activityId,
+            } as PepDraft);
+          }),
+        );
       }
 
       const full = await getProjectById(id);
@@ -97,6 +110,7 @@ export function useWizardCommit(params: {
     } catch (e: any) {
       alert(e?.message ? String(e.message) : "Erro no commit.");
     } finally {
+      commitInFlightRef.current = false;
       setCommitting(false);
     }
   }, [committing, params]);
