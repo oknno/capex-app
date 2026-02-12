@@ -1,0 +1,103 @@
+/* ===========================
+   CAPEX APP - RESET CONTROLADO
+   Tudo fica dentro do #static-mirror
+   =========================== */
+
+#static-mirror {
+  /* ocupa a largura disponível dentro do canvas */
+  width: 100%;
+}
+
+#static-mirror #root {
+  width: 100%;
+}
+
+/* Reset apenas dentro do app (evita quebrar o SharePoint) */
+#static-mirror,
+#static-mirror * {
+  box-sizing: border-box;
+}
+
+#static-mirror {
+  font-family: "Segoe UI", Arial, sans-serif;
+  color: #1f2937;
+}
+
+/* Uma “tela” do app, com fundo e espaçamento */
+#static-mirror .capex-app {
+  width: 100%;
+  min-height: 70vh;
+  background: #f6f7f9;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* Container central do conteúdo */
+#static-mirror .capex-container {
+  width: 100%;
+  max-width: 1400px; /* ajuste se quiser mais largo */
+  margin: 0 auto;
+  padding: 16px 18px;
+}
+
+/* Header corporativo */
+#static-mirror .capex-header {
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+#static-mirror .capex-header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+}
+
+#static-mirror .capex-title {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+#static-mirror .capex-title h1 {
+  font-size: 18px;
+  margin: 0;
+  font-weight: 600;
+}
+
+#static-mirror .capex-badge {
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #eef2ff;
+  border: 1px solid #e0e7ff;
+}
+
+/* Botões simples */
+#static-mirror .capex-actions {
+  display: flex;
+  gap: 8px;
+}
+
+#static-mirror .btn {
+  appearance: none;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #111827;
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+#static-mirror .btn.primary {
+  background: #111827;
+  color: #fff;
+  border-color: #111827;
+}
+
+#static-mirror .btn:active {
+  transform: translateY(1px);
+}
