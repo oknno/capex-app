@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import { toIntOrUndefined } from "../../../../../domain/projects/project.calculations";
 import type { ActivityDraftLocal, MilestoneDraftLocal, PepDraftLocal } from "../../../../../domain/projects/project.validators";
+import { buildYearOptions, PEP_ELEMENT_OPTIONS } from "./wizardOptions";
 import { SectionTitle, wizardLayoutStyles } from "./WizardUi";
 import { Button } from "../../../../components/ui/Button";
 import { StateMessage } from "../../../../components/ui/StateMessage";
@@ -25,6 +26,8 @@ export function PepStep(props: {
   const [amount, setAmount] = useState("");
   const [selectedActivity, setSelectedActivity] = useState("");
 
+  const yearOptions = buildYearOptions(5);
+
   useEffect(() => {
     if (!props.needStructure) return;
     if (!selectedActivity && props.activities.length) setSelectedActivity(props.activities[0].tempId);
@@ -47,9 +50,24 @@ export function PepStep(props: {
       )}
 
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Tipo / Elemento PEP" style={{ ...wizardLayoutStyles.input, width: 280 }} />
-        <input value={year} onChange={(e) => setYear(e.target.value)} placeholder="Ano do PEP" style={{ ...wizardLayoutStyles.input, width: 120 }} />
-        <input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="Valor do PEP (R$)" style={{ ...wizardLayoutStyles.input, width: 200 }} />
+        <select value={title} onChange={(e) => setTitle(e.target.value)} style={{ ...wizardLayoutStyles.input, width: 280 }}>
+          <option value="">Elemento PEP</option>
+          {PEP_ELEMENT_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+        </select>
+
+        <select value={year} onChange={(e) => setYear(e.target.value)} style={{ ...wizardLayoutStyles.input, width: 140 }}>
+          <option value="">Ano do PEP</option>
+          {yearOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+        </select>
+
+        <input
+          value={amount}
+          onChange={(e) => {
+            if (e.target.value === "" || /^\d+$/.test(e.target.value)) setAmount(e.target.value);
+          }}
+          placeholder="Valor do PEP (R$)"
+          style={{ ...wizardLayoutStyles.input, width: 200 }}
+        />
 
         <Button tone="primary" disabled={props.readOnly || !title.trim() || !year.trim() || !amount.trim() || (props.needStructure && !selectedActivity)} onClick={() => {
           const y = Number(year.trim());
