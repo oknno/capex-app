@@ -1,13 +1,40 @@
 import type { CSSProperties } from "react";
 
 import { Badge } from "../../../../components/ui/Badge";
-import { Button } from "../../../../components/ui/Button";
 import { Field } from "../../../../components/ui/Field";
 import { Section } from "../../../../components/ui/Section";
 import { uiTokens } from "../../../../components/ui/tokens";
 
-export function Tab(props: { label: string; active: boolean; onClick: () => void }) {
-  return <Button tone={props.active ? "primary" : "default"} style={styles.tab} onClick={props.onClick}>{props.label}</Button>;
+type TabStatus = "completed" | "current" | "available" | "blocked";
+
+export function Tab(props: { label: string; indexLabel: string; status: TabStatus; onClick: () => void }) {
+  const disabled = props.status === "blocked";
+  const indicator = props.status === "completed" ? "✓" : props.indexLabel;
+
+  return (
+    <button
+      type="button"
+      style={{
+        ...styles.tab,
+        ...(props.status === "current" ? styles.tabCurrent : {}),
+        ...(disabled ? styles.tabBlocked : {})
+      }}
+      onClick={props.onClick}
+      disabled={disabled}
+      aria-current={props.status === "current" ? "step" : undefined}
+    >
+      <span
+        style={{
+          ...styles.tabDot,
+          ...(props.status === "completed" ? styles.tabDotCompleted : {}),
+          ...(props.status === "current" ? styles.tabDotCurrent : {})
+        }}
+      >
+        {indicator}
+      </span>
+      <span>{props.label}</span>
+    </button>
+  );
 }
 
 export function SummaryBadge(props: { label: string; value: any }) {
@@ -62,7 +89,49 @@ export const wizardLayoutStyles = {
 };
 
 const styles = {
-  tab: { borderRadius: uiTokens.radius.pill, padding: "8px 12px" },
+  tab: {
+    borderRadius: uiTokens.radius.pill,
+    padding: "6px 10px",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 8,
+    border: `1px solid ${uiTokens.colors.border}`,
+    background: uiTokens.colors.surface,
+    color: uiTokens.colors.textMuted,
+    cursor: "pointer",
+    fontWeight: 600
+  },
+  tabCurrent: {
+    color: uiTokens.colors.textStrong,
+    borderColor: uiTokens.colors.accent,
+    background: uiTokens.colors.accentSoft
+  },
+  tabBlocked: {
+    opacity: 0.55,
+    cursor: "not-allowed"
+  },
+  tabDot: {
+    width: 22,
+    height: 22,
+    borderRadius: "50%",
+    border: `1px solid ${uiTokens.colors.border}`,
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: 12,
+    color: uiTokens.colors.textMuted,
+    background: uiTokens.colors.surfaceMuted
+  },
+  tabDotCompleted: {
+    borderColor: uiTokens.stateTones.success.fg,
+    background: uiTokens.stateTones.success.fg,
+    color: uiTokens.colors.surface
+  },
+  tabDotCurrent: {
+    borderColor: uiTokens.colors.accent,
+    color: uiTokens.colors.accent,
+    background: uiTokens.colors.surface
+  },
   input: wizardLayoutStyles.input,
 } as const;
 

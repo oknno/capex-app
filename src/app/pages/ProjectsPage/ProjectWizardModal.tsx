@@ -228,33 +228,64 @@ export function ProjectWizardModal(props: {
     totalPeps: state.peps.reduce((acc, x) => acc + (Number(x.amountBrl) || 0), 0)
   };
 
-  async function goNext() {
-    if (readOnly || transitioning) return;
+  const stepOrder = useMemo<StepKey[]>(
+    () => (needStructure ? ["project", "structure", "peps", "review"] : ["project", "peps", "review"]),
+    [needStructure]
+  );
+
+  const currentStepIndex = stepOrder.indexOf(step);
+
+  function validateCurrentStep(currentStep: StepKey) {
+    if (currentStep === "project") validateProjectBasics(normalizeProjectForCommit(state.project));
+    if (currentStep === "structure" && needStructure) validateStructure(state);
+    if (currentStep === "peps") validateStructure(state);
+  }
+
+  async function tryStepChange(nextStep: StepKey, trigger: "tab" | "button") {
+    if (readOnly || transitioning || nextStep === step) return;
+
+    const nextIndex = stepOrder.indexOf(nextStep);
+    if (nextIndex < 0) return;
+
+    const canNavigateBack = nextIndex < currentStepIndex;
+    const canNavigateForward = nextIndex === currentStepIndex + 1;
+    if (!canNavigateBack && !canNavigateForward) return;
+
+    if (canNavigateBack) {
+      setStep(nextStep);
+      return;
+    }
+
     setTransitioning(true);
     try {
-      if (step === "project") validateProjectBasics(normalizeProjectForCommit(state.project));
-      if (step === "structure" && needStructure) validateStructure(state);
-      if (step === "peps") validateStructure(state);
-
-      if (step === "project") setStep(needStructure ? "structure" : "peps");
-      else if (step === "structure") setStep("peps");
-      else if (step === "peps") setStep("review");
+      validateCurrentStep(step);
+      setStep(nextStep);
+    } catch (e: unknown) {
+      const message = e instanceof Error && e.message ? e.message : "Há pendências nesta etapa.";
+      const context = trigger === "tab" ? "Corrija as pendências antes de avançar pela barra de etapas." : "Corrija as pendências antes de avançar.";
+      notify(`${message} ${context}`, "error");
     } finally {
       setTransitioning(false);
     }
   }
 
+  async function goNext() {
+    const nextStep = stepOrder[currentStepIndex + 1];
+    if (!nextStep) return;
+    await tryStepChange(nextStep, "button");
+  }
+
   function goBack() {
-    if (step === "review") setStep("peps");
-    else if (step === "peps") setStep(needStructure ? "structure" : "project");
-    else if (step === "structure") setStep("project");
+    const previousStep = stepOrder[currentStepIndex - 1];
+    if (!previousStep) return;
+    setStep(previousStep);
   }
 
   const stepLabel = (k: StepKey) => {
-    if (k === "project") return "1. Projeto";
-    if (k === "structure") return `2. KEY Projects (${ONE_MILLION.toLocaleString("pt-BR")}+)`;
-    if (k === "peps") return needStructure ? "3. Elemento PEP" : "2. Elemento PEP";
-    return needStructure ? "4. Revisão" : "3. Revisão";
+    if (k === "project") return "Projeto";
+    if (k === "structure") return `KEY Projects (${ONE_MILLION.toLocaleString("pt-BR")}+)`;
+    if (k === "peps") return "Elemento PEP";
+    return "Revisão";
   };
 
   return (
@@ -271,10 +302,22 @@ export function ProjectWizardModal(props: {
         </div>
 
         <div style={styles.tabsRow}>
-          <Tab label={stepLabel("project")} active={step === "project"} onClick={() => setStep("project")} />
-          {needStructure && <Tab label={stepLabel("structure")} active={step === "structure"} onClick={() => setStep("structure")} />}
-          <Tab label={stepLabel("peps")} active={step === "peps"} onClick={() => setStep("peps")} />
-          <Tab label={stepLabel("review")} active={step === "review"} onClick={() => setStep("review")} />
+          {stepOrder.map((stepKey, index) => {
+            const isCurrent = stepKey === step;
+            const status = isCurrent ? "current" : index < currentStepIndex ? "completed" : index === currentStepIndex + 1 ? "available" : "blocked";
+            return (
+              <Tab
+                key={stepKey}
+                label={stepLabel(stepKey)}
+                indexLabel={String(index + 1)}
+                status={status}
+                onClick={() => {
+                  void tryStepChange(stepKey, "tab");
+                }}
+              />
+            );
+          })}
+          {!readOnly && <span style={{ marginLeft: 8, fontSize: 12, color: uiTokens.colors.textMuted }}>Dica: use principalmente os botões Próximo/Voltar.</span>}
         </div>
 
         <div style={styles.body}>
