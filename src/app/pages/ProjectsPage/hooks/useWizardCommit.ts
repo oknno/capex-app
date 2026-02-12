@@ -3,14 +3,10 @@ import { useCallback, useRef, useState } from "react";
 import { getProjectById } from "../../../../services/sharepoint/projectsApi";
 import type { ProjectDraft } from "../../../../services/sharepoint/projectsApi";
 import { CommitProjectStructureError, commitProjectStructure } from "../../../../services/sharepoint/commitProjectStructure";
-import { sendToApproval } from "../../../../services/sharepoint/projectsWorkflow";
+import { sendProjectToApproval } from "../../../../application/use-cases/sendToApproval";
 import type { WizardDraftState } from "../../../../domain/projects/project.validators";
 import { validateProjectBasics, validateStructure } from "../../../../domain/projects/project.validators";
-
-function toErrorText(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  return "Erro desconhecido";
-}
+import { normalizeError } from "../../../../application/errors/appError";
 
 function formatCommitError(error: CommitProjectStructureError): string {
   const rollbackDetails =
@@ -20,11 +16,17 @@ function formatCommitError(error: CommitProjectStructureError): string {
 
   return [
     `${error.message}`,
-    `Falha principal: ${toErrorText(error.causeError)}`,
+    `Falha principal: ${error.causeError instanceof Error ? error.causeError.message : "Erro desconhecido"}`,
     `Rollback: ${error.rollback.status} (${error.rollback.failures.length}/${error.rollback.attempts} falhas).`,
     rollbackDetails,
   ].join("\n");
 }
+
+type UseWizardCommitDeps = {
+  getProjectById: typeof getProjectById;
+  commitProjectStructure: typeof commitProjectStructure;
+  sendProjectToApproval: typeof sendProjectToApproval;
+};
 
 export function useWizardCommit(params: {
   readOnly: boolean;
@@ -35,7 +37,9 @@ export function useWizardCommit(params: {
   normalizeProjectForCommit: (draft: ProjectDraft) => ProjectDraft;
   onSubmitProject: (draft: ProjectDraft) => Promise<number>;
   onClose: () => void;
-}) {
+  askConfirm: (message: string) => Promise<boolean>;
+  notify: (message: string, tone?: "success" | "error" | "info") => void;
+}, deps: UseWizardCommitDeps = { getProjectById, commitProjectStructure, sendProjectToApproval }) {
   const [committing, setCommitting] = useState(false);
   const commitInFlightRef = useRef(false);
 
@@ -49,10 +53,11 @@ export function useWizardCommit(params: {
       validateProjectBasics(normalizedProject);
       validateStructure({ ...params.state, project: normalizedProject });
 
-      if (!window.confirm("Confirmar COMMIT? Isso vai gravar projeto + estrutura + PEPs no SharePoint e enviar para Aprovação.")) return;
+      const confirmed = await params.askConfirm("Confirmar COMMIT? Isso vai gravar projeto + estrutura + PEPs no SharePoint e enviar para Aprovação.");
+      if (!confirmed) return;
 
       let id = params.projectId;
-      const commitResult = await commitProjectStructure({
+      const commitResult = await deps.commitProjectStructure({
         projectId: id,
         normalizedProject,
         needStructure: params.needStructure,
@@ -65,23 +70,23 @@ export function useWizardCommit(params: {
       id = commitResult.projectId;
       params.setProjectId(id);
 
-      // Passo explícito: transição de status após persistir estrutura.
-      const full = await getProjectById(id);
-      await sendToApproval(full);
+      const full = await deps.getProjectById(id);
+      await deps.sendProjectToApproval(full);
 
-      alert("Commit concluído e enviado para Aprovação.");
+      params.notify("Commit concluído e enviado para Aprovação.", "success");
       params.onClose();
     } catch (error: unknown) {
       if (error instanceof CommitProjectStructureError) {
-        alert(formatCommitError(error));
+        params.notify(formatCommitError(error), "error");
       } else {
-        alert(toErrorText(error));
+        const appError = normalizeError(error, "Não foi possível concluir o commit.");
+        params.notify(appError.technicalDetails ? `${appError.userMessage} (${appError.technicalDetails})` : appError.userMessage, "error");
       }
     } finally {
       commitInFlightRef.current = false;
       setCommitting(false);
     }
-  }, [committing, params]);
+  }, [committing, deps, params]);
 
   return { committing, commitAll };
 }

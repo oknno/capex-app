@@ -16,6 +16,7 @@ export function PepStep(props: {
   peps: PepDraftLocal[];
   defaultYear: number;
   onChange: (next: PepDraftLocal[]) => void;
+  onValidationError: (message: string) => void;
 }) {
   const [title, setTitle] = useState("");
   const [year, setYear] = useState(String(props.defaultYear));
@@ -51,8 +52,8 @@ export function PepStep(props: {
         <button className="btn primary" disabled={props.readOnly || !title.trim() || !year.trim() || !amount.trim() || (props.needStructure && !selectedActivity)} onClick={() => {
           const y = Number(year.trim());
           const amt = toIntOrUndefined(amount);
-          if (!Number.isFinite(y)) return alert("Ano inválido.");
-          if (!amt || amt <= 0) return alert("amountBrl inválido.");
+          if (!Number.isFinite(y)) return props.onValidationError("Ano inválido.");
+          if (!amt || amt <= 0) return props.onValidationError("amountBrl inválido.");
 
           props.onChange([...props.peps, { tempId: uid("pp"), Title: title.trim(), year: y, amountBrl: amt, activityTempId: props.needStructure ? selectedActivity : undefined }]);
           setTitle("");

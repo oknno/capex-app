@@ -9,8 +9,6 @@ import { getActivitiesBatchByProject } from "../../../services/sharepoint/activi
 
 import { getPepsBatchByProject } from "../../../services/sharepoint/pepsApi";
 
-import { backToDraft } from "../../../services/sharepoint/projectsWorkflow";
-
 import {
   ONE_MILLION,
   calculateInvestmentLevel,
@@ -33,6 +31,10 @@ import { StructureStep } from "./components/wizard/StructureStep";
 import { PepStep } from "./components/wizard/PepStep";
 import { ReviewStep } from "./components/wizard/ReviewStep";
 import { Tab, wizardLayoutStyles as styles } from "./components/wizard/WizardUi";
+import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { useToast } from "../../components/notifications/useToast";
+import { moveProjectBackToDraft } from "../../../application/use-cases/backToDraft";
+import { normalizeError } from "../../../application/errors/appError";
 
 type StepKey = "project" | "structure" | "peps" | "review";
 
@@ -43,11 +45,13 @@ export function ProjectWizardModal(props: {
   onSubmitProject: (draft: ProjectDraft) => Promise<number>;
 }) {
   const readOnly = props.mode === "view";
+  const { notify } = useToast();
   const [step, setStep] = useState<StepKey>("project");
   const [projectId, setProjectId] = useState<number | null>(props.initial?.Id ?? null);
   const [loadingHeader, setLoadingHeader] = useState(false);
   const [errHeader, setErrHeader] = useState("");
   const [transitioning, setTransitioning] = useState(false);
+  const [confirmState, setConfirmState] = useState<{ message: string; title: string; resolve: (ok: boolean) => void } | null>(null);
 
   const [state, setState] = useState<WizardDraftState>(() => ({
     project: {
@@ -162,8 +166,9 @@ export function ProjectWizardModal(props: {
         });
 
         setState((prev) => ({ ...prev, milestones: msLocal, activities: actsLocal, peps: pepsLocal }));
-      } catch (e: any) {
-        setErrHeader(e?.message ? String(e.message) : "Erro ao carregar projeto do SharePoint.");
+      } catch (e: unknown) {
+        const appError = normalizeError(e, "Erro ao carregar projeto do SharePoint.");
+        setErrHeader(appError.userMessage);
       } finally {
         setLoadingHeader(false);
       }
@@ -188,6 +193,11 @@ export function ProjectWizardModal(props: {
     };
   }
 
+  const askConfirm = (message: string) =>
+    new Promise<boolean>((resolve) => {
+      setConfirmState({ title: "Confirmação", message, resolve });
+    });
+
   const { committing, commitAll } = useWizardCommit({
     readOnly,
     needStructure,
@@ -196,7 +206,9 @@ export function ProjectWizardModal(props: {
     state,
     normalizeProjectForCommit,
     onSubmitProject: props.onSubmitProject,
-    onClose: props.onClose
+    onClose: props.onClose,
+    askConfirm,
+    notify
   });
 
   const totals = {
@@ -258,13 +270,19 @@ export function ProjectWizardModal(props: {
         <div style={styles.body}>
           {step === "project" && <ProjectStep draft={state.project} readOnly={readOnly} onChange={patchProject} />}
           {step === "structure" && needStructure && <StructureStep readOnly={readOnly} milestones={state.milestones} activities={state.activities} onChange={(next) => setState((s) => ({ ...s, ...next }))} />}
-          {step === "peps" && <PepStep readOnly={readOnly} needStructure={needStructure} milestones={state.milestones} activities={state.activities} peps={state.peps} defaultYear={Number(state.project.approvalYear ?? new Date().getFullYear())} onChange={(nextPeps) => setState((s) => ({ ...s, peps: nextPeps }))} />}
+          {step === "peps" && <PepStep readOnly={readOnly} needStructure={needStructure} milestones={state.milestones} activities={state.activities} peps={state.peps} defaultYear={Number(state.project.approvalYear ?? new Date().getFullYear())} onValidationError={(message) => notify(message, "error")} onChange={(nextPeps) => setState((s) => ({ ...s, peps: nextPeps }))} />}
           {step === "review" && <ReviewStep readOnly={readOnly} projectId={projectId} totals={totals} onBackToDraft={async () => {
             if (!projectId) return;
-            if (!window.confirm("Voltar status para Rascunho?")) return;
-            const p = await getProjectById(projectId);
-            await backToDraft(p);
-            alert("Status alterado para Rascunho.");
+            const confirmed = await askConfirm("Voltar status para Rascunho?");
+            if (!confirmed) return;
+            try {
+              const p = await getProjectById(projectId);
+              await moveProjectBackToDraft(p);
+              notify("Status alterado para Rascunho.", "success");
+            } catch (e: unknown) {
+              const appError = normalizeError(e, "Não foi possível voltar para rascunho.");
+              notify(appError.technicalDetails ? `${appError.userMessage} (${appError.technicalDetails})` : appError.userMessage, "error");
+            }
           }} />}
         </div>
 
@@ -277,6 +295,20 @@ export function ProjectWizardModal(props: {
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={Boolean(confirmState)}
+        title={confirmState?.title ?? "Confirmar"}
+        message={confirmState?.message ?? ""}
+        onClose={() => {
+          confirmState?.resolve(false);
+          setConfirmState(null);
+        }}
+        onConfirm={() => {
+          confirmState?.resolve(true);
+          setConfirmState(null);
+        }}
+      />
     </div>
   );
 }
