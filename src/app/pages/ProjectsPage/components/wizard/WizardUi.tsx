@@ -97,8 +97,8 @@ export const wizardLayoutStyles = {
     border: `1px solid ${uiTokens.colors.borderMuted}`,
     background: uiTokens.colors.surface
   } as CSSProperties,
-  grid2: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: uiTokens.spacing.md } as CSSProperties,
-  grid2Relaxed: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: uiTokens.spacing.lg } as CSSProperties,
+  grid2: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: uiTokens.spacing.md } as CSSProperties,
+  grid2Relaxed: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: uiTokens.spacing.lg } as CSSProperties,
   box: { border: `1px solid ${uiTokens.colors.border}`, borderRadius: uiTokens.radius.md, overflow: "hidden" } as CSSProperties,
   boxHead: { padding: "10px 12px", fontSize: uiTokens.typography.xs, fontWeight: uiTokens.typography.labelWeight, background: uiTokens.colors.surfaceMuted, borderBottom: `1px solid ${uiTokens.colors.border}` } as CSSProperties,
   row: { padding: "10px 12px", borderBottom: `1px solid ${uiTokens.colors.borderMuted}` } as CSSProperties,
