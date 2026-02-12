@@ -104,7 +104,7 @@ export const wizardLayoutStyles = {
   row: { padding: "10px 12px", borderBottom: `1px solid ${uiTokens.colors.borderMuted}` } as CSSProperties,
   empty: { padding: uiTokens.spacing.md, color: uiTokens.colors.textMuted } as CSSProperties,
   input: { width: "100%", padding: "9px 10px", borderRadius: uiTokens.radius.sm, border: "1px solid #d1d5db" } as CSSProperties,
-  textareaReadable: { width: "100%", maxWidth: 760, minHeight: 80 } as CSSProperties
+  textareaReadable: { width: "100%", minHeight: 80 } as CSSProperties
 };
 
 const styles = {
