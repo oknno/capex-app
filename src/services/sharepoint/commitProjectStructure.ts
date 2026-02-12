@@ -43,6 +43,11 @@ export class CommitProjectStructureError extends Error {
   }
 }
 
+
+function toErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "Unknown delete error";
+}
+
 type CommitProjectStructureArgs = {
   projectId: number | null;
   normalizedProject: ProjectDraft;
@@ -74,35 +79,35 @@ export async function commitProjectStructure(args: CommitProjectStructureArgs): 
     for (const pepId of pepIds) {
       try {
         await deletePep(pepId);
-      } catch (error: any) {
-        rollbackIssues.push({ entity: "pep", id: pepId, reason: error?.message ? String(error.message) : "Unknown delete error" });
+      } catch (error: unknown) {
+        rollbackIssues.push({ entity: "pep", id: pepId, reason: toErrorMessage(error) });
       }
     }
 
     for (const activityId of activityIds) {
       try {
         await deleteActivity(activityId);
-      } catch (error: any) {
-        rollbackIssues.push({ entity: "activity", id: activityId, reason: error?.message ? String(error.message) : "Unknown delete error" });
+      } catch (error: unknown) {
+        rollbackIssues.push({ entity: "activity", id: activityId, reason: toErrorMessage(error) });
       }
     }
 
     for (const milestoneId of milestoneIds) {
       try {
         await deleteMilestone(milestoneId);
-      } catch (error: any) {
-        rollbackIssues.push({ entity: "milestone", id: milestoneId, reason: error?.message ? String(error.message) : "Unknown delete error" });
+      } catch (error: unknown) {
+        rollbackIssues.push({ entity: "milestone", id: milestoneId, reason: toErrorMessage(error) });
       }
     }
 
     if (journal.createdProjectId) {
       try {
         await deleteProject(journal.createdProjectId);
-      } catch (error: any) {
+      } catch (error: unknown) {
         rollbackIssues.push({
           entity: "project",
           id: journal.createdProjectId,
-          reason: error?.message ? String(error.message) : "Unknown delete error"
+          reason: toErrorMessage(error)
         });
       }
     }

@@ -38,26 +38,20 @@ export async function getMilestonesByProject(projectId: number): Promise<Milesto
 }
 
 export async function createMilestone(draft: MilestoneDraft): Promise<number> {
-  const siteUrl = spConfig.siteUrl;
-  const listTitle = spConfig.milestonesListTitle;
-
-  const url = `${siteUrl}/_api/web/lists/getbytitle('${encodeURIComponent(listTitle)}')/items`;
+  const url = `${spConfig.siteUrl}/_api/web/lists/getbytitle('${encodeURIComponent(spConfig.milestonesListTitle)}')/items`;
   const digest = await getDigest();
 
-  const body: any = {
+  const body: Record<string, unknown> = {
     Title: draft.Title,
     projectsIdId: draft.projectsIdId
   };
 
-  const created = await spPostJson<any>(url, body, digest);
-  return Number(created?.Id);
+  const created = await spPostJson<{ Id?: unknown }>(url, body, digest);
+  return Number(created.Id);
 }
 
 export async function deleteMilestone(id: number): Promise<void> {
-  const siteUrl = spConfig.siteUrl;
-  const listTitle = spConfig.milestonesListTitle;
-
-  const url = `${siteUrl}/_api/web/lists/getbytitle('${encodeURIComponent(listTitle)}')/items(${id})`;
+  const url = `${spConfig.siteUrl}/_api/web/lists/getbytitle('${encodeURIComponent(spConfig.milestonesListTitle)}')/items(${id})`;
   const digest = await getDigest();
 
   const res = await fetch(url, {

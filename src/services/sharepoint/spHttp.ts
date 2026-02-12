@@ -5,7 +5,7 @@ const JSON_HEADERS = {
   "Content-Type": "application/json;odata=nometadata"
 };
 
-export async function spGetJson<T = any>(url: string): Promise<T> {
+export async function spGetJson<T = unknown>(url: string): Promise<T> {
   const res = await fetch(url, {
     method: "GET",
     headers: {
@@ -21,7 +21,7 @@ export async function spGetJson<T = any>(url: string): Promise<T> {
   return (await res.json()) as T;
 }
 
-export async function spPostJson<T = any>(url: string, body: any, digest: string): Promise<T> {
+export async function spPostJson<T = unknown>(url: string, body: unknown, digest: string): Promise<T> {
   const res = await fetch(url, {
     method: "POST",
     headers: {
@@ -39,9 +39,9 @@ export async function spPostJson<T = any>(url: string, body: any, digest: string
   return (await res.json()) as T;
 }
 
-export async function spPatchJson<T = any>(
+export async function spPatchJson<T = unknown>(
   url: string,
-  body: any,
+  body: unknown,
   digest: string
 ): Promise<T> {
   const res = await fetch(url, {
@@ -89,8 +89,8 @@ export async function getDigest(): Promise<string> {
     throw new Error(`Digest ${res.status}: ${txt}`);
   }
 
-  const data = await res.json();
-  const digest = String(data?.FormDigestValue || "");
+  const data = (await res.json()) as { FormDigestValue?: unknown };
+  const digest = String(data.FormDigestValue ?? "");
 
   // cache ~25 min (digest geralmente ~30 min)
   _digestCache = { value: digest, expiresAt: now + 25 * 60 * 1000 };

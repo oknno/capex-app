@@ -4,12 +4,10 @@ import { spGetJson, getDigest, spPostJson } from "./spHttp";
 export type ActivityRow = {
   Id: number;
   Title: string;
-
   projectsIdId?: number;
   milestonesIdId?: number;
-
-  startDate?: string; // ISO
-  endDate?: string;   // ISO
+  startDate?: string;
+  endDate?: string;
   supplier?: string;
   activityDescription?: string;
 };
@@ -18,9 +16,8 @@ export type ActivityDraft = {
   Title: string;
   projectsIdId: number;
   milestonesIdId: number;
-
-  startDate?: string; // ISO
-  endDate?: string;   // ISO
+  startDate?: string;
+  endDate?: string;
   supplier?: string;
   activityDescription?: string;
 };
@@ -51,13 +48,10 @@ export async function getActivitiesByMilestone(projectId: number, milestoneId: n
 }
 
 export async function createActivity(draft: ActivityDraft): Promise<number> {
-  const siteUrl = spConfig.siteUrl;
-  const listTitle = spConfig.activitiesListTitle;
-
-  const url = `${siteUrl}/_api/web/lists/getbytitle('${encodeURIComponent(listTitle)}')/items`;
+  const url = `${spConfig.siteUrl}/_api/web/lists/getbytitle('${encodeURIComponent(spConfig.activitiesListTitle)}')/items`;
   const digest = await getDigest();
 
-  const body: any = {
+  const body: Record<string, unknown> = {
     Title: draft.Title,
     startDate: draft.startDate,
     endDate: draft.endDate,
@@ -67,15 +61,12 @@ export async function createActivity(draft: ActivityDraft): Promise<number> {
     projectsIdId: draft.projectsIdId
   };
 
-  const created = await spPostJson<any>(url, body, digest);
-  return Number(created?.Id);
+  const created = await spPostJson<{ Id?: unknown }>(url, body, digest);
+  return Number(created.Id);
 }
 
 export async function deleteActivity(id: number): Promise<void> {
-  const siteUrl = spConfig.siteUrl;
-  const listTitle = spConfig.activitiesListTitle;
-
-  const url = `${siteUrl}/_api/web/lists/getbytitle('${encodeURIComponent(listTitle)}')/items(${id})`;
+  const url = `${spConfig.siteUrl}/_api/web/lists/getbytitle('${encodeURIComponent(spConfig.activitiesListTitle)}')/items(${id})`;
   const digest = await getDigest();
 
   const res = await fetch(url, {

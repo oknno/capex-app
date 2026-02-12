@@ -22,7 +22,16 @@ type ODataListResponse<T> = {
   value: T[];
 };
 
-function numOrUndef(v: any): number | undefined {
+type PepWire = {
+  Id?: unknown;
+  Title?: unknown;
+  amountBrl?: unknown;
+  year?: unknown;
+  projectsIdId?: unknown;
+  activitiesIdId?: unknown;
+};
+
+function numOrUndef(v: unknown): number | undefined {
   const n = Number(v);
   return Number.isFinite(n) ? n : undefined;
 }
@@ -38,9 +47,9 @@ export async function getPepsByActivity(activityId: number): Promise<PepRow[]> {
     `&$orderby=Id desc` +
     `&$top=500`;
 
-  const data = await spGetJson<ODataListResponse<any>>(url);
+  const data = await spGetJson<ODataListResponse<PepWire>>(url);
 
-  return (data.value ?? []).map((x: any) => ({
+  return (data.value ?? []).map((x) => ({
     Id: Number(x.Id),
     Title: String(x.Title ?? ""),
     amountBrl: x.amountBrl != null ? numOrUndef(x.amountBrl) : undefined,
@@ -57,7 +66,7 @@ export async function createPep(draft: PepDraft): Promise<number> {
   const url = `${siteUrl}/_api/web/lists/getbytitle('${encodeURIComponent(listTitle)}')/items`;
   const digest = await getDigest();
 
-  const body: any = {
+  const body: Record<string, unknown> = {
     Title: draft.Title,
     amountBrl: draft.amountBrl,
     year: draft.year,
@@ -65,10 +74,9 @@ export async function createPep(draft: PepDraft): Promise<number> {
     activitiesIdId: draft.activitiesIdId
   };
 
-  const created = await spPostJson<any>(url, body, digest);
-  return Number(created?.Id);
+  const created = await spPostJson<{ Id?: unknown }>(url, body, digest);
+  return Number(created.Id);
 }
-
 
 export async function deletePep(id: number): Promise<void> {
   const siteUrl = spConfig.siteUrl;
@@ -98,7 +106,7 @@ export async function updatePep(id: number, patch: Partial<PepDraft>): Promise<v
 
   const url = `${siteUrl}/_api/web/lists/getbytitle('${encodeURIComponent(listTitle)}')/items(${id})`;
 
-  const body: any = {};
+  const body: Record<string, unknown> = {};
   if (patch.Title !== undefined) body.Title = String(patch.Title ?? "").trim();
   if (patch.amountBrl !== undefined) body.amountBrl = patch.amountBrl;
   if (patch.year !== undefined) body.year = patch.year;
