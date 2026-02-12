@@ -1,63 +1,79 @@
-// src/domain/rules/projectApprovalRules.ts
 import type { RuleResult } from "./types";
 
-export type ApprovalSnapshot = {
+export type ApprovalRulesInputSnapshot = {
+  projectStatus?: string;
   milestonesCount: number;
   activitiesCount: number;
   pepsCount: number;
   totalProjectBrl: number;
 };
 
-export function runProjectApprovalRules(s: ApprovalSnapshot): RuleResult[] {
-  const out: RuleResult[] = [];
+function normalizeStatus(status?: string) {
+  return (status ?? "").trim().toLowerCase();
+}
 
-  // R1 - Marcos
-  if (s.milestonesCount <= 0) {
-    out.push({
+function isStatusBlocked(status?: string) {
+  const normalizedStatus = normalizeStatus(status);
+  return normalizedStatus.length > 0 && normalizedStatus !== "rascunho" && normalizedStatus !== "reprovado";
+}
+
+export function executeProjectApprovalRules(snapshot: ApprovalRulesInputSnapshot): RuleResult[] {
+  const results: RuleResult[] = [];
+
+  if (isStatusBlocked(snapshot.projectStatus)) {
+    results.push({
+      id: "status.blocked",
+      level: "error",
+      title: "Status bloqueado",
+      message: `Status atual (“${snapshot.projectStatus ?? "-"}”) não permite envio para aprovação.`,
+    });
+  } else {
+    results.push({ id: "status.ok", level: "ok", title: "Status ok" });
+  }
+
+  if (snapshot.milestonesCount <= 0) {
+    results.push({
       id: "milestones.required",
       level: "error",
-      title: "Sem Marcos",
-      message: "Cadastre pelo menos 1 Milestone antes de enviar para aprovação."
+      title: "Sem marcos",
+      message: "Cadastre pelo menos 1 milestone antes de enviar para aprovação.",
     });
   } else {
-    out.push({ id: "milestones.ok", level: "ok", title: "Marcos ok" });
+    results.push({ id: "milestones.ok", level: "ok", title: "Marcos ok" });
   }
 
-  // R2 - Atividades
-  if (s.activitiesCount <= 0) {
-    out.push({
+  if (snapshot.activitiesCount <= 0) {
+    results.push({
       id: "activities.required",
       level: "error",
-      title: "Sem Atividades",
-      message: "Cadastre pelo menos 1 Activity antes de enviar para aprovação."
+      title: "Sem atividades",
+      message: "Cadastre pelo menos 1 activity antes de enviar para aprovação.",
     });
   } else {
-    out.push({ id: "activities.ok", level: "ok", title: "Atividades ok" });
+    results.push({ id: "activities.ok", level: "ok", title: "Atividades ok" });
   }
 
-  // R3 - PEPs
-  if (s.pepsCount <= 0) {
-    out.push({
+  if (snapshot.pepsCount <= 0) {
+    results.push({
       id: "peps.required",
       level: "error",
       title: "Sem PEPs",
-      message: "Cadastre pelo menos 1 PEP antes de enviar para aprovação."
+      message: "Cadastre pelo menos 1 PEP antes de enviar para aprovação.",
     });
   } else {
-    out.push({ id: "peps.ok", level: "ok", title: "PEPs ok" });
+    results.push({ id: "peps.ok", level: "ok", title: "PEPs ok" });
   }
 
-  // R4 - Total
-  if (!Number.isFinite(s.totalProjectBrl) || s.totalProjectBrl <= 0) {
-    out.push({
+  if (!Number.isFinite(snapshot.totalProjectBrl) || snapshot.totalProjectBrl <= 0) {
+    results.push({
       id: "total.invalid",
       level: "error",
-      title: "Total do projeto inválido",
-      message: "O total consolidado de PEPs está zero ou inválido."
+      title: "Total inválido",
+      message: "O total consolidado de PEPs está zero ou inválido.",
     });
   } else {
-    out.push({ id: "total.ok", level: "ok", title: "Total do projeto ok" });
+    results.push({ id: "total.ok", level: "ok", title: "Total ok" });
   }
 
-  return out;
+  return results;
 }

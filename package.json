@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "typecheck": "tsc -b --pretty false",
     "lint:strict": "eslint src/services/sharepoint --max-warnings=0",
-    "check": "npm run lint:strict && npm run typecheck"
+    "check": "npm run lint:strict && npm run typecheck",
+    "test": "node --test tests/domain/rules/projectApprovalRules.test.mjs"
   },
   "dependencies": {
     "react": "^19.2.0",
