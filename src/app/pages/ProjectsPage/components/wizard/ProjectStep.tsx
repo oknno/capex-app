@@ -9,6 +9,7 @@ import {
   todayIsoDate,
 } from "./wizardOptions";
 import { FieldDate, FieldNumber, FieldSelect, FieldText, SectionTitle, wizardLayoutStyles } from "./WizardUi";
+import { Field } from "../../../../components/ui/Field";
 
 function onlyIntegerOrEmpty(value: string) {
   if (value === "") return "";
@@ -58,6 +59,32 @@ export function ProjectStep(props: { draft: ProjectDraft; readOnly: boolean; onC
 
           <FieldSelect label="Unidade" value={d.unit ?? ""} options={unitOptions} disabled={props.readOnly || !d.center} onChange={(v) => props.onChange({ unit: v || undefined, location: undefined })} />
           <FieldSelect label="Local de Implantação" value={d.location ?? ""} options={locationOptions} disabled={props.readOnly || !d.unit} onChange={(v) => props.onChange({ location: v || undefined })} />
+        </div>
+      </div>
+
+      <div style={wizardLayoutStyles.card}>
+        <SectionTitle title="Contexto do projeto" subtitle="O que preencher aqui: necessidade do negócio e solução proposta." />
+
+        <div style={wizardLayoutStyles.sectionStack}>
+          <Field label="Necessidade do Negócio">
+            <textarea
+              value={d.businessNeed ?? ""}
+              disabled={props.readOnly}
+              rows={4}
+              onChange={(e) => props.onChange({ businessNeed: e.target.value })}
+              style={{ ...wizardLayoutStyles.input, ...wizardLayoutStyles.textareaReadable }}
+            />
+          </Field>
+
+          <Field label="Solução da Proposta">
+            <textarea
+              value={d.proposedSolution ?? ""}
+              disabled={props.readOnly}
+              rows={4}
+              onChange={(e) => props.onChange({ proposedSolution: e.target.value })}
+              style={{ ...wizardLayoutStyles.input, ...wizardLayoutStyles.textareaReadable }}
+            />
+          </Field>
         </div>
       </div>
 
