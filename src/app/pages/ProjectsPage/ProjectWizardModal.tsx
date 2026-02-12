@@ -5,10 +5,9 @@ import type { ProjectDraft, ProjectRow } from "../../../services/sharepoint/proj
 
 import { getMilestonesByProject } from "../../../services/sharepoint/milestonesApi";
 
-import { getActivitiesByMilestone } from "../../../services/sharepoint/activitiesApi";
+import { getActivitiesBatchByProject } from "../../../services/sharepoint/activitiesApi";
 
-import { getPepsByActivity } from "../../../services/sharepoint/pepsApi";
-import type { PepRow } from "../../../services/sharepoint/pepsApi";
+import { getPepsBatchByProject } from "../../../services/sharepoint/pepsApi";
 
 import { backToDraft } from "../../../services/sharepoint/projectsWorkflow";
 
@@ -102,24 +101,65 @@ export function ProjectWizardModal(props: {
         setProjectId(full.Id);
         setState((prev) => ({ ...prev, project: { ...prev.project, ...full } }));
 
-        const milestones = await getMilestonesByProject(full.Id);
+        const loadStartedAt = performance.now();
+        const [milestones, activities, peps] = await Promise.all([
+          getMilestonesByProject(full.Id),
+          getActivitiesBatchByProject(full.Id, { pageSize: 500, maxPages: 20 }),
+          getPepsBatchByProject(full.Id, { pageSize: 500, maxPages: 20 })
+        ]);
+
+        const milestoneMap = new Map<number, ActivityDraftLocal[]>();
+        const activityMap = new Map<number, PepDraftLocal[]>();
+
         const msLocal: MilestoneDraftLocal[] = milestones.map((m) => ({ tempId: `ms_${m.Id}`, Title: String(m.Title ?? "").toUpperCase() }));
-        const actsLocal: ActivityDraftLocal[] = [];
-        const pepsLocal: PepDraftLocal[] = [];
 
-        for (const m of milestones) {
-          const acts = await getActivitiesByMilestone(full.Id, m.Id);
-          for (const a of acts) {
-            const actTempId = `ac_${a.Id}`;
-            actsLocal.push({ tempId: actTempId, Title: String(a.Title ?? "").toUpperCase(), milestoneTempId: `ms_${m.Id}` });
-
-            const pepList = (await getPepsByActivity(a.Id)) as PepRow[] | undefined;
-            for (const p of pepList ?? []) {
-              const amount = typeof p.amountBrl === "number" ? p.amountBrl : Number(p.amountBrl);
-              pepsLocal.push({ tempId: `pp_${p.Id}`, Title: String(p.Title ?? ""), year: Number(p.year ?? new Date().getFullYear()), amountBrl: Math.round(Number.isFinite(amount) ? amount : 0), activityTempId: actTempId });
-            }
-          }
+        for (const a of activities) {
+          const activity: ActivityDraftLocal = {
+            tempId: `ac_${a.Id}`,
+            Title: String(a.Title ?? "").toUpperCase(),
+            milestoneTempId: `ms_${a.milestonesIdId}`
+          };
+          const key = Number(a.milestonesIdId ?? -1);
+          const group = milestoneMap.get(key) ?? [];
+          group.push(activity);
+          milestoneMap.set(key, group);
         }
+
+        for (const p of peps) {
+          const amount = typeof p.amountBrl === "number" ? p.amountBrl : Number(p.amountBrl);
+          const pep: PepDraftLocal = {
+            tempId: `pp_${p.Id}`,
+            Title: String(p.Title ?? ""),
+            year: Number(p.year ?? new Date().getFullYear()),
+            amountBrl: Math.round(Number.isFinite(amount) ? amount : 0),
+            activityTempId: `ac_${p.activitiesIdId}`
+          };
+          const key = Number(p.activitiesIdId ?? -1);
+          const group = activityMap.get(key) ?? [];
+          group.push(pep);
+          activityMap.set(key, group);
+        }
+
+        const actsLocal: ActivityDraftLocal[] = milestones.flatMap((m) => milestoneMap.get(m.Id) ?? []);
+        const pepsLocal: PepDraftLocal[] = actsLocal.flatMap((a) => {
+          const activityId = Number(a.tempId.replace("ac_", ""));
+          return activityMap.get(activityId) ?? [];
+        });
+
+        const loadFinishedAt = performance.now();
+        const estimatedSequentialRoundTrips = 2 + milestones.length + activities.length;
+        const optimizedRoundTrips = 3;
+        console.info("[ProjectWizardModal] Carregamento de estrutura concluído", {
+          projectId: full.Id,
+          totalMilestones: milestones.length,
+          totalActivities: activities.length,
+          totalPeps: peps.length,
+          durationMs: Math.round(loadFinishedAt - loadStartedAt),
+          roundTripsBefore: estimatedSequentialRoundTrips,
+          roundTripsAfter: optimizedRoundTrips,
+          milestoneMapSize: milestoneMap.size,
+          activityMapSize: activityMap.size
+        });
 
         setState((prev) => ({ ...prev, milestones: msLocal, activities: actsLocal, peps: pepsLocal }));
       } catch (e: any) {

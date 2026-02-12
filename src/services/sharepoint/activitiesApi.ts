@@ -27,6 +27,11 @@ type ODataList<T> = {
   ["@odata.nextLink"]?: string;
 };
 
+type BatchFetchOptions = {
+  pageSize?: number;
+  maxPages?: number;
+};
+
 function enc(s: string) {
   return encodeURIComponent(s);
 }
@@ -45,6 +50,34 @@ export async function getActivitiesByMilestone(projectId: number, milestoneId: n
 
   const data = await spGetJson<ODataList<ActivityRow>>(url);
   return data.value ?? [];
+}
+
+export async function getActivitiesBatchByProject(projectId: number, options?: BatchFetchOptions): Promise<ActivityRow[]> {
+  const top = Math.max(1, Math.min(options?.pageSize ?? 500, 5000));
+  const maxPages = Math.max(1, options?.maxPages ?? 20);
+
+  const baseUrl = `${listBaseUrl(spConfig.activitiesListTitle)}/items`;
+  let nextUrl =
+    `${baseUrl}?$select=Id,Title,projectsIdId,milestonesIdId,startDate,endDate,supplier,activityDescription` +
+    `&$filter=projectsIdId eq ${projectId}` +
+    `&$orderby=Id desc` +
+    `&$top=${top}`;
+
+  const all: ActivityRow[] = [];
+  let page = 0;
+
+  while (nextUrl && page < maxPages) {
+    const data = await spGetJson<ODataList<ActivityRow>>(nextUrl);
+    all.push(...(data.value ?? []));
+    nextUrl = data["@odata.nextLink"] ?? "";
+    page += 1;
+  }
+
+  if (nextUrl) {
+    console.warn(`[activitiesApi] Paginação interrompida após ${maxPages} páginas para projectId=${projectId}.`);
+  }
+
+  return all;
 }
 
 export async function createActivity(draft: ActivityDraft): Promise<number> {

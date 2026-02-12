@@ -20,6 +20,14 @@ export type PepDraft = {
 
 type ODataListResponse<T> = {
   value: T[];
+  ["@odata.nextLink"]?: string;
+};
+
+type BatchFetchOptions = {
+  activityIds?: number[];
+  pageSize?: number;
+  maxPages?: number;
+  maxConcurrent?: number;
 };
 
 type PepWire = {
@@ -36,6 +44,61 @@ function numOrUndef(v: unknown): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
+function toPepRow(x: PepWire): PepRow {
+  return {
+    Id: Number(x.Id),
+    Title: String(x.Title ?? ""),
+    amountBrl: x.amountBrl != null ? numOrUndef(x.amountBrl) : undefined,
+    year: x.year != null ? numOrUndef(x.year) : undefined,
+    projectsIdId: x.projectsIdId != null ? numOrUndef(x.projectsIdId) : undefined,
+    activitiesIdId: x.activitiesIdId != null ? numOrUndef(x.activitiesIdId) : undefined
+  };
+}
+
+async function runWithConcurrency<T, R>(items: T[], maxConcurrent: number, worker: (item: T) => Promise<R[]>): Promise<R[]> {
+  const concurrency = Math.max(1, maxConcurrent);
+  const results: R[] = [];
+  let cursor = 0;
+
+  async function consume() {
+    while (cursor < items.length) {
+      const current = items[cursor++];
+      const partial = await worker(current);
+      results.push(...partial);
+    }
+  }
+
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, consume));
+  return results;
+}
+
+async function fetchPepsPaged(filter: string, pageSize: number, maxPages: number): Promise<PepRow[]> {
+  const siteUrl = spConfig.siteUrl;
+  const listTitle = spConfig.pepsListTitle;
+  const baseUrl = `${siteUrl}/_api/web/lists/getbytitle('${encodeURIComponent(listTitle)}')/items`;
+  let nextUrl =
+    `${baseUrl}?$select=Id,Title,amountBrl,year,projectsIdId,activitiesIdId` +
+    `&$filter=${encodeURIComponent(filter)}` +
+    `&$orderby=Id desc` +
+    `&$top=${pageSize}`;
+
+  const rows: PepRow[] = [];
+  let page = 0;
+
+  while (nextUrl && page < maxPages) {
+    const data = await spGetJson<ODataListResponse<PepWire>>(nextUrl);
+    rows.push(...(data.value ?? []).map(toPepRow));
+    nextUrl = data["@odata.nextLink"] ?? "";
+    page += 1;
+  }
+
+  if (nextUrl) {
+    console.warn(`[pepsApi] Paginação interrompida após ${maxPages} páginas para filtro: ${filter}`);
+  }
+
+  return rows;
+}
+
 export async function getPepsByActivity(activityId: number): Promise<PepRow[]> {
   const siteUrl = spConfig.siteUrl;
   const listTitle = spConfig.pepsListTitle;
@@ -49,14 +112,33 @@ export async function getPepsByActivity(activityId: number): Promise<PepRow[]> {
 
   const data = await spGetJson<ODataListResponse<PepWire>>(url);
 
-  return (data.value ?? []).map((x) => ({
-    Id: Number(x.Id),
-    Title: String(x.Title ?? ""),
-    amountBrl: x.amountBrl != null ? numOrUndef(x.amountBrl) : undefined,
-    year: x.year != null ? numOrUndef(x.year) : undefined,
-    projectsIdId: x.projectsIdId != null ? numOrUndef(x.projectsIdId) : undefined,
-    activitiesIdId: x.activitiesIdId != null ? numOrUndef(x.activitiesIdId) : undefined
-  }));
+  return (data.value ?? []).map(toPepRow);
+}
+
+export async function getPepsBatchByProject(projectId: number, options?: BatchFetchOptions): Promise<PepRow[]> {
+  const pageSize = Math.max(1, Math.min(options?.pageSize ?? 500, 5000));
+  const maxPages = Math.max(1, options?.maxPages ?? 20);
+  const maxConcurrent = Math.max(1, options?.maxConcurrent ?? 4);
+  const activityIds = (options?.activityIds ?? []).filter((id) => Number.isFinite(id));
+
+  if (activityIds.length === 0) {
+    return fetchPepsPaged(`projectsIdId eq ${projectId}`, pageSize, maxPages);
+  }
+
+  const chunks: number[][] = [];
+  const chunkSize = 20;
+  for (let i = 0; i < activityIds.length; i += chunkSize) {
+    chunks.push(activityIds.slice(i, i + chunkSize));
+  }
+
+  const rows = await runWithConcurrency(chunks, maxConcurrent, async (chunk) => {
+    const activityFilter = chunk.map((id) => `activitiesIdId eq ${id}`).join(" or ");
+    return fetchPepsPaged(`projectsIdId eq ${projectId} and (${activityFilter})`, pageSize, maxPages);
+  });
+
+  const deduped = new Map<number, PepRow>();
+  for (const row of rows) deduped.set(row.Id, row);
+  return [...deduped.values()];
 }
 
 export async function createPep(draft: PepDraft): Promise<number> {
