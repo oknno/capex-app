@@ -98,6 +98,21 @@ export function ProjectWizardModal(props: {
   }));
 
   const needStructure = useMemo(() => requiresStructure(state.project.budgetBrl), [state.project.budgetBrl]);
+  const effectivePeps = useMemo(() => {
+    if (!needStructure) return state.peps;
+    const defaultYear = Number(state.project.approvalYear ?? new Date().getFullYear());
+    return state.activities
+      .filter((activity) => Boolean(activity.pepElement) && Number(activity.amountBrl ?? 0) > 0)
+      .map((activity) => ({
+        tempId: `auto_${activity.tempId}`,
+        Title: String(activity.pepElement ?? "").trim(),
+        year: defaultYear,
+        amountBrl: Number(activity.amountBrl ?? 0),
+        activityTempId: activity.tempId
+      }));
+  }, [needStructure, state.activities, state.peps, state.project.approvalYear]);
+
+  const draftState = useMemo(() => ({ ...state, peps: effectivePeps }), [effectivePeps, state]);
 
   useEffect(() => {
     if (!props.initial?.Id || props.mode === "create") return;
@@ -155,7 +170,16 @@ export function ProjectWizardModal(props: {
           activityMap.set(key, group);
         }
 
-        const actsLocal: ActivityDraftLocal[] = milestones.flatMap((m) => milestoneMap.get(m.Id) ?? []);
+        const actsLocal: ActivityDraftLocal[] = milestones.flatMap((m) => (milestoneMap.get(m.Id) ?? []).map((activity) => {
+          const activityId = Number(activity.tempId.replace("ac_", ""));
+          const linkedPeps = activityMap.get(activityId) ?? [];
+          const firstPep = linkedPeps[0];
+          return {
+            ...activity,
+            amountBrl: firstPep ? Number(firstPep.amountBrl) : activity.amountBrl,
+            pepElement: firstPep?.Title ?? activity.pepElement
+          };
+        }));
         const pepsLocal: PepDraftLocal[] = actsLocal.flatMap((a) => {
           const activityId = Number(a.tempId.replace("ac_", ""));
           return activityMap.get(activityId) ?? [];
@@ -214,7 +238,7 @@ export function ProjectWizardModal(props: {
     needStructure,
     projectId,
     setProjectId: (id) => setProjectId(id),
-    state,
+    state: draftState,
     normalizeProjectForCommit,
     onSubmitProject: props.onSubmitProject,
     onClose: props.onClose,
@@ -273,13 +297,13 @@ export function ProjectWizardModal(props: {
     }
 
     try {
-      validateStructure(state);
+      validateStructure(draftState);
     } catch (error: unknown) {
       const message = error instanceof Error && error.message ? error.message : "Existem pendências em Estrutura/PEPs.";
       pendings.push({ id: "structure-validation", section: "execution", message });
     }
 
-    if (state.peps.length === 0) {
+    if (effectivePeps.length === 0) {
       pendings.push({ id: "pep-empty", section: "execution", message: "Cadastre ao menos 1 PEP para avançar." });
     }
 
@@ -289,7 +313,7 @@ export function ProjectWizardModal(props: {
     }
 
     return pendings;
-  }, [needStructure, normalizeProjectForCommit, projectRequiredFields, state]);
+  }, [draftState, effectivePeps.length, needStructure, normalizeProjectForCommit, projectRequiredFields, state.activities.length, state.milestones.length, state.project]);
 
   const reviewCountText = `${pendingItems.length === 0 ? "Pronto para commit" : `${pendingItems.length} pendência(s)`}`;
 
@@ -297,7 +321,7 @@ export function ProjectWizardModal(props: {
 
   function validateCurrentStep(currentStep: StepKey) {
     if (currentStep === "project") validateProjectBasics(normalizeProjectForCommit(state.project));
-    if (currentStep === "execution") validateStructure(state);
+    if (currentStep === "execution") validateStructure(draftState);
   }
 
   async function tryStepChange(nextStep: StepKey, trigger: "tab" | "button") {
@@ -398,7 +422,7 @@ export function ProjectWizardModal(props: {
             {
               key: "execution",
               title: needStructure ? `PEPs e KEY Projects (≥ ${ONE_MILLION.toLocaleString("pt-BR")})` : `PEPs (< ${ONE_MILLION.toLocaleString("pt-BR")})`,
-              subtitle: `${Math.min(structureFilledCount, structureEssentialTotal)}/${structureEssentialTotal} checks estruturais • ${state.peps.length} PEP(s)`,
+              subtitle: `${Math.min(structureFilledCount, structureEssentialTotal)}/${structureEssentialTotal} checks estruturais • ${effectivePeps.length} PEP(s)`,
               done: pendingItems.every((pending) => pending.section !== "execution")
             },
             { key: "review", title: "Resumo para validar", subtitle: reviewCountText, done: pendingItems.length === 0 }
@@ -416,7 +440,7 @@ export function ProjectWizardModal(props: {
           {step === "execution" && (
             <div style={{ display: "grid", gap: 12 }}>
               {needStructure && <StructureStep readOnly={readOnly} projectStartDate={state.project.startDate} projectEndDate={state.project.endDate} milestones={state.milestones} activities={state.activities} onValidationError={(message) => notify(message, "error")} onChange={(next) => setState((s) => ({ ...s, ...next }))} />}
-              <PepStep readOnly={readOnly} needStructure={needStructure} milestones={state.milestones} activities={state.activities} peps={state.peps} defaultYear={Number(state.project.approvalYear ?? new Date().getFullYear())} onValidationError={(message) => notify(message, "error")} onChange={(nextPeps) => setState((s) => ({ ...s, peps: nextPeps }))} />
+              {!needStructure && <PepStep readOnly={readOnly} needStructure={needStructure} milestones={state.milestones} activities={state.activities} peps={state.peps} defaultYear={Number(state.project.approvalYear ?? new Date().getFullYear())} onValidationError={(message) => notify(message, "error")} onChange={(nextPeps) => setState((s) => ({ ...s, peps: nextPeps }))} />}
             </div>
           )}
           {step === "review" && (
@@ -439,7 +463,7 @@ export function ProjectWizardModal(props: {
                 </div>
               )}
 
-              <ReviewStep readOnly={readOnly} projectId={projectId} state={state} needStructure={needStructure} onBackToDraft={async () => {
+              <ReviewStep readOnly={readOnly} projectId={projectId} state={draftState} needStructure={needStructure} onBackToDraft={async () => {
                 if (!projectId) return;
                 const confirmed = await askConfirm("Voltar status para Rascunho?");
                 if (!confirmed) return;
