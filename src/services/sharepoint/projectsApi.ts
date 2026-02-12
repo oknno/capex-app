@@ -1,5 +1,6 @@
 import { spConfig } from "./spConfig";
 import { spGetJson, spPostJson, spPatchJson, getDigest } from "./spHttp";
+import { getListFieldsCached } from "./listSchemaCache";
 
 export type ProjectRow = {
   Id: number;
@@ -60,7 +61,8 @@ const PROJECT_SELECT_BASE =
   "startDate,endDate,businessNeed,proposedSolution,kpiType,kpiName,kpiDescription,kpiCurrent,kpiExpected," +
   "roceGain,roceGainDescription,roceLoss,roceLossDescription,roceClassification";
 
-const PROJECT_SELECT_WITH_ROCE = `${PROJECT_SELECT_BASE},roce`;
+const FALLBACK_UNSUPPORTED_FIELDS = new Set(["roce"]);
+let projectsFieldNamesPromise: Promise<Set<string> | null> | null = null;
 
 function asRecord(value: unknown): SpRecord {
   return value && typeof value === "object" ? (value as SpRecord) : {};
@@ -91,12 +93,39 @@ function pickNextLink(data: SpListResponse): string | undefined {
   return typeof link === "string" && link.length > 0 ? link : undefined;
 }
 
-function buildProjectPayload(source: ProjectUpdate): Record<string, unknown> {
+function buildRawProjectPayload(source: ProjectUpdate): Record<string, unknown> {
   const payload: Record<string, unknown> = {};
   (Object.keys(source) as Array<keyof ProjectUpdate>).forEach((key) => {
     const value = source[key];
     if (value !== undefined) payload[key] = value;
   });
+  return payload;
+}
+
+async function getProjectsFieldNames(): Promise<Set<string> | null> {
+  if (!projectsFieldNamesPromise) {
+    projectsFieldNamesPromise = getListFieldsCached(spConfig.projectsListTitle)
+      .then((fields) => new Set(fields.map((field) => field.InternalName)))
+      .catch(() => null);
+  }
+  return projectsFieldNamesPromise;
+}
+
+async function buildProjectPayload(source: ProjectUpdate): Promise<Record<string, unknown>> {
+  const payload = buildRawProjectPayload(source);
+  const schemaFieldNames = await getProjectsFieldNames();
+
+  if (!schemaFieldNames) {
+    for (const unsupportedField of FALLBACK_UNSUPPORTED_FIELDS) {
+      delete payload[unsupportedField];
+    }
+    return payload;
+  }
+
+  for (const key of Object.keys(payload)) {
+    if (!schemaFieldNames.has(key)) delete payload[key];
+  }
+
   return payload;
 }
 
@@ -140,15 +169,17 @@ export async function getProjectById(id: number): Promise<ProjectRow> {
 export async function createProject(draft: ProjectDraft): Promise<number> {
   const url = `${spConfig.siteUrl}/_api/web/lists/getbytitle('${encodeURIComponent(spConfig.projectsListTitle)}')/items`;
   const digest = await getDigest();
+  const payload = await buildProjectPayload(draft);
 
-  const created = await spPostJson<{ Id?: unknown }>(url, buildProjectPayload(draft), digest);
+  const created = await spPostJson<{ Id?: unknown }>(url, payload, digest);
   return Number(created.Id);
 }
 
 export async function updateProject(id: number, patch: ProjectUpdate): Promise<void> {
   const url = `${spConfig.siteUrl}/_api/web/lists/getbytitle('${encodeURIComponent(spConfig.projectsListTitle)}')/items(${id})`;
   const digest = await getDigest();
-  await spPatchJson(url, buildProjectPayload(patch), digest);
+  const payload = await buildProjectPayload(patch);
+  await spPatchJson(url, payload, digest);
 }
 
 function escapeODataString(v: string) {
@@ -160,12 +191,7 @@ async function fetchProjectsPage(args: {
   orderExpr: string;
   filters?: string;
 }): Promise<SpListResponse> {
-  try {
-    return await spGetJson<SpListResponse>(buildProjectsPageUrl(args, PROJECT_SELECT_WITH_ROCE));
-  } catch (error: unknown) {
-    if (!isMissingFieldError(error, "roce")) throw error;
-    return spGetJson<SpListResponse>(buildProjectsPageUrl(args, PROJECT_SELECT_BASE));
-  }
+  return spGetJson<SpListResponse>(buildProjectsPageUrl(args, PROJECT_SELECT_BASE));
 }
 
 function buildProjectsPageUrl(
@@ -180,12 +206,7 @@ function buildProjectsPageUrl(
 }
 
 async function fetchProjectById(id: number): Promise<SpRecord> {
-  try {
-    return await spGetJson<SpRecord>(buildProjectByIdUrl(id, PROJECT_SELECT_WITH_ROCE));
-  } catch (error: unknown) {
-    if (!isMissingFieldError(error, "roce")) throw error;
-    return spGetJson<SpRecord>(buildProjectByIdUrl(id, PROJECT_SELECT_BASE));
-  }
+  return spGetJson<SpRecord>(buildProjectByIdUrl(id, PROJECT_SELECT_BASE));
 }
 
 function buildProjectByIdUrl(id: number, select: string): string {
@@ -193,13 +214,6 @@ function buildProjectByIdUrl(id: number, select: string): string {
     `${spConfig.siteUrl}/_api/web/lists/getbytitle('${encodeURIComponent(spConfig.projectsListTitle)}')/items(${id})` +
     `?$select=${select}`
   );
-}
-
-function isMissingFieldError(error: unknown, fieldName: string): boolean {
-  if (!(error instanceof Error)) return false;
-  const msg = error.message.toLowerCase();
-  const missingFieldMarkers = ["does not exist", "não existe", "nao existe"];
-  return missingFieldMarkers.some((marker) => msg.includes(marker)) && msg.includes(fieldName.toLowerCase());
 }
 
 function mapProjectRow(x: SpRecord): ProjectRow {
