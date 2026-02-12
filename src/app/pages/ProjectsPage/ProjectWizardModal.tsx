@@ -1,18 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
 
-import { getProjectById, updateProject } from "../../../services/sharepoint/projectsApi";
+import { getProjectById } from "../../../services/sharepoint/projectsApi";
 import type { ProjectDraft, ProjectRow } from "../../../services/sharepoint/projectsApi";
 
-import { getMilestonesByProject, createMilestone } from "../../../services/sharepoint/milestonesApi";
-import type { MilestoneDraft } from "../../../services/sharepoint/milestonesApi";
+import { getMilestonesByProject } from "../../../services/sharepoint/milestonesApi";
 
-import { getActivitiesByMilestone, createActivity } from "../../../services/sharepoint/activitiesApi";
-import type { ActivityDraft } from "../../../services/sharepoint/activitiesApi";
+import { getActivitiesByMilestone } from "../../../services/sharepoint/activitiesApi";
 
-import { getPepsByActivity, createPep } from "../../../services/sharepoint/pepsApi";
-import type { PepRow, PepDraft } from "../../../services/sharepoint/pepsApi";
+import { getPepsByActivity } from "../../../services/sharepoint/pepsApi";
+import type { PepRow } from "../../../services/sharepoint/pepsApi";
 
 import { sendToApproval, backToDraft } from "../../../services/sharepoint/projectsWorkflow";
+import {
+  commitProjectStructure,
+  CommitProjectStructureError
+} from "../../../services/sharepoint/commitProjectStructure";
 
 import {
   ONE_MILLION,
@@ -241,112 +243,48 @@ export function ProjectWizardModal(props: {
       validateProjectBasics(normalizedProject);
       validateStructure({ ...state, project: normalizedProject });
 
-      // confirmar
       const ok = window.confirm("Confirmar COMMIT? Isso vai gravar projeto + estrutura + PEPs no SharePoint e enviar para Aprovação.");
       if (!ok) return;
 
-      // 1) criar ou atualizar Project
-      let id = projectId;
+      const result = await commitProjectStructure({
+        projectId,
+        normalizedProject,
+        needStructure,
+        milestones: state.milestones,
+        activities: state.activities,
+        peps: state.peps,
+        createProject: props.onSubmitProject
+      });
 
-      if (!id) {
-        id = await props.onSubmitProject(normalizedProject);
-        setProjectId(id);
-      } else {
-        await updateProject(id, normalizedProject);
-      }
+      setProjectId(result.projectId);
 
-      // 2) criar estrutura (com fallback <1M)
-      let milestoneIdMap = new Map<string, number>();
-      let activityIdMap = new Map<string, number>();
-
-      if (!needStructure) {
-        // cria milestone e activity técnicos (usuário não vê)
-        const msTemp = uid("ms");
-        const acTemp = uid("ac");
-
-        await createMilestone({ Title: "SEM MARCOS (AUTO)", projectsIdId: id } as MilestoneDraft);
-        const milestonesNow = await getMilestonesByProject(id);
-        const createdMs = milestonesNow.find((m) => String(m.Title ?? "").toUpperCase().includes("SEM MARCOS"));
-        if (!createdMs) throw new Error("Falha ao criar milestone técnico.");
-
-        milestoneIdMap.set(msTemp, createdMs.Id);
-
-        await createActivity({ Title: "PEP DIRETO (AUTO)", projectsIdId: id, milestonesIdId: createdMs.Id } as ActivityDraft);
-
-        const actsNow = await getActivitiesByMilestone(id, createdMs.Id);
-        const createdAc = actsNow.find((a) => String(a.Title ?? "").toUpperCase().includes("PEP DIRETO"));
-        if (!createdAc) throw new Error("Falha ao criar activity técnica.");
-
-        activityIdMap.set(acTemp, createdAc.Id);
-
-        // 3) criar PEPs apontando pro activity técnico
-        for (const p of state.peps) {
-          const pep: PepDraft = {
-            Title: p.Title.trim(),
-            year: p.year,
-            amountBrl: Math.round(p.amountBrl),
-            projectsIdId: id,
-            activitiesIdId: createdAc.Id
-          };
-          await createPep(pep);
-        }
-      } else {
-        // 2a) milestones
-        for (const m of state.milestones) {
-          const draft: MilestoneDraft = { Title: m.Title.trim().toUpperCase(), projectsIdId: id };
-          await createMilestone(draft);
-          // map: vamos buscar pelo título (simples e robusto aqui)
-          const msNow = await getMilestonesByProject(id);
-          const created = msNow.find((x) => String(x.Title ?? "").toUpperCase() === draft.Title);
-          if (!created) throw new Error(`Falha ao criar milestone: ${draft.Title}`);
-          milestoneIdMap.set(m.tempId, created.Id);
-        }
-
-        // 2b) activities
-        for (const a of state.activities) {
-          const milestoneId = milestoneIdMap.get(a.milestoneTempId);
-          if (!milestoneId) throw new Error("Activity sem milestone válido (commit).");
-
-          const draft: ActivityDraft = {
-            Title: a.Title.trim().toUpperCase(),
-            projectsIdId: id,
-            milestonesIdId: milestoneId
-          };
-
-          await createActivity(draft);
-
-          const actsNow = await getActivitiesByMilestone(id, milestoneId);
-          const created = actsNow.find((x) => String(x.Title ?? "").toUpperCase() === draft.Title);
-          if (!created) throw new Error(`Falha ao criar activity: ${draft.Title}`);
-
-          activityIdMap.set(a.tempId, created.Id);
-        }
-
-        // 3) peps
-        for (const p of state.peps) {
-          const actTemp = p.activityTempId;
-          if (!actTemp) throw new Error("PEP sem Activity (commit).");
-          const activityId = activityIdMap.get(actTemp);
-          if (!activityId) throw new Error("PEP com Activity inválida (commit).");
-
-          const pep: PepDraft = {
-            Title: p.Title.trim(),
-            year: p.year,
-            amountBrl: Math.round(p.amountBrl),
-            projectsIdId: id,
-            activitiesIdId: activityId
-          };
-          await createPep(pep);
-        }
-      }
-
-      // 4) workflow
-      const full = await getProjectById(id);
+      const full = await getProjectById(result.projectId);
       await sendToApproval(full);
 
       alert("Commit concluído e enviado para Aprovação.");
       props.onClose();
     } catch (e: any) {
+      if (e instanceof CommitProjectStructureError) {
+        const rootMessage = e.causeError instanceof Error ? e.causeError.message : "Erro desconhecido durante commit.";
+        const rollbackStatus = e.rollback.status === "complete" ? "completo" : "parcial";
+        const failures = e.rollback.failures
+          .map((f) => `- ${f.entity} #${f.id}: ${f.reason}`)
+          .join("\n");
+
+        const structuredMessage = [
+          "Falha no commit do projeto.",
+          `Causa: ${rootMessage}`,
+          `Rollback: ${rollbackStatus} (${e.rollback.attempts - e.rollback.failures.length}/${e.rollback.attempts} reversões bem-sucedidas).`,
+          failures ? `Falhas no rollback:
+${failures}` : ""
+        ]
+          .filter(Boolean)
+          .join("\n");
+
+        alert(structuredMessage);
+        return;
+      }
+
       alert(e?.message ? String(e.message) : "Erro no commit.");
     } finally {
       setCommitting(false);
