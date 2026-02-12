@@ -45,116 +45,130 @@ export function ProjectStep(props: { draft: ProjectDraft; readOnly: boolean; onC
   const locationOptions = getOptionsWithFallback(LOCATION_OPTIONS_BY_UNIT[d.unit ?? ""], "Local");
 
   return (
-    <div style={{ display: "grid", gap: 12, padding: 14 }}>
-      <SectionTitle title="Sobre o Projeto" subtitle="Preencha os dados principais do projeto para iniciar o cadastro." />
+    <div style={{ ...wizardLayoutStyles.sectionStack, padding: 14 }}>
+      <div style={wizardLayoutStyles.card}>
+        <SectionTitle title="Dados principais" subtitle="O que preencher aqui: nome, orçamento, verba e datas do projeto." />
 
-      <label style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 13, color: "#374151", width: "fit-content" }}>
-        <input type="checkbox" checked={showAdvanced} onChange={(e) => setShowAdvanced(e.target.checked)} disabled={props.readOnly} />
-        Mostrar campos avançados
-      </label>
+        <label style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 13, color: "#374151", width: "fit-content" }}>
+          <input type="checkbox" checked={showAdvanced} onChange={(e) => setShowAdvanced(e.target.checked)} disabled={props.readOnly} />
+          Mostrar campos avançados
+        </label>
 
-      <div style={wizardLayoutStyles.grid2}>
-        <FieldText label="Nome do Projeto *" value={d.Title ?? ""} maxLength={25} placeholder="Ex: MODERNIZAÇÃO DA LINHA" disabled={props.readOnly} onChange={(v) => props.onChange({ Title: v.toUpperCase().slice(0, 25) })} />
-        <FieldSelect label="Ano de Aprovação *" value={d.approvalYear ?? ""} options={yearOptions} disabled={props.readOnly} onChange={(v) => props.onChange({ approvalYear: v ? Number(v) : undefined })} />
+        <div style={wizardLayoutStyles.grid2Relaxed}>
+          <FieldText label="Nome do Projeto *" value={d.Title ?? ""} maxLength={25} placeholder="Ex: MODERNIZAÇÃO DA LINHA" disabled={props.readOnly} onChange={(v) => props.onChange({ Title: v.toUpperCase().slice(0, 25) })} />
+          <FieldSelect label="Ano de Aprovação *" value={d.approvalYear ?? ""} options={yearOptions} disabled={props.readOnly} onChange={(v) => props.onChange({ approvalYear: v ? Number(v) : undefined })} />
 
-        <FieldNumber label="Orçamento do Projeto em R$ *" value={d.budgetBrl ?? ""} placeholder="Ex: 5000000" disabled={props.readOnly} onChange={(v) => {
-          const clean = onlyIntegerOrEmpty(v);
-          if (clean === null) return;
-          props.onChange({ budgetBrl: clean === "" ? undefined : Number(clean) });
-        }} />
-        <FieldSelect label="Origem da Verba" value={d.fundingSource ?? ""} options={FUNDING_SOURCE_OPTIONS} disabled={props.readOnly} onChange={(v) => props.onChange({ fundingSource: v || undefined })} />
+          <FieldNumber label="Orçamento do Projeto em R$ *" value={d.budgetBrl ?? ""} placeholder="Ex: 5000000" disabled={props.readOnly} onChange={(v) => {
+            const clean = onlyIntegerOrEmpty(v);
+            if (clean === null) return;
+            props.onChange({ budgetBrl: clean === "" ? undefined : Number(clean) });
+          }} />
+          <FieldSelect label="Origem da Verba" value={d.fundingSource ?? ""} options={FUNDING_SOURCE_OPTIONS} disabled={props.readOnly} onChange={(v) => props.onChange({ fundingSource: v || undefined })} />
 
-        <FieldDate label="Data de Início" value={d.startDate ?? ""} min={today} disabled={props.readOnly} onChange={(v) => props.onChange({ startDate: v || undefined })} />
-        <FieldDate label="Data de Término" value={d.endDate ?? ""} min={d.startDate || today} disabled={props.readOnly} onChange={(v) => props.onChange({ endDate: v || undefined })} />
+          <FieldDate label="Data de Início" value={d.startDate ?? ""} min={today} disabled={props.readOnly} onChange={(v) => props.onChange({ startDate: v || undefined })} />
+          <FieldDate label="Data de Término" value={d.endDate ?? ""} min={d.startDate || today} disabled={props.readOnly} onChange={(v) => props.onChange({ endDate: v || undefined })} />
+        </div>
       </div>
 
-      <SectionTitle title="Informação Operacional" />
-      <div style={wizardLayoutStyles.grid2}>
-        <FieldSelect label="Empresa" value={d.company ?? ""} options={COMPANY_OPTIONS} disabled={props.readOnly} onChange={(v) => props.onChange({ company: v || undefined, center: undefined, unit: undefined, location: undefined })} />
-        <FieldSelect label="Centro" value={d.center ?? ""} options={centerOptions} disabled={props.readOnly || !d.company} onChange={(v) => props.onChange({ center: v || undefined, unit: undefined, location: undefined })} />
+      <div style={wizardLayoutStyles.card}>
+        <SectionTitle title="Estrutura operacional" subtitle="O que preencher aqui: empresa, centro, unidade e local da implantação." />
 
-        <FieldSelect label="Unidade" value={d.unit ?? ""} options={unitOptions} disabled={props.readOnly || !d.center} onChange={(v) => props.onChange({ unit: v || undefined, location: undefined })} />
-        <FieldSelect label="Local de Implantação" value={d.location ?? ""} options={locationOptions} disabled={props.readOnly || !d.unit} onChange={(v) => props.onChange({ location: v || undefined })} />
+        <div style={wizardLayoutStyles.grid2Relaxed}>
+          <FieldSelect label="Empresa" value={d.company ?? ""} options={COMPANY_OPTIONS} disabled={props.readOnly} onChange={(v) => props.onChange({ company: v || undefined, center: undefined, unit: undefined, location: undefined })} />
+          <FieldSelect label="Centro" value={d.center ?? ""} options={centerOptions} disabled={props.readOnly || !d.company} onChange={(v) => props.onChange({ center: v || undefined, unit: undefined, location: undefined })} />
+
+          <FieldSelect label="Unidade" value={d.unit ?? ""} options={unitOptions} disabled={props.readOnly || !d.center} onChange={(v) => props.onChange({ unit: v || undefined, location: undefined })} />
+          <FieldSelect label="Local de Implantação" value={d.location ?? ""} options={locationOptions} disabled={props.readOnly || !d.unit} onChange={(v) => props.onChange({ location: v || undefined })} />
+        </div>
       </div>
 
       {showAdvanced && (
-        <div style={{ display: "grid", gap: 12, border: "1px solid #e5e7eb", borderRadius: 8, padding: 12, background: "#f9fafb" }}>
-          <SectionTitle title="Informações avançadas" subtitle="Campos complementares para detalhamento do projeto." />
+        <div style={wizardLayoutStyles.card}>
+          <SectionTitle title="Informações avançadas" subtitle="O que preencher aqui: dados de classificação e indicadores complementares." />
 
-          <div style={wizardLayoutStyles.grid2}>
-            <FieldText label="Status do Projeto" value={d.status ?? "Rascunho"} disabled={true} onChange={() => { }} />
-            <FieldText label="Nível de Investimento" value={investmentLevelLabel(d.investmentLevel)} placeholder={`Calculado automaticamente (câmbio ${EXCHANGE_RATE})`} disabled={true} onChange={() => { }} />
+          <div style={wizardLayoutStyles.cardSubtle}>
+            <SectionTitle title="Classificação" subtitle="O que preencher aqui: status, tipo e responsáveis pelo projeto." />
+            <div style={wizardLayoutStyles.grid2Relaxed}>
+              <FieldText label="Status do Projeto" value={d.status ?? "Rascunho"} disabled={true} onChange={() => { }} />
+              <FieldText label="Nível de Investimento" value={investmentLevelLabel(d.investmentLevel)} placeholder={`Calculado automaticamente (câmbio ${EXCHANGE_RATE})`} disabled={true} onChange={() => { }} />
 
-            <FieldText label="Função do Projeto" value={d.projectFunction ?? ""} maxLength={35} disabled={props.readOnly} onChange={(v) => props.onChange({ projectFunction: v.slice(0, 35) })} />
-            <FieldText label="C. Custo Depreciação" value={d.depreciationCostCenter ?? ""} disabled={props.readOnly} onChange={(v) => props.onChange({ depreciationCostCenter: v })} />
+              <FieldText label="Função do Projeto" value={d.projectFunction ?? ""} maxLength={35} disabled={props.readOnly} onChange={(v) => props.onChange({ projectFunction: v.slice(0, 35) })} />
+              <FieldText label="C. Custo Depreciação" value={d.depreciationCostCenter ?? ""} disabled={props.readOnly} onChange={(v) => props.onChange({ depreciationCostCenter: v })} />
 
-            <FieldSelect label="Categoria" value={d.category ?? ""} options={CATEGORY_OPTIONS} disabled={props.readOnly} onChange={(v) => props.onChange({ category: v || undefined })} />
-            <FieldSelect label="Tipo de Investimento" value={d.investmentType ?? ""} options={INVESTMENT_TYPE_OPTIONS} disabled={props.readOnly} onChange={(v) => props.onChange({ investmentType: v || undefined })} />
+              <FieldSelect label="Categoria" value={d.category ?? ""} options={CATEGORY_OPTIONS} disabled={props.readOnly} onChange={(v) => props.onChange({ category: v || undefined })} />
+              <FieldSelect label="Tipo de Investimento" value={d.investmentType ?? ""} options={INVESTMENT_TYPE_OPTIONS} disabled={props.readOnly} onChange={(v) => props.onChange({ investmentType: v || undefined })} />
 
-            <FieldSelect label="Tipo de Ativo" value={d.assetType ?? ""} options={ASSET_TYPE_OPTIONS} disabled={props.readOnly} onChange={(v) => props.onChange({ assetType: v || undefined })} />
-            <FieldText label="Usuário do Projeto" value={d.projectUser ?? ""} disabled={props.readOnly} onChange={(v) => props.onChange({ projectUser: v.toUpperCase() })} />
+              <FieldSelect label="Tipo de Ativo" value={d.assetType ?? ""} options={ASSET_TYPE_OPTIONS} disabled={props.readOnly} onChange={(v) => props.onChange({ assetType: v || undefined })} />
+              <FieldText label="Usuário do Projeto" value={d.projectUser ?? ""} disabled={props.readOnly} onChange={(v) => props.onChange({ projectUser: v.toUpperCase() })} />
 
-            <FieldText label="Líder do Projeto" value={d.projectLeader ?? ""} disabled={props.readOnly} onChange={(v) => props.onChange({ projectLeader: v.toUpperCase() })} />
+              <FieldText label="Líder do Projeto" value={d.projectLeader ?? ""} disabled={props.readOnly} onChange={(v) => props.onChange({ projectLeader: v.toUpperCase() })} />
+            </div>
           </div>
 
-          <SectionTitle title="Detalhamento Complementar" />
-          <Field label="Necessidade do Negócio">
-            <textarea value={d.businessNeed ?? ""} disabled={props.readOnly} onChange={(e) => props.onChange({ businessNeed: e.target.value })} rows={3} style={{ ...wizardLayoutStyles.input, resize: "vertical" }} />
-          </Field>
+          <div style={wizardLayoutStyles.cardSubtle}>
+            <SectionTitle title="Contexto do projeto" subtitle="O que preencher aqui: necessidade, solução e descrição dos resultados esperados." />
+            <Field label="Necessidade do Negócio">
+              <textarea value={d.businessNeed ?? ""} disabled={props.readOnly} onChange={(e) => props.onChange({ businessNeed: e.target.value })} rows={3} style={{ ...wizardLayoutStyles.input, ...wizardLayoutStyles.textareaReadable, resize: "vertical" }} />
+            </Field>
 
-          <Field label="Solução da Proposta">
-            <textarea value={d.proposedSolution ?? ""} disabled={props.readOnly} onChange={(e) => props.onChange({ proposedSolution: e.target.value })} rows={3} style={{ ...wizardLayoutStyles.input, resize: "vertical" }} />
-          </Field>
-
-          <SectionTitle title="Indicadores de Desempenho" />
-          <div style={wizardLayoutStyles.grid2}>
-            <FieldSelect label="Tipo de KPI" value={d.kpiType ?? ""} options={KPI_TYPE_OPTIONS} disabled={props.readOnly} onChange={(v) => props.onChange({ kpiType: v || undefined })} />
-            <FieldText label="Nome do KPI" value={d.kpiName ?? ""} disabled={props.readOnly} onChange={(v) => props.onChange({ kpiName: v.toUpperCase() })} />
-
-            <FieldNumber label="KPI Atual" value={d.kpiCurrent ?? "0"} disabled={props.readOnly} onChange={(v) => {
-              const clean = onlyIntegerOrEmpty(v);
-              if (clean === null) return;
-              props.onChange({ kpiCurrent: clean === "" ? "0" : clean });
-            }} />
-            <FieldNumber label="KPI Esperado" value={d.kpiExpected ?? "0"} disabled={props.readOnly} onChange={(v) => {
-              const clean = onlyIntegerOrEmpty(v);
-              if (clean === null) return;
-              props.onChange({ kpiExpected: clean === "" ? "0" : clean });
-            }} />
+            <Field label="Solução da Proposta">
+              <textarea value={d.proposedSolution ?? ""} disabled={props.readOnly} onChange={(e) => props.onChange({ proposedSolution: e.target.value })} rows={3} style={{ ...wizardLayoutStyles.input, ...wizardLayoutStyles.textareaReadable, resize: "vertical" }} />
+            </Field>
           </div>
 
-          <Field label="Descrição do KPI">
-            <textarea value={d.kpiDescription ?? ""} disabled={props.readOnly} onChange={(e) => props.onChange({ kpiDescription: e.target.value })} rows={3} style={{ ...wizardLayoutStyles.input, resize: "vertical" }} />
-          </Field>
+          <div style={wizardLayoutStyles.cardSubtle}>
+            <SectionTitle title="Indicadores" subtitle="O que preencher aqui: KPI atual, meta e explicação do indicador." />
+            <div style={wizardLayoutStyles.grid2Relaxed}>
+              <FieldSelect label="Tipo de KPI" value={d.kpiType ?? ""} options={KPI_TYPE_OPTIONS} disabled={props.readOnly} onChange={(v) => props.onChange({ kpiType: v || undefined })} />
+              <FieldText label="Nome do KPI" value={d.kpiName ?? ""} disabled={props.readOnly} onChange={(v) => props.onChange({ kpiName: v.toUpperCase() })} />
 
-          <SectionTitle title="ROCE" />
-          <div style={wizardLayoutStyles.grid2}>
-            <FieldSelect label="Classificação do ROCE" value={d.roceClassification ?? ""} options={ROCE_CLASS_OPTIONS} disabled={props.readOnly} onChange={(v) => props.onChange({ roceClassification: v || undefined })} />
-            <FieldNumber label="ROCE" value={d.roce ?? ""} disabled={props.readOnly} onChange={(v) => {
-              const clean = onlyIntegerOrEmpty(v);
-              if (clean === null) return;
-              props.onChange({ roce: clean === "" ? undefined : Number(clean) });
-            }} />
+              <FieldNumber label="KPI Atual" value={d.kpiCurrent ?? "0"} disabled={props.readOnly} onChange={(v) => {
+                const clean = onlyIntegerOrEmpty(v);
+                if (clean === null) return;
+                props.onChange({ kpiCurrent: clean === "" ? "0" : clean });
+              }} />
+              <FieldNumber label="KPI Esperado" value={d.kpiExpected ?? "0"} disabled={props.readOnly} onChange={(v) => {
+                const clean = onlyIntegerOrEmpty(v);
+                if (clean === null) return;
+                props.onChange({ kpiExpected: clean === "" ? "0" : clean });
+              }} />
+            </div>
 
-            <FieldNumber label="Ganho (R$)" value={d.roceGain ?? ""} disabled={props.readOnly} onChange={(v) => {
-              const clean = onlyIntegerOrEmpty(v);
-              if (clean === null) return;
-              props.onChange({ roceGain: clean === "" ? undefined : Number(clean) });
-            }} />
-            <FieldNumber label="Perda (R$)" value={d.roceLoss ?? ""} disabled={props.readOnly} onChange={(v) => {
-              const clean = onlyIntegerOrEmpty(v);
-              if (clean === null) return;
-              props.onChange({ roceLoss: clean === "" ? undefined : Number(clean) });
-            }} />
+            <Field label="Descrição do KPI">
+              <textarea value={d.kpiDescription ?? ""} disabled={props.readOnly} onChange={(e) => props.onChange({ kpiDescription: e.target.value })} rows={3} style={{ ...wizardLayoutStyles.input, ...wizardLayoutStyles.textareaReadable, resize: "vertical" }} />
+            </Field>
           </div>
 
-          <Field label="Descrição do ganho">
-            <textarea value={d.roceGainDescription ?? ""} disabled={props.readOnly} onChange={(e) => props.onChange({ roceGainDescription: e.target.value })} rows={2} style={{ ...wizardLayoutStyles.input, resize: "vertical" }} />
-          </Field>
+          <div style={wizardLayoutStyles.cardSubtle}>
+            <SectionTitle title="ROCE" subtitle="O que preencher aqui: classificação, ganhos, perdas e justificativas." />
+            <div style={wizardLayoutStyles.grid2Relaxed}>
+              <FieldSelect label="Classificação do ROCE" value={d.roceClassification ?? ""} options={ROCE_CLASS_OPTIONS} disabled={props.readOnly} onChange={(v) => props.onChange({ roceClassification: v || undefined })} />
+              <FieldNumber label="ROCE" value={d.roce ?? ""} disabled={props.readOnly} onChange={(v) => {
+                const clean = onlyIntegerOrEmpty(v);
+                if (clean === null) return;
+                props.onChange({ roce: clean === "" ? undefined : Number(clean) });
+              }} />
 
-          <Field label="Descrição da perda">
-            <textarea value={d.roceLossDescription ?? ""} disabled={props.readOnly} onChange={(e) => props.onChange({ roceLossDescription: e.target.value })} rows={2} style={{ ...wizardLayoutStyles.input, resize: "vertical" }} />
-          </Field>
+              <FieldNumber label="Ganho (R$)" value={d.roceGain ?? ""} disabled={props.readOnly} onChange={(v) => {
+                const clean = onlyIntegerOrEmpty(v);
+                if (clean === null) return;
+                props.onChange({ roceGain: clean === "" ? undefined : Number(clean) });
+              }} />
+              <FieldNumber label="Perda (R$)" value={d.roceLoss ?? ""} disabled={props.readOnly} onChange={(v) => {
+                const clean = onlyIntegerOrEmpty(v);
+                if (clean === null) return;
+                props.onChange({ roceLoss: clean === "" ? undefined : Number(clean) });
+              }} />
+            </div>
+
+            <Field label="Descrição do ganho">
+              <textarea value={d.roceGainDescription ?? ""} disabled={props.readOnly} onChange={(e) => props.onChange({ roceGainDescription: e.target.value })} rows={2} style={{ ...wizardLayoutStyles.input, ...wizardLayoutStyles.textareaReadable, resize: "vertical" }} />
+            </Field>
+
+            <Field label="Descrição da perda">
+              <textarea value={d.roceLossDescription ?? ""} disabled={props.readOnly} onChange={(e) => props.onChange({ roceLossDescription: e.target.value })} rows={2} style={{ ...wizardLayoutStyles.input, ...wizardLayoutStyles.textareaReadable, resize: "vertical" }} />
+            </Field>
+          </div>
         </div>
       )}
 
