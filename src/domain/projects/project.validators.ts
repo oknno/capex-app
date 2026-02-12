@@ -9,7 +9,15 @@ export type WizardDraftState = {
 };
 
 export type MilestoneDraftLocal = { tempId: string; Title: string };
-export type ActivityDraftLocal = { tempId: string; Title: string; milestoneTempId: string };
+export type ActivityDraftLocal = {
+  tempId: string;
+  Title: string;
+  milestoneTempId: string;
+  startDate?: string;
+  endDate?: string;
+  supplier?: string;
+  activityDescription?: string;
+};
 export type PepDraftLocal = { tempId: string; Title: string; year: number; amountBrl: number; activityTempId?: string };
 
 export function validateProjectBasics(p: ProjectDraft) {

@@ -124,7 +124,11 @@ export function ProjectWizardModal(props: {
           const activity: ActivityDraftLocal = {
             tempId: `ac_${a.Id}`,
             Title: String(a.Title ?? "").toUpperCase(),
-            milestoneTempId: `ms_${a.milestonesIdId}`
+            milestoneTempId: `ms_${a.milestonesIdId}`,
+            startDate: a.startDate ? String(a.startDate).slice(0, 10) : undefined,
+            endDate: a.endDate ? String(a.endDate).slice(0, 10) : undefined,
+            supplier: a.supplier ? String(a.supplier) : undefined,
+            activityDescription: a.activityDescription ? String(a.activityDescription) : undefined
           };
           const key = Number(a.milestonesIdId ?? -1);
           const group = milestoneMap.get(key) ?? [];

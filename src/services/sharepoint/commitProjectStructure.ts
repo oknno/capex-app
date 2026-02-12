@@ -173,6 +173,10 @@ export async function commitProjectStructure(args: CommitProjectStructureArgs): 
 
       const activityId = await createActivity({
         Title: activity.Title.trim().toUpperCase(),
+        startDate: activity.startDate ? `${activity.startDate}T00:00:00Z` : undefined,
+        endDate: activity.endDate ? `${activity.endDate}T00:00:00Z` : undefined,
+        supplier: activity.supplier,
+        activityDescription: activity.activityDescription,
         projectsIdId: id,
         milestonesIdId: milestoneId
       });
