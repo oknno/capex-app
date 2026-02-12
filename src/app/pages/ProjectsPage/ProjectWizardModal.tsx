@@ -2,14 +2,34 @@ import { useEffect, useMemo, useState } from "react";
 
 import { getProjectById } from "../../../services/sharepoint/projectsApi";
 import type { ProjectDraft, ProjectRow } from "../../../services/sharepoint/projectsApi";
+
 import { getMilestonesByProject } from "../../../services/sharepoint/milestonesApi";
+
 import { getActivitiesByMilestone } from "../../../services/sharepoint/activitiesApi";
+
 import { getPepsByActivity } from "../../../services/sharepoint/pepsApi";
 import type { PepRow } from "../../../services/sharepoint/pepsApi";
-import { backToDraft } from "../../../services/sharepoint/projectsWorkflow";
 
-import { ONE_MILLION, calculateInvestmentLevel, requiresStructure, toIntOrUndefined, toUpperOrUndefined } from "../../../domain/projects/project.calculations";
-import type { ActivityDraftLocal, MilestoneDraftLocal, PepDraftLocal, WizardDraftState } from "../../../domain/projects/project.validators";
+import { sendToApproval, backToDraft } from "../../../services/sharepoint/projectsWorkflow";
+import {
+  commitProjectStructure,
+  CommitProjectStructureError
+} from "../../../services/sharepoint/commitProjectStructure";
+
+import {
+  ONE_MILLION,
+  calculateInvestmentLevel,
+  requiresStructure,
+  toIntOrUndefined,
+  toUpperOrUndefined
+} from "../../../domain/projects/project.calculations";
+
+import type {
+  ActivityDraftLocal,
+  MilestoneDraftLocal,
+  PepDraftLocal,
+  WizardDraftState
+} from "../../../domain/projects/project.validators";
 import { validateProjectBasics, validateStructure } from "../../../domain/projects/project.validators";
 
 import { useWizardCommit } from "./hooks/useWizardCommit";
@@ -172,7 +192,94 @@ export function ProjectWizardModal(props: {
     else if (step === "structure") setStep("project");
   }
 
-  const stepLabel = (k: StepKey) => (k === "project" ? "1. Projeto" : k === "structure" ? `2. Estrutura (${ONE_MILLION.toLocaleString("pt-BR")}+)` : k === "peps" ? (needStructure ? "3. PEPs" : "2. PEPs") : (needStructure ? "4. Revisão" : "3. Revisão"));
+  function normalizeProjectForCommit(p: ProjectDraft): ProjectDraft {
+    const budget = toIntOrUndefined(p.budgetBrl);
+    const normalized: ProjectDraft = {
+      ...p,
+
+      Title: toUpperOrUndefined(p.Title) ?? "",
+      projectLeader: toUpperOrUndefined(p.projectLeader),
+      projectUser: toUpperOrUndefined(p.projectUser),
+      kpiName: toUpperOrUndefined(p.kpiName),
+
+      budgetBrl: budget,
+      investmentLevel: calculateInvestmentLevel(budget),
+
+      // status controlado (mantém o que já vem do BD ou "Rascunho" no create)
+      status: p.status ?? "Rascunho"
+    };
+
+    return normalized;
+  }
+
+  async function commitAll() {
+    if (readOnly) return;
+    if (committing) return;
+
+    setCommitting(true);
+    try {
+      const normalizedProject = normalizeProjectForCommit(state.project);
+
+      validateProjectBasics(normalizedProject);
+      validateStructure({ ...state, project: normalizedProject });
+
+      const ok = window.confirm("Confirmar COMMIT? Isso vai gravar projeto + estrutura + PEPs no SharePoint e enviar para Aprovação.");
+      if (!ok) return;
+
+      const result = await commitProjectStructure({
+        projectId,
+        normalizedProject,
+        needStructure,
+        milestones: state.milestones,
+        activities: state.activities,
+        peps: state.peps,
+        createProject: props.onSubmitProject
+      });
+
+      setProjectId(result.projectId);
+
+      const full = await getProjectById(result.projectId);
+      await sendToApproval(full);
+
+      alert("Commit concluído e enviado para Aprovação.");
+      props.onClose();
+    } catch (e: any) {
+      if (e instanceof CommitProjectStructureError) {
+        const rootMessage = e.causeError instanceof Error ? e.causeError.message : "Erro desconhecido durante commit.";
+        const rollbackStatus = e.rollback.status === "complete" ? "completo" : "parcial";
+        const failures = e.rollback.failures
+          .map((f) => `- ${f.entity} #${f.id}: ${f.reason}`)
+          .join("\n");
+
+        const structuredMessage = [
+          "Falha no commit do projeto.",
+          `Causa: ${rootMessage}`,
+          `Rollback: ${rollbackStatus} (${e.rollback.attempts - e.rollback.failures.length}/${e.rollback.attempts} reversões bem-sucedidas).`,
+          failures ? `Falhas no rollback:
+${failures}` : ""
+        ]
+          .filter(Boolean)
+          .join("\n");
+
+        alert(structuredMessage);
+        return;
+      }
+
+      alert(e?.message ? String(e.message) : "Erro no commit.");
+    } finally {
+      setCommitting(false);
+    }
+  }
+
+  // ===== UI =====
+
+  const totals = summaryTotals();
+  const stepLabel = (k: StepKey) => {
+    if (k === "project") return "1. Projeto";
+    if (k === "structure") return `2. Estrutura (${ONE_MILLION.toLocaleString("pt-BR")}+)`;
+    if (k === "peps") return needStructure ? "3. PEPs" : "2. PEPs";
+    return needStructure ? "4. Revisão" : "3. Revisão";
+  };
 
   return (
     <div style={styles.overlay}>
