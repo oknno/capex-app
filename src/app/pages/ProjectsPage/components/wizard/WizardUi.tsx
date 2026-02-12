@@ -80,12 +80,31 @@ export const wizardLayoutStyles = {
   tabsRow: { padding: 10, borderBottom: `1px solid ${uiTokens.colors.border}`, display: "flex", gap: uiTokens.spacing.sm, flexWrap: "wrap" } as CSSProperties,
   body: { overflow: "auto" } as CSSProperties,
   footer: { padding: uiTokens.spacing.lg, borderTop: `1px solid ${uiTokens.colors.border}`, display: "flex", justifyContent: "space-between", gap: uiTokens.spacing.md, alignItems: "center" } as CSSProperties,
+  sectionStack: { display: "grid", gap: uiTokens.spacing.lg } as CSSProperties,
+  card: {
+    display: "grid",
+    gap: uiTokens.spacing.md,
+    padding: uiTokens.spacing.lg,
+    borderRadius: uiTokens.radius.md,
+    border: `1px solid ${uiTokens.colors.borderMuted}`,
+    background: uiTokens.colors.surfaceMuted
+  } as CSSProperties,
+  cardSubtle: {
+    display: "grid",
+    gap: uiTokens.spacing.md,
+    padding: uiTokens.spacing.md,
+    borderRadius: uiTokens.radius.md,
+    border: `1px solid ${uiTokens.colors.borderMuted}`,
+    background: uiTokens.colors.surface
+  } as CSSProperties,
   grid2: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: uiTokens.spacing.md } as CSSProperties,
+  grid2Relaxed: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: uiTokens.spacing.lg } as CSSProperties,
   box: { border: `1px solid ${uiTokens.colors.border}`, borderRadius: uiTokens.radius.md, overflow: "hidden" } as CSSProperties,
   boxHead: { padding: "10px 12px", fontSize: uiTokens.typography.xs, fontWeight: uiTokens.typography.labelWeight, background: uiTokens.colors.surfaceMuted, borderBottom: `1px solid ${uiTokens.colors.border}` } as CSSProperties,
   row: { padding: "10px 12px", borderBottom: `1px solid ${uiTokens.colors.borderMuted}` } as CSSProperties,
   empty: { padding: uiTokens.spacing.md, color: uiTokens.colors.textMuted } as CSSProperties,
-  input: { width: "100%", padding: "9px 10px", borderRadius: uiTokens.radius.sm, border: "1px solid #d1d5db" } as CSSProperties
+  input: { width: "100%", padding: "9px 10px", borderRadius: uiTokens.radius.sm, border: "1px solid #d1d5db" } as CSSProperties,
+  textareaReadable: { width: "100%", maxWidth: 760, minHeight: 80 } as CSSProperties
 };
 
 const styles = {
