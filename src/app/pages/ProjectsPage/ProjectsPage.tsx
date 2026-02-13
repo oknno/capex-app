@@ -14,7 +14,6 @@ import { Card } from "../../components/ui/Card";
 import { CommandBar } from "./CommandBar";
 
 import { useProjectsList } from "./hooks/useProjectsList";
-import { useProjectTimeline } from "./hooks/useProjectTimeline";
 import { ProjectsTableSection } from "./components/ProjectsTableSection";
 import { ProjectSummarySection } from "./components/ProjectSummarySection";
 import { projectsPageStyles as styles } from "./components/ProjectsPage.styles";
@@ -30,7 +29,6 @@ export function ProjectsPage(props: { onWantsRefreshHeader?: () => void; onRegis
   const [selectedFullState, setSelectedFullState] = useState<"idle" | "loading" | "error">("idle");
   const [confirmState, setConfirmState] = useState<{ title: string; message: string; onConfirm: () => void; tone?: "danger" | "neutral" } | null>(null);
 
-  const timeline = useProjectTimeline(list.selectedId);
 
   useEffect(() => {
     list.loadFirstPage();
@@ -173,9 +171,6 @@ export function ProjectsPage(props: { onWantsRefreshHeader?: () => void; onRegis
             selectedFull={selectedFull}
             selectedFullState={selectedFullState}
             onRefresh={list.loadFirstPage}
-            activitiesState={timeline.activitiesState}
-            milestones={timeline.milestones}
-            activities={timeline.activities}
           />
         </Card>
       </div>
