@@ -73,6 +73,7 @@ export function ReviewStep(props: {
 
       <SummarySection title="2/3/4/6/7">
         <SummaryField label="Origem da verba" value={project.fundingSource} />
+        <SummaryField label="Programa" value={project.program} />
         <SummaryField label="Função" value={project.projectFunction} />
         <SummaryField label="Tipo de investimento" value={project.investmentType} />
         <SummaryField label="Tipo de ativo" value={project.assetType} />

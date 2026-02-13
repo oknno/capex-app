@@ -64,6 +64,7 @@ export function ProjectWizardModal(props: {
       status: props.initial?.status ?? (props.mode === "create" ? "Rascunho" : props.initial?.status),
       investmentLevel: props.initial?.investmentLevel,
       fundingSource: props.initial?.fundingSource,
+      program: props.initial?.program,
       company: props.initial?.company,
       center: props.initial?.center,
       unit: props.initial?.unit,

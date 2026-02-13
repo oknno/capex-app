@@ -10,6 +10,12 @@ export const FUNDING_SOURCE_OPTIONS: SelectOption[] = [
   { value: "REMANEJAMENTO", label: "REMANEJAMENTO" }
 ];
 
+export const PROGRAM_OPTIONS: SelectOption[] = [
+  { value: "ACELERAAI", label: "ACELERAAI" },
+  { value: "INOVACAO", label: "INOVAÇÃO" },
+  { value: "REGULAR", label: "REGULAR" }
+];
+
 export const COMPANY_OPTIONS: SelectOption[] = [
   ...Object.keys(COMPANY_CENTER_UNIT_LOCATION_MAP).map((company) => ({ value: company, label: company }))
 ];
