@@ -5,6 +5,7 @@ import type { ActivityDraftLocal, MilestoneDraftLocal, PepDraftLocal } from "../
 import { buildYearOptions, PEP_ELEMENT_OPTIONS } from "./wizardOptions";
 import { SectionTitle, wizardLayoutStyles } from "./WizardUi";
 import { Button } from "../../../../components/ui/Button";
+import { Field } from "../../../../components/ui/Field";
 import { StateMessage } from "../../../../components/ui/StateMessage";
 
 function uid(prefix: string) {
@@ -37,48 +38,60 @@ export function PepStep(props: {
     <div style={{ padding: 14, display: "grid", gap: 12 }}>
       <SectionTitle title={props.needStructure ? "Elemento PEP (rateio das atividades)" : "5. Elemento PEP (projeto abaixo de 1M)"} subtitle={props.needStructure ? "Projeto ≥ 1M: vincule cada PEP a uma atividade." : "Projeto < 1M: preencha apenas elemento, ano e valor do PEP."} />
 
-      {props.needStructure && (
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-          <select value={selectedActivity} onChange={(e) => setSelectedActivity(e.target.value)} disabled={props.readOnly || props.activities.length === 0} style={{ ...wizardLayoutStyles.input, width: 360 }}>
-            <option value="">Selecione a atividade...</option>
-            {props.activities.map((a) => {
-              const ms = props.milestones.find((m) => m.tempId === a.milestoneTempId);
-              return <option key={a.tempId} value={a.tempId}>{a.Title} — {ms?.Title ?? ""}</option>;
-            })}
-          </select>
+      <div style={wizardLayoutStyles.cardSubtle}>
+        <div style={wizardLayoutStyles.journeyStack}>
+          {props.needStructure && (
+            <Field label="Atividade vinculada">
+              <select value={selectedActivity} onChange={(e) => setSelectedActivity(e.target.value)} disabled={props.readOnly || props.activities.length === 0} style={wizardLayoutStyles.input}>
+                <option value="">Selecione a atividade...</option>
+                {props.activities.map((a) => {
+                  const ms = props.milestones.find((m) => m.tempId === a.milestoneTempId);
+                  return <option key={a.tempId} value={a.tempId}>{a.Title} — {ms?.Title ?? ""}</option>;
+                })}
+              </select>
+            </Field>
+          )}
+
+          <Field label="Elemento PEP">
+            <select value={title} onChange={(e) => setTitle(e.target.value)} style={wizardLayoutStyles.input}>
+              <option value="">Selecione o elemento...</option>
+              {PEP_ELEMENT_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
+          </Field>
+
+          <div style={wizardLayoutStyles.journeyPairGrid}>
+            <Field label="Ano do PEP">
+              <select value={year} onChange={(e) => setYear(e.target.value)} style={wizardLayoutStyles.input}>
+                <option value="">Selecione...</option>
+                {yearOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+              </select>
+            </Field>
+
+            <Field label="Valor do PEP (R$)">
+              <input
+                value={amount}
+                onChange={(e) => {
+                  if (e.target.value === "" || /^\d+$/.test(e.target.value)) setAmount(e.target.value);
+                }}
+                placeholder="Somente números inteiros"
+                style={wizardLayoutStyles.input}
+              />
+            </Field>
+          </div>
+
+          <div>
+            <Button tone="primary" disabled={props.readOnly || !title.trim() || !year.trim() || !amount.trim() || (props.needStructure && !selectedActivity)} onClick={() => {
+              const y = Number(year.trim());
+              const amt = toIntOrUndefined(amount);
+              if (!Number.isFinite(y)) return props.onValidationError("Ano inválido.");
+              if (!amt || amt <= 0) return props.onValidationError("Valor do PEP inválido.");
+
+              props.onChange([...props.peps, { tempId: uid("pp"), Title: title.trim(), year: y, amountBrl: amt, activityTempId: props.needStructure ? selectedActivity : undefined }]);
+              setTitle("");
+              setAmount("");
+            }}>Adicionar PEP</Button>
+          </div>
         </div>
-      )}
-
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-        <select value={title} onChange={(e) => setTitle(e.target.value)} style={{ ...wizardLayoutStyles.input, width: 280 }}>
-          <option value="">Elemento PEP</option>
-          {PEP_ELEMENT_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-        </select>
-
-        <select value={year} onChange={(e) => setYear(e.target.value)} style={{ ...wizardLayoutStyles.input, width: 140 }}>
-          <option value="">Ano do PEP</option>
-          {yearOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-        </select>
-
-        <input
-          value={amount}
-          onChange={(e) => {
-            if (e.target.value === "" || /^\d+$/.test(e.target.value)) setAmount(e.target.value);
-          }}
-          placeholder="Valor do PEP (R$)"
-          style={{ ...wizardLayoutStyles.input, width: 200 }}
-        />
-
-        <Button tone="primary" disabled={props.readOnly || !title.trim() || !year.trim() || !amount.trim() || (props.needStructure && !selectedActivity)} onClick={() => {
-          const y = Number(year.trim());
-          const amt = toIntOrUndefined(amount);
-          if (!Number.isFinite(y)) return props.onValidationError("Ano inválido.");
-          if (!amt || amt <= 0) return props.onValidationError("Valor do PEP inválido.");
-
-          props.onChange([...props.peps, { tempId: uid("pp"), Title: title.trim(), year: y, amountBrl: amt, activityTempId: props.needStructure ? selectedActivity : undefined }]);
-          setTitle("");
-          setAmount("");
-        }}>Adicionar PEP</Button>
       </div>
 
       <div style={wizardLayoutStyles.box}>
