@@ -40,7 +40,6 @@ export type ProjectRow = {
 
 export type ProjectDraft = Omit<ProjectRow, "Id">;
 
-export type ProjectPatch = Partial<ProjectDraft>;
 export type ProjectUpdate = Partial<ProjectDraft>;
 
 export type SortBy = "Title" | "Id" | "approvalYear";
