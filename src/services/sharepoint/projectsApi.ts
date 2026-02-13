@@ -10,6 +10,9 @@ export type ProjectRow = {
   status?: string;
   investmentLevel?: string;
   fundingSource?: string;
+  program?: string;
+  sourceProjectCode?: string;
+  hasRoce?: string;
   company?: string;
   center?: string;
   unit?: string;
@@ -62,6 +65,9 @@ const PROJECT_FIELDS: Array<keyof ProjectRow> = [
   "status",
   "investmentLevel",
   "fundingSource",
+  "program",
+  "sourceProjectCode",
+  "hasRoce",
   "company",
   "center",
   "unit",
@@ -118,6 +124,12 @@ function readNumber(source: SpRecord, key: keyof ProjectDraft | "Id"): number | 
   if (value == null) return undefined;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function readDateString(source: SpRecord, key: keyof ProjectDraft | "Id"): string | undefined {
+  const value = readString(source, key);
+  if (!value) return undefined;
+  return value.includes("T") ? value.slice(0, 10) : value;
 }
 
 function pickNextLink(data: SpListResponse): string | undefined {
@@ -272,6 +284,9 @@ function mapProjectRow(x: SpRecord): ProjectRow {
     status: readString(x, "status"),
     investmentLevel: readString(x, "investmentLevel"),
     fundingSource: readString(x, "fundingSource"),
+    program: readString(x, "program"),
+    sourceProjectCode: readString(x, "sourceProjectCode"),
+    hasRoce: readString(x, "hasRoce"),
     company: readString(x, "company"),
     center: readString(x, "center"),
     unit: readString(x, "unit"),
@@ -283,8 +298,8 @@ function mapProjectRow(x: SpRecord): ProjectRow {
     projectFunction: readString(x, "projectFunction"),
     projectLeader: readString(x, "projectLeader"),
     projectUser: readString(x, "projectUser"),
-    startDate: readString(x, "startDate"),
-    endDate: readString(x, "endDate"),
+    startDate: readDateString(x, "startDate"),
+    endDate: readDateString(x, "endDate"),
     businessNeed: readString(x, "businessNeed"),
     proposedSolution: readString(x, "proposedSolution"),
     kpiType: readString(x, "kpiType"),
