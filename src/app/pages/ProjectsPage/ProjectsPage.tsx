@@ -24,7 +24,9 @@ import { Button } from "../../components/ui/Button";
 
 const PROJECTS_EXPORT_COLUMNS: Array<{ header: string; getValue: (project: ProjectRow) => string | number | undefined }> = [
   { header: "ID", getValue: (project) => project.Id },
+  { header: "Código SAP", getValue: (project) => project.sourceProjectCode },
   { header: "Projeto", getValue: (project) => project.Title },
+  { header: "budgetBrl", getValue: (project) => project.budgetBrl },
   { header: "Unidade", getValue: (project) => project.unit },
   { header: "Status", getValue: (project) => project.status }
 ];
