@@ -81,21 +81,25 @@ export function ProjectStep(props: { draft: ProjectDraft; readOnly: boolean; onC
             <FieldDate label="Data de Término" value={endDateValue} min={startDateValue || today} disabled={props.readOnly} onChange={(v) => props.onChange({ endDate: v || undefined })} />
           </div>
 
-          <div style={wizardLayoutStyles.journeyPairGrid}>
-            <FieldSelect label="Origem da Verba" value={d.fundingSource ?? ""} options={FUNDING_SOURCE_OPTIONS} disabled={props.readOnly} onChange={(v) => props.onChange({ fundingSource: v || undefined })} />
-            <FieldText label="Função do Projeto" value={d.projectFunction ?? ""} maxLength={35} disabled={props.readOnly} onChange={(v) => props.onChange({ projectFunction: v.toUpperCase().slice(0, 35) })} />
-          </div>
+          <FieldText label="Função do Projeto" value={d.projectFunction ?? ""} maxLength={35} disabled={props.readOnly} onChange={(v) => props.onChange({ projectFunction: v.toUpperCase().slice(0, 35) })} />
         </div>
       </div>
 
       <div style={wizardLayoutStyles.card}>
-        <SectionTitle title="2. Origem" />
+        <SectionTitle title="2. Origem e Programa" />
         <div style={wizardLayoutStyles.journeyStack}>
           <div style={wizardLayoutStyles.journeyPairGrid}>
             <FieldSelect label="Origem da Verba" value={d.fundingSource ?? ""} options={FUNDING_SOURCE_OPTIONS} disabled={props.readOnly} onChange={(v) => props.onChange({ fundingSource: v || undefined })} />
             <FieldSelect label="Programa" value={d.program ?? ""} options={PROGRAM_OPTIONS} disabled={props.readOnly} onChange={(v) => props.onChange({ program: v || undefined })} />
           </div>
-          <FieldText label="Função do Projeto" value={d.projectFunction ?? ""} maxLength={35} disabled={props.readOnly} onChange={(v) => props.onChange({ projectFunction: v.toUpperCase().slice(0, 35) })} />
+          {d.fundingSource === "REMANEJAMENTO" && (
+            <FieldText
+              label="Projeto de Origem"
+              value={d.sourceProjectCode ?? ""}
+              disabled={props.readOnly}
+              onChange={(v) => props.onChange({ sourceProjectCode: v.toUpperCase() || undefined })}
+            />
+          )}
         </div>
       </div>
 
