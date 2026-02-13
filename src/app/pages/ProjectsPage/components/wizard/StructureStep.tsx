@@ -115,26 +115,26 @@ export function StructureStep(props: {
     <div style={{ padding: 14, display: "grid", gap: 14 }}>
       <SectionTitle title="8. KEY Projects" subtitle="Disponível para projetos com orçamento igual ou superior a R$ 1.000.000,00." />
 
-      <div style={wizardLayoutStyles.journeyPairGrid}>
-        <Field label="Nome do Marco">
-          <input value={msTitle} onChange={(e) => setMsTitle(e.target.value)} placeholder="Ex.: Aprovação Técnica" style={wizardLayoutStyles.input} />
-        </Field>
-        <div style={{ alignSelf: "end" }}>
-          <Button
-            tone="primary"
-            disabled={props.readOnly || !msTitle.trim()}
-            onClick={() => {
-              const nextMilestone = { tempId: uid("ms"), Title: msTitle.trim().toUpperCase() };
-              props.onChange({ milestones: [...props.milestones, nextMilestone] });
-              setMsTitle("");
-            }}
-          >
-            Adicionar Marco
-          </Button>
-        </div>
-      </div>
-
       <div style={wizardLayoutStyles.cardSubtle}>
+        <div style={wizardLayoutStyles.journeyPairGrid}>
+          <Field label="Nome do Marco">
+            <input value={msTitle} onChange={(e) => setMsTitle(e.target.value)} placeholder="Ex.: Aprovação Técnica" style={wizardLayoutStyles.input} />
+          </Field>
+          <div style={{ alignSelf: "end" }}>
+            <Button
+              tone="primary"
+              disabled={props.readOnly || !msTitle.trim()}
+              onClick={() => {
+                const nextMilestone = { tempId: uid("ms"), Title: msTitle.trim().toUpperCase() };
+                props.onChange({ milestones: [...props.milestones, nextMilestone] });
+                setMsTitle("");
+              }}
+            >
+              Adicionar Marco
+            </Button>
+          </div>
+        </div>
+
         {!props.milestones.length ? (
           <div style={wizardLayoutStyles.empty}><StateMessage state="empty" message="Nenhum marco cadastrado." /></div>
         ) : (
