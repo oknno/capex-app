@@ -30,7 +30,7 @@ export function ProjectSummarySection(props: {
       {props.selectedFull && (
         <div style={styles.summaryContent}>
           <div style={styles.summaryTitleRow}>
-            <div style={styles.projectTitle}>{props.selectedFull.Title}</div>
+            <div style={styles.projectTitle}>{hideSsoLabel(props.selectedFull.Title)}</div>
             <StatusBadge status={String(props.selectedFull.status ?? "Rascunho")} />
           </div>
 
@@ -149,6 +149,19 @@ function fmtDate(v?: string) {
 function truncateText(s: string, max: number) {
   const t = String(s ?? "");
   return t.length <= max ? t : `${t.slice(0, max)}…`;
+}
+
+function hideSsoLabel(value?: string) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "-";
+
+  const withoutSso = raw
+    .replace(/\bSSO\b/gi, "")
+    .replace(/\s*[-–—|/]\s*/g, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+
+  return withoutSso || raw;
 }
 
 const styles = {
