@@ -10,11 +10,6 @@ export const FUNDING_SOURCE_OPTIONS: SelectOption[] = [
   { value: "REMANEJAMENTO", label: "REMANEJAMENTO" }
 ];
 
-export const ROCE_AVAILABILITY_OPTIONS: SelectOption[] = [
-  { value: "SIM", label: "SIM" },
-  { value: "NAO", label: "NÃO" }
-];
-
 export const PROGRAM_OPTIONS: SelectOption[] = [
   { value: "ACELERAAI", label: "ACELERAAI" },
   { value: "INOVACAO", label: "INOVAÇÃO" },

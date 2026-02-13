@@ -11,8 +11,6 @@ export type ProjectRow = {
   investmentLevel?: string;
   fundingSource?: string;
   program?: string;
-  sourceProjectCode?: string;
-  hasRoce?: string;
   company?: string;
   center?: string;
   unit?: string;
@@ -66,8 +64,6 @@ const PROJECT_FIELDS: Array<keyof ProjectRow> = [
   "investmentLevel",
   "fundingSource",
   "program",
-  "sourceProjectCode",
-  "hasRoce",
   "company",
   "center",
   "unit",
@@ -285,8 +281,6 @@ function mapProjectRow(x: SpRecord): ProjectRow {
     investmentLevel: readString(x, "investmentLevel"),
     fundingSource: readString(x, "fundingSource"),
     program: readString(x, "program"),
-    sourceProjectCode: readString(x, "sourceProjectCode"),
-    hasRoce: readString(x, "hasRoce"),
     company: readString(x, "company"),
     center: readString(x, "center"),
     unit: readString(x, "unit"),

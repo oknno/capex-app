@@ -36,8 +36,6 @@ export function ProjectSummarySection(props: {
             <Field label="Unidade" layout="inline">{String(props.selectedFull.unit ?? "-")}</Field>
             <Field label="Origem" layout="inline">{String(props.selectedFull.fundingSource ?? "-")}</Field>
             <Field label="Programa" layout="inline">{String(props.selectedFull.program ?? "-")}</Field>
-            <Field label="Cód. Projeto Origem" layout="inline">{String(props.selectedFull.sourceProjectCode ?? "-")}</Field>
-            <Field label="Tem ROCE" layout="inline">{String(props.selectedFull.hasRoce ?? "-")}</Field>
           </div>
 
           <div style={styles.longTextWrap}>

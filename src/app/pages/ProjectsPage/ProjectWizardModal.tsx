@@ -65,8 +65,6 @@ export function ProjectWizardModal(props: {
       investmentLevel: props.initial?.investmentLevel,
       fundingSource: props.initial?.fundingSource,
       program: props.initial?.program,
-      sourceProjectCode: props.initial?.sourceProjectCode,
-      hasRoce: props.initial?.hasRoce,
       company: props.initial?.company,
       center: props.initial?.center,
       unit: props.initial?.unit,
