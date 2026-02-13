@@ -10,9 +10,9 @@ function renderValue(value: SummaryValue) {
   return value === undefined || value === "" ? "—" : String(value);
 }
 
-function SummaryField(props: { label: string; value: SummaryValue }) {
+function SummaryField(props: { label: string; value: SummaryValue; minWidth?: number }) {
   return (
-    <div style={{ minWidth: 180 }}>
+    <div style={{ minWidth: props.minWidth ?? 180 }}>
       <div style={{ fontSize: 14, fontWeight: 600, color: "#374151", marginBottom: 4 }}>{props.label}</div>
       <div style={{ fontSize: 14, color: "#111827", lineHeight: 1.4, wordBreak: "break-word" }}>{renderValue(props.value)}</div>
     </div>
@@ -35,7 +35,7 @@ function SummarySection(props: {
 
   return (
     <section style={style}>
-      <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#111827" }}>{props.title}</h3>
+      <h3 style={{ margin: 0, fontSize: 32 / 2, fontWeight: 700, color: "#111827" }}>{props.title}</h3>
       <div
         style={{
           display: "grid",
@@ -60,55 +60,25 @@ export function ReviewStep(props: {
 
   return (
     <div style={{ padding: 14, display: "grid", gap: 16 }}>
-      <SectionTitle title="Resumo para validação" subtitle="Conferência final com dados separados pelos blocos da fase 1." />
+      <SectionTitle title="Resumo para validação" subtitle="Conferência final com dados separados por tópicos." />
 
       <SummarySection title="1. Sobre o Projeto">
-        <SummaryField label="Nome do Projeto" value={project.Title} />
-        <SummaryField label="Orçamento do Projeto (R$)" value={project.budgetBrl?.toLocaleString("pt-BR")} />
-        <SummaryField label="Nível de Investimento" value={project.investmentLevel} />
-        <SummaryField label="Ano de Aprovação" value={project.approvalYear} />
-        <SummaryField label="Data de Início" value={project.startDate} />
-        <SummaryField label="Data de Término" value={project.endDate} />
+        <SummaryField label="Nome" value={project.Title} />
+        <SummaryField label="Orçamento (R$)" value={project.budgetBrl?.toLocaleString("pt-BR")} />
+        <SummaryField label="Nível de investimento" value={project.investmentLevel} />
+        <SummaryField label="Ano" value={project.approvalYear} />
+        <SummaryField label="Início" value={project.startDate} />
+        <SummaryField label="Término" value={project.endDate} />
       </SummarySection>
 
-      <SummarySection title="2. Origem e Função" columns={2}>
-        <SummaryField label="Origem da Verba" value={project.fundingSource} />
-        <SummaryField label="Função do Projeto" value={project.projectFunction} />
-      </SummarySection>
-
-      <SummarySection title="3. Informação Operacional">
-        <SummaryField label="Empresa" value={project.company} />
-        <SummaryField label="Centro" value={project.center} />
-        <SummaryField label="Unidade" value={project.unit} />
-        <SummaryField label="Local de Implantação" value={project.location} />
-        <SummaryField label="C. Custo Depreciação" value={project.depreciationCostCenter} />
-        <SummaryField label="Categoria" value={project.category} />
-        <SummaryField label="Tipo de Investimento" value={project.investmentType} />
-        <SummaryField label="Tipo de Ativo" value={project.assetType} />
-        <SummaryField label="Usuário do Projeto" value={project.projectUser} />
-        <SummaryField label="Líder do Projeto" value={project.projectLeader} />
-      </SummarySection>
-
-      <SummarySection title="4. Detalhamento Complementar" columns={1}>
-        <SummaryField label="Necessidade do Negócio" value={project.businessNeed} />
-        <SummaryField label="Solução da Proposta" value={project.proposedSolution} />
-      </SummarySection>
-
-      <SummarySection title="6. Indicadores de Desempenho">
-        <SummaryField label="Tipo de KPI" value={project.kpiType} />
-        <SummaryField label="Nome do KPI" value={project.kpiName} />
-        <SummaryField label="KPI Atual" value={project.kpiCurrent} />
-        <SummaryField label="KPI Esperado" value={project.kpiExpected} />
-        <SummaryField label="Descrição do KPI" value={project.kpiDescription} />
-      </SummarySection>
-
-      <SummarySection title="7. ROCE">
-        <SummaryField label="Classificação do ROCE" value={project.roceClassification} />
+      <SummarySection title="2/3/4/6/7">
+        <SummaryField label="Origem da verba" value={project.fundingSource} />
+        <SummaryField label="Função" value={project.projectFunction} />
+        <SummaryField label="Tipo de investimento" value={project.investmentType} />
+        <SummaryField label="Tipo de ativo" value={project.assetType} />
+        <SummaryField label="Empresa / Centro / Unidade" value={[project.company, project.center, project.unit].filter(Boolean).join(" / ")} />
+        <SummaryField label="KPI" value={[project.kpiType, project.kpiName].filter(Boolean).join(" - ")} />
         <SummaryField label="ROCE" value={project.roce} />
-        <SummaryField label="Ganho (R$)" value={project.roceGain?.toLocaleString("pt-BR")} />
-        <SummaryField label="Perda (R$)" value={project.roceLoss?.toLocaleString("pt-BR")} />
-        <SummaryField label="Descrição do ganho" value={project.roceGainDescription} />
-        <SummaryField label="Descrição da perda" value={project.roceLossDescription} />
       </SummarySection>
 
       <SummarySection title={props.needStructure ? "8. KEY Projects" : "5. Elemento PEP (projeto abaixo de 1M)"} columns={props.needStructure ? 4 : 2}>
