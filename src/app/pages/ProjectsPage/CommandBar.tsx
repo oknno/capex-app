@@ -1,8 +1,19 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Badge } from "../../components/ui/Badge";
+import { UNIT_OPTIONS_BY_CENTER } from "./components/wizard/wizardOptions";
 
 type SortBy = "Title" | "Id" | "approvalYear";
 type SortDir = "asc" | "desc";
+
+const STATUS_OPTIONS = ["Rascunho", "Em Aprovação", "Aprovado", "Reprovado"];
+const UNIT_OPTIONS = Array.from(
+  new Set(
+    Object.values(UNIT_OPTIONS_BY_CENTER)
+      .flat()
+      .map((option) => option.value)
+      .filter(Boolean)
+  )
+).sort((a, b) => a.localeCompare(b, "pt-BR"));
 
 export type ProjectsFilters = {
   searchTitle: string;
@@ -180,7 +191,7 @@ function FilterMenu(props: {
         <div id={popupId} role="dialog" aria-label="Filtro de projetos" style={popoverStyle}>
           <div style={contentStyle}>
             <div style={{ display: "grid", gap: 6 }}>
-              <label style={{ fontSize: 12, color: "#6b7280" }}>Nome do projeto (prefixo)</label>
+              <label style={{ fontSize: 12, color: "#6b7280" }}>Nome do projeto (contém)</label>
               <input
                 value={value.searchTitle}
                 onChange={(e) => props.onChange({ searchTitle: e.target.value })}
@@ -190,23 +201,31 @@ function FilterMenu(props: {
             </div>
 
             <div style={{ display: "grid", gap: 6 }}>
-              <label style={{ fontSize: 12, color: "#6b7280" }}>Status (exato)</label>
-              <input
+              <label style={{ fontSize: 12, color: "#6b7280" }}>Status</label>
+              <select
                 value={value.status}
                 onChange={(e) => props.onChange({ status: e.target.value })}
-                placeholder="Ex: Rascunho"
-                style={inputStyle}
-              />
+                style={selectStyle}
+              >
+                <option value="">Todos</option>
+                {STATUS_OPTIONS.map((status) => (
+                  <option key={status} value={status}>{status}</option>
+                ))}
+              </select>
             </div>
 
             <div style={{ display: "grid", gap: 6 }}>
-              <label style={{ fontSize: 12, color: "#6b7280" }}>Unidade (exato)</label>
-              <input
+              <label style={{ fontSize: 12, color: "#6b7280" }}>Unidade</label>
+              <select
                 value={value.unit}
                 onChange={(e) => props.onChange({ unit: e.target.value })}
-                placeholder="Ex: UM - MONLEVADE"
-                style={inputStyle}
-              />
+                style={selectStyle}
+              >
+                <option value="">Todas</option>
+                {UNIT_OPTIONS.map((unit) => (
+                  <option key={unit} value={unit}>{unit}</option>
+                ))}
+              </select>
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>

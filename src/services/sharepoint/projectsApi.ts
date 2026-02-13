@@ -206,7 +206,7 @@ export async function getProjectsPage(args: {
   const orderExpr = orderBy === "Id" ? `Id ${orderDir}` : `${orderBy} ${orderDir},Id ${orderDir}`;
 
   const filters: string[] = [];
-  if (args.searchTitle?.trim()) filters.push(`startswith(Title,'${escapeODataString(args.searchTitle.trim())}')`);
+  if (args.searchTitle?.trim()) filters.push(`substringof('${escapeODataString(args.searchTitle.trim())}',Title)`);
   if (args.statusEquals?.trim()) filters.push(`status eq '${escapeODataString(args.statusEquals.trim())}'`);
   if (args.unitEquals?.trim()) filters.push(`unit eq '${escapeODataString(args.unitEquals.trim())}'`);
 
