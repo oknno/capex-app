@@ -13,6 +13,7 @@ import {
   KPI_TYPE_OPTIONS,
   LOCATION_OPTIONS_BY_UNIT,
   PROGRAM_OPTIONS,
+  ROCE_AVAILABILITY_OPTIONS,
   ROCE_CLASS_OPTIONS,
   UNIT_OPTIONS_BY_CENTER,
   todayIsoDate,
@@ -220,6 +221,14 @@ export function ProjectStep(props: { draft: ProjectDraft; readOnly: boolean; onC
                   if (clean === null) return;
                   props.onChange({ roceLoss: clean === "" ? undefined : Number(clean) });
                 }} />
+
+                <FieldSelect
+                  label="Classificação ROCE"
+                  value={d.roceClassification ?? ""}
+                  options={ROCE_CLASS_OPTIONS}
+                  disabled={props.readOnly}
+                  onChange={(v) => props.onChange({ roceClassification: v || undefined })}
+                />
               </div>
 
               <div style={wizardLayoutStyles.journeyPairGrid}>

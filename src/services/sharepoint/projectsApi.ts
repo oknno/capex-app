@@ -22,6 +22,8 @@ export type ProjectRow = {
   projectFunction?: string;
   projectLeader?: string;
   projectUser?: string;
+  sourceProjectCode?: string;
+  hasRoce?: string;
   startDate?: string;
   endDate?: string;
   businessNeed?: string;
@@ -75,6 +77,8 @@ const PROJECT_FIELDS: Array<keyof ProjectRow> = [
   "projectFunction",
   "projectLeader",
   "projectUser",
+  "sourceProjectCode",
+  "hasRoce",
   "startDate",
   "endDate",
   "businessNeed",
@@ -292,6 +296,8 @@ function mapProjectRow(x: SpRecord): ProjectRow {
     projectFunction: readString(x, "projectFunction"),
     projectLeader: readString(x, "projectLeader"),
     projectUser: readString(x, "projectUser"),
+    sourceProjectCode: readString(x, "sourceProjectCode"),
+    hasRoce: readString(x, "hasRoce"),
     startDate: readDateString(x, "startDate"),
     endDate: readDateString(x, "endDate"),
     businessNeed: readString(x, "businessNeed"),
