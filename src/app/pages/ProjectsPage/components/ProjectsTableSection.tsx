@@ -4,9 +4,9 @@ import { StateMessage } from "../../../components/ui/StateMessage";
 import { uiTokens } from "../../../components/ui/tokens";
 
 const styles = {
-  tableWrap: { border: `1px solid ${uiTokens.colors.border}`, borderRadius: uiTokens.radius.md, overflow: "hidden" },
+  tableWrap: { border: `1px solid ${uiTokens.colors.border}`, borderRadius: uiTokens.radius.md, overflow: "hidden", display: "flex", flexDirection: "column", flex: 1, minHeight: 0 },
   headerRow: { display: "grid", gridTemplateColumns: "90px 1fr 220px 160px", background: uiTokens.colors.surfaceMuted, borderBottom: `1px solid ${uiTokens.colors.border}` },
-  body: { maxHeight: "calc(100vh - 260px)", overflowY: "auto" },
+  body: { overflowY: "auto", flex: 1, minHeight: 0 },
   row: { display: "grid", gridTemplateColumns: "90px 1fr 220px 160px", cursor: "pointer", borderBottom: `1px solid ${uiTokens.colors.borderMuted}` },
 } as const;
 

@@ -16,8 +16,8 @@ export const projectsPageStyles = {
     marginTop: uiTokens.spacing.md,
     overflow: "hidden"
   },
-  listCard: { display: "flex", flexDirection: "column", overflow: "hidden" },
+  listCard: { display: "flex", flexDirection: "column", overflow: "hidden", minHeight: 0 },
   footerRow: { display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10 },
   helperText: { fontSize: uiTokens.typography.xs, color: uiTokens.colors.textMuted },
-  summaryCard: { overflow: "auto" },
+  summaryCard: { overflow: "auto", minHeight: 0 },
 } as const;
