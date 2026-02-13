@@ -7,6 +7,7 @@ import { createProject } from "../../../application/use-cases/createProject";
 import { editProject } from "../../../application/use-cases/editProject";
 import { sendProjectToApproval } from "../../../application/use-cases/sendToApproval";
 import { moveProjectBackToDraft } from "../../../application/use-cases/backToDraft";
+import { canDeleteProject, deleteDraftProjectAndRelated } from "../../../application/use-cases/deleteProject";
 import { normalizeError } from "../../../application/errors/appError";
 
 import { ProjectWizardModal } from "./ProjectWizardModal";
@@ -121,6 +122,33 @@ export function ProjectsPage(props: { onWantsRefreshHeader?: () => void; onRegis
     });
   }
 
+  async function onDelete() {
+    const selected = list.selected;
+    const check = canDeleteProject(selected);
+    if (!check.ok || !selected) {
+      notify(check.reason ?? "Não foi possível excluir o projeto.", "info");
+      return;
+    }
+
+    requestConfirm({
+      title: "Excluir projeto",
+      message: `Deseja realmente excluir o projeto #${selected.Id}? Esta ação também excluirá marcos, atividades e PEPs relacionados.`,
+      tone: "danger",
+      onConfirm: async () => {
+        setConfirmState(null);
+        try {
+          await deleteDraftProjectAndRelated(selected);
+          list.setSelectedId(null);
+          await list.loadFirstPage();
+          notify("Projeto e estrutura relacionada excluídos com sucesso.", "success");
+        } catch (e) {
+          const appError = normalizeError(e, "Erro ao excluir projeto.");
+          notify(appError.technicalDetails ? `${appError.userMessage} (${appError.technicalDetails})` : appError.userMessage, "error");
+        }
+      }
+    });
+  }
+
   return (
     <div style={styles.pageWrap as any}>
       <CommandBar
@@ -142,7 +170,7 @@ export function ProjectsPage(props: { onWantsRefreshHeader?: () => void; onRegis
           }
           setWizard({ mode: "edit", initial: list.selected });
         }}
-        onDelete={() => notify("Excluir já está funcionando no seu projeto — mantendo aqui como placeholder.", "info")}
+        onDelete={onDelete}
         onSendToApproval={onSendToApproval}
         onBackStatus={onBackStatus}
         onExport={() => notify("Exportar já está funcionando no seu projeto — mantendo aqui como placeholder.", "info")}
