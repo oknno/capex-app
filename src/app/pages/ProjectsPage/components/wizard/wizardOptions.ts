@@ -43,7 +43,20 @@ export const LOCATION_OPTIONS_BY_UNIT: Record<string, SelectOption[]> = Object.v
   return acc;
 }, {});
 
-export const CATEGORY_OPTIONS: SelectOption[] = Array.from({ length: 12 }, (_, i) => ({ value: `CAT_${i + 1}`, label: `Categoria ${i + 1}` }));
+export const CATEGORY_OPTIONS: SelectOption[] = [
+  { value: "I1", label: "Cat 1 - Segurança" },
+  { value: "I2", label: "Cat 2 - Crescimento" },
+  { value: "I3", label: "Cat 3 - Modificações" },
+  { value: "I4", label: "Cat 4 - Manutenção" },
+  { value: "I5", label: "Cat 5 - Renovações" },
+  { value: "I6", label: "Cat 6 - Meio Ambiente" },
+  { value: "I7", label: "Cat 7 - Informatização" },
+  { value: "I8", label: "Cat 8 - Pesquisa e Desenvolvimento" },
+  { value: "I9", label: "Cat 9 - SPA e Requisitos Legais Crescimento" },
+  { value: "J1", label: "Cat 10 - SPA e Req. Legais Manut. e Meio Ambiente" },
+  { value: "J2", label: "Cat 11 - Cilindros de Laminadores" },
+  { value: "J3", label: "Cat 12 - Energia" }
+];
 export const INVESTMENT_TYPE_OPTIONS: SelectOption[] = Array.from({ length: 5 }, (_, i) => ({ value: `INV_${i + 1}`, label: `Tipo de Investimento ${i + 1}` }));
 export const ASSET_TYPE_OPTIONS: SelectOption[] = Array.from({ length: 5 }, (_, i) => ({ value: `ASSET_${i + 1}`, label: `Tipo de Ativo ${i + 1}` }));
 export const KPI_TYPE_OPTIONS: SelectOption[] = Array.from({ length: 5 }, (_, i) => ({ value: `KPI_${i + 1}`, label: `Tipo de KPI ${i + 1}` }));
