@@ -122,6 +122,12 @@ function readNumber(source: SpRecord, key: keyof ProjectDraft | "Id"): number | 
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
+function readDateString(source: SpRecord, key: keyof ProjectDraft | "Id"): string | undefined {
+  const value = readString(source, key);
+  if (!value) return undefined;
+  return value.includes("T") ? value.slice(0, 10) : value;
+}
+
 function pickNextLink(data: SpListResponse): string | undefined {
   const link = data["odata.nextLink"] ?? data["@odata.nextLink"] ?? data.__next ?? data.d?.__next;
   return typeof link === "string" && link.length > 0 ? link : undefined;
@@ -286,8 +292,8 @@ function mapProjectRow(x: SpRecord): ProjectRow {
     projectFunction: readString(x, "projectFunction"),
     projectLeader: readString(x, "projectLeader"),
     projectUser: readString(x, "projectUser"),
-    startDate: readString(x, "startDate"),
-    endDate: readString(x, "endDate"),
+    startDate: readDateString(x, "startDate"),
+    endDate: readDateString(x, "endDate"),
     businessNeed: readString(x, "businessNeed"),
     proposedSolution: readString(x, "proposedSolution"),
     kpiType: readString(x, "kpiType"),

@@ -79,6 +79,7 @@ export function ReviewStep(props: {
         <SummaryField label="Tipo de ativo" value={project.assetType} />
         <SummaryField label="Empresa / Centro / Unidade" value={[project.company, project.center, project.unit].filter(Boolean).join(" / ")} />
         <SummaryField label="KPI" value={[project.kpiType, project.kpiName].filter(Boolean).join(" - ")} />
+        <SummaryField label="Tem ROCE" value={project.hasRoce} />
         <SummaryField label="ROCE" value={project.roce} />
       </SummarySection>
 

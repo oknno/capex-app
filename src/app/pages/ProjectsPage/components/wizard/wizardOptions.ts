@@ -77,8 +77,11 @@ export const ASSET_TYPE_OPTIONS: SelectOption[] = [
   { value: "06", label: "06 - VEÍCULOS" },
   { value: "99", label: "99 - INFORMÁTICA (HARDWARE/SOFTWARE)" }
 ];
-export const KPI_TYPE_OPTIONS: SelectOption[] = Array.from({ length: 5 }, (_, i) => ({ value: `KPI_${i + 1}`, label: `Tipo de KPI ${i + 1}` }));
-export const ROCE_CLASS_OPTIONS: SelectOption[] = Array.from({ length: 5 }, (_, i) => ({ value: `ROCE_${i + 1}`, label: `Classificação ROCE ${i + 1}` }));
+export const KPI_TYPE_OPTIONS: SelectOption[] = [
+  { value: "PRODUTIVIDADE", label: "PRODUTIVIDADE" },
+  { value: "SAUDE_E_SEGURANCA", label: "SAÚDE E SEGURANÇA" },
+  { value: "OUTROS", label: "OUTROS" }
+];
 export const PEP_ELEMENT_OPTIONS: SelectOption[] = Array.from({ length: 18 }, (_, i) => ({ value: `PEP_${i + 1}`, label: `Elemento PEP ${i + 1}` }));
 
 export const INVESTMENT_LEVEL_OPTIONS: Array<SelectOption & { minUsd: number; maxUsd?: number }> = [

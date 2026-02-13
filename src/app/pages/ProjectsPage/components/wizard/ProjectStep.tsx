@@ -30,6 +30,18 @@ function getOptionsWithFallback(options: { value: string; label: string }[] | un
   return Array.from({ length: 4 }, (_, i) => ({ value: `${prefix}_${i + 1}`, label: `${prefix} ${i + 1}` }));
 }
 
+function toDateInputValue(value?: string) {
+  if (!value) return "";
+  return value.includes("T") ? value.slice(0, 10) : value;
+}
+
+function descriptionQualityLabel(text?: string) {
+  const size = String(text ?? "").trim().length;
+  if (size < 100) return { label: "Descrição curta/ruim", tone: "#b91c1c" };
+  if (size < 200) return { label: "Boa descrição", tone: "#92400e" };
+  return { label: "Ótima descrição", tone: "#166534" };
+}
+
 export function ProjectStep(props: { draft: ProjectDraft; readOnly: boolean; onChange: (patch: Partial<ProjectDraft>) => void }) {
   const d = props.draft;
   const yearOptions = buildYearOptions(5);
@@ -39,6 +51,11 @@ export function ProjectStep(props: { draft: ProjectDraft; readOnly: boolean; onC
   const locationOptions = getOptionsWithFallback(LOCATION_OPTIONS_BY_UNIT[d.unit ?? ""], "Local");
   const levelCode = calculateInvestmentLevel(d.budgetBrl, EXCHANGE_RATE);
   const levelLabel = INVESTMENT_LEVEL_OPTIONS.find((item) => item.value === levelCode)?.label ?? "";
+  const startDateValue = toDateInputValue(d.startDate);
+  const endDateValue = toDateInputValue(d.endDate);
+  const businessNeedQuality = descriptionQualityLabel(d.businessNeed);
+  const proposedSolutionQuality = descriptionQualityLabel(d.proposedSolution);
+  const hasRoce = d.hasRoce === "SIM";
 
   return (
     <div style={{ ...wizardLayoutStyles.sectionStack, padding: 14 }}>
@@ -59,14 +76,19 @@ export function ProjectStep(props: { draft: ProjectDraft; readOnly: boolean; onC
           </div>
 
           <div style={wizardLayoutStyles.journeyPairGrid}>
-            <FieldDate label="Data de Início" value={d.startDate ?? ""} min={today} disabled={props.readOnly} onChange={(v) => props.onChange({ startDate: v || undefined })} />
-            <FieldDate label="Data de Término" value={d.endDate ?? ""} min={d.startDate || today} disabled={props.readOnly} onChange={(v) => props.onChange({ endDate: v || undefined })} />
+            <FieldDate label="Data de Início" value={startDateValue} min={today} disabled={props.readOnly} onChange={(v) => props.onChange({ startDate: v || undefined })} />
+            <FieldDate label="Data de Término" value={endDateValue} min={startDateValue || today} disabled={props.readOnly} onChange={(v) => props.onChange({ endDate: v || undefined })} />
+          </div>
+
+          <div style={wizardLayoutStyles.journeyPairGrid}>
+            <FieldSelect label="Origem da Verba" value={d.fundingSource ?? ""} options={FUNDING_SOURCE_OPTIONS} disabled={props.readOnly} onChange={(v) => props.onChange({ fundingSource: v || undefined })} />
+            <FieldText label="Função do Projeto" value={d.projectFunction ?? ""} maxLength={35} disabled={props.readOnly} onChange={(v) => props.onChange({ projectFunction: v.toUpperCase().slice(0, 35) })} />
           </div>
         </div>
       </div>
 
       <div style={wizardLayoutStyles.card}>
-        <SectionTitle title="2. Origem e Função" />
+        <SectionTitle title="2. Origem" />
         <div style={wizardLayoutStyles.journeyStack}>
           <div style={wizardLayoutStyles.journeyPairGrid}>
             <FieldSelect label="Origem da Verba" value={d.fundingSource ?? ""} options={FUNDING_SOURCE_OPTIONS} disabled={props.readOnly} onChange={(v) => props.onChange({ fundingSource: v || undefined })} />
@@ -118,6 +140,9 @@ export function ProjectStep(props: { draft: ProjectDraft; readOnly: boolean; onC
               onChange={(e) => props.onChange({ businessNeed: e.target.value })}
               style={{ ...wizardLayoutStyles.input, ...wizardLayoutStyles.textareaReadable }}
             />
+            <div style={{ marginTop: 6, fontSize: 12, color: businessNeedQuality.tone }}>
+              {`${String(d.businessNeed ?? "").trim().length} caracteres — ${businessNeedQuality.label}`}
+            </div>
           </Field>
 
           <Field label="Solução da Proposta">
@@ -128,6 +153,9 @@ export function ProjectStep(props: { draft: ProjectDraft; readOnly: boolean; onC
               onChange={(e) => props.onChange({ proposedSolution: e.target.value })}
               style={{ ...wizardLayoutStyles.input, ...wizardLayoutStyles.textareaReadable }}
             />
+            <div style={{ marginTop: 6, fontSize: 12, color: proposedSolutionQuality.tone }}>
+              {`${String(d.proposedSolution ?? "").trim().length} caracteres — ${proposedSolutionQuality.label}`}
+            </div>
           </Field>
         </div>
       </div>
@@ -140,16 +168,8 @@ export function ProjectStep(props: { draft: ProjectDraft; readOnly: boolean; onC
             <FieldText label="Nome do KPI" value={d.kpiName ?? ""} disabled={props.readOnly} onChange={(v) => props.onChange({ kpiName: v.toUpperCase() })} />
           </div>
           <div style={wizardLayoutStyles.journeyPairGrid}>
-            <FieldNumber label="KPI Atual" value={d.kpiCurrent ?? "0"} disabled={props.readOnly} onChange={(v) => {
-              const clean = onlyIntegerOrEmpty(v);
-              if (clean === null) return;
-              props.onChange({ kpiCurrent: clean === "" ? "0" : clean });
-            }} />
-            <FieldNumber label="KPI Esperado" value={d.kpiExpected ?? "0"} disabled={props.readOnly} onChange={(v) => {
-              const clean = onlyIntegerOrEmpty(v);
-              if (clean === null) return;
-              props.onChange({ kpiExpected: clean === "" ? "0" : clean });
-            }} />
+            <FieldText label="KPI Atual" value={d.kpiCurrent ?? ""} disabled={props.readOnly} onChange={(v) => props.onChange({ kpiCurrent: v })} />
+            <FieldText label="KPI Esperado" value={d.kpiExpected ?? ""} disabled={props.readOnly} onChange={(v) => props.onChange({ kpiExpected: v })} />
           </div>
           <Field label="Descrição do KPI">
             <textarea value={d.kpiDescription ?? ""} disabled={props.readOnly} rows={3} onChange={(e) => props.onChange({ kpiDescription: e.target.value })} style={{ ...wizardLayoutStyles.input, ...wizardLayoutStyles.textareaReadable }} />
@@ -160,36 +180,58 @@ export function ProjectStep(props: { draft: ProjectDraft; readOnly: boolean; onC
       <div style={wizardLayoutStyles.card}>
         <SectionTitle title="7. ROCE" />
         <div style={wizardLayoutStyles.journeyStack}>
-          <div style={wizardLayoutStyles.journeyPairGrid}>
-            <FieldSelect label="Classificação do ROCE" value={d.roceClassification ?? ""} options={ROCE_CLASS_OPTIONS} disabled={props.readOnly} onChange={(v) => props.onChange({ roceClassification: v || undefined })} />
-            <FieldNumber label="ROCE" value={d.roce ?? ""} disabled={props.readOnly} onChange={(v) => {
-              const clean = onlyIntegerOrEmpty(v);
-              if (clean === null) return;
-              props.onChange({ roce: clean === "" ? undefined : Number(clean) });
-            }} />
-          </div>
+          <FieldSelect
+            label="Tem ROCE?"
+            value={d.hasRoce ?? ""}
+            options={ROCE_AVAILABILITY_OPTIONS}
+            disabled={props.readOnly}
+            onChange={(v) => props.onChange({
+              hasRoce: v || undefined,
+              ...(v === "SIM" ? {} : {
+                roce: undefined,
+                roceGain: undefined,
+                roceGainDescription: undefined,
+                roceLoss: undefined,
+                roceLossDescription: undefined,
+                roceClassification: undefined
+              })
+            })}
+          />
 
-          <div style={wizardLayoutStyles.journeyPairGrid}>
-            <FieldNumber label="Ganho (R$)" value={d.roceGain ?? ""} disabled={props.readOnly} onChange={(v) => {
-              const clean = onlyIntegerOrEmpty(v);
-              if (clean === null) return;
-              props.onChange({ roceGain: clean === "" ? undefined : Number(clean) });
-            }} />
-            <FieldNumber label="Perda (R$)" value={d.roceLoss ?? ""} disabled={props.readOnly} onChange={(v) => {
-              const clean = onlyIntegerOrEmpty(v);
-              if (clean === null) return;
-              props.onChange({ roceLoss: clean === "" ? undefined : Number(clean) });
-            }} />
-          </div>
+          {hasRoce && (
+            <>
+              <div style={wizardLayoutStyles.journeyPairGrid}>
+                <FieldNumber label="ROCE" value={d.roce ?? ""} disabled={props.readOnly} onChange={(v) => {
+                  const clean = onlyIntegerOrEmpty(v);
+                  if (clean === null) return;
+                  props.onChange({ roce: clean === "" ? undefined : Number(clean) });
+                }} />
 
-          <div style={wizardLayoutStyles.journeyPairGrid}>
-            <Field label="Descrição do ganho">
-              <textarea value={d.roceGainDescription ?? ""} disabled={props.readOnly} rows={3} onChange={(e) => props.onChange({ roceGainDescription: e.target.value })} style={{ ...wizardLayoutStyles.input, ...wizardLayoutStyles.textareaReadable }} />
-            </Field>
-            <Field label="Descrição da perda">
-              <textarea value={d.roceLossDescription ?? ""} disabled={props.readOnly} rows={3} onChange={(e) => props.onChange({ roceLossDescription: e.target.value })} style={{ ...wizardLayoutStyles.input, ...wizardLayoutStyles.textareaReadable }} />
-            </Field>
-          </div>
+                <FieldNumber label="Ganho (R$)" value={d.roceGain ?? ""} disabled={props.readOnly} onChange={(v) => {
+                  const clean = onlyIntegerOrEmpty(v);
+                  if (clean === null) return;
+                  props.onChange({ roceGain: clean === "" ? undefined : Number(clean) });
+                }} />
+              </div>
+
+              <div style={wizardLayoutStyles.journeyPairGrid}>
+                <FieldNumber label="Perda (R$)" value={d.roceLoss ?? ""} disabled={props.readOnly} onChange={(v) => {
+                  const clean = onlyIntegerOrEmpty(v);
+                  if (clean === null) return;
+                  props.onChange({ roceLoss: clean === "" ? undefined : Number(clean) });
+                }} />
+              </div>
+
+              <div style={wizardLayoutStyles.journeyPairGrid}>
+                <Field label="Descrição do ganho">
+                  <textarea value={d.roceGainDescription ?? ""} disabled={props.readOnly} rows={3} onChange={(e) => props.onChange({ roceGainDescription: e.target.value })} style={{ ...wizardLayoutStyles.input, ...wizardLayoutStyles.textareaReadable }} />
+                </Field>
+                <Field label="Descrição da perda">
+                  <textarea value={d.roceLossDescription ?? ""} disabled={props.readOnly} rows={3} onChange={(e) => props.onChange({ roceLossDescription: e.target.value })} style={{ ...wizardLayoutStyles.input, ...wizardLayoutStyles.textareaReadable }} />
+                </Field>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

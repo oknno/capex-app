@@ -83,8 +83,8 @@ export function ProjectWizardModal(props: {
       kpiType: props.initial?.kpiType,
       kpiName: props.initial?.kpiName,
       kpiDescription: props.initial?.kpiDescription,
-      kpiCurrent: props.initial?.kpiCurrent ?? "0",
-      kpiExpected: props.initial?.kpiExpected ?? "0",
+      kpiCurrent: props.initial?.kpiCurrent ?? "",
+      kpiExpected: props.initial?.kpiExpected ?? "",
       roce: props.initial?.roce,
       roceGain: props.initial?.roceGain,
       roceGainDescription: props.initial?.roceGainDescription,
@@ -223,9 +223,18 @@ export function ProjectWizardModal(props: {
       projectLeader: toUpperOrUndefined(p.projectLeader),
       projectUser: toUpperOrUndefined(p.projectUser),
       kpiName: toUpperOrUndefined(p.kpiName),
+      sourceProjectCode: toUpperOrUndefined(p.sourceProjectCode),
       budgetBrl: budget,
       investmentLevel: calculateInvestmentLevel(budget),
-      status: p.status ?? "Rascunho"
+      status: p.status ?? "Rascunho",
+      ...(p.hasRoce === "SIM" ? {} : {
+        roce: undefined,
+        roceGain: undefined,
+        roceGainDescription: undefined,
+        roceLoss: undefined,
+        roceLossDescription: undefined,
+        roceClassification: undefined
+      })
     };
   }, []);
 

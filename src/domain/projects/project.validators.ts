@@ -37,6 +37,10 @@ export function validateProjectBasics(p: ProjectDraft) {
   if (String(p.Title ?? "").trim().length > 25) throw new Error("Nome do Projeto deve ter no máximo 25 caracteres.");
   if (String(p.projectFunction ?? "").trim().length > 35) throw new Error("Função do Projeto deve ter no máximo 35 caracteres.");
 
+  if (!String(p.fundingSource ?? "").trim()) throw new Error("Origem da Verba é obrigatória.");
+  if (String(p.fundingSource ?? "").trim() === "REMANEJAMENTO" && !String(p.sourceProjectCode ?? "").trim()) {
+    throw new Error("Código do Projeto é obrigatório para origem Remanejamento.");
+  }
   const b = toIntOrUndefined(p.budgetBrl);
   if (b === undefined || b <= 0) throw new Error("budgetBrl deve ser um inteiro > 0.");
 
