@@ -5,6 +5,7 @@ import type { ActivityDraftLocal, MilestoneDraftLocal } from "../../../../../dom
 import { PEP_ELEMENT_OPTIONS } from "./wizardOptions";
 import { SectionTitle, wizardLayoutStyles } from "./WizardUi";
 import { Button } from "../../../../components/ui/Button";
+import { Field } from "../../../../components/ui/Field";
 import { StateMessage } from "../../../../components/ui/StateMessage";
 
 function uid(prefix: string) {
@@ -42,80 +43,105 @@ export function StructureStep(props: {
     <div style={{ padding: 14, display: "grid", gap: 14 }}>
       <SectionTitle title="8. KEY Projects" subtitle="Disponível para projetos com orçamento igual ou superior a R$ 1.000.000,00." />
 
-      <div style={{ display: "grid", gap: 10 }}>
-        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-          <input value={msTitle} onChange={(e) => setMsTitle(e.target.value)} placeholder="Nome do marco" style={wizardLayoutStyles.input} />
-          <Button tone="primary" disabled={props.readOnly || !msTitle.trim()} onClick={() => {
-            const next = [...props.milestones, { tempId: uid("ms"), Title: msTitle.trim().toUpperCase() }];
-            props.onChange({ milestones: next });
-            setMsTitle("");
-            if (!selectedMs) setSelectedMs(next[0].tempId);
-          }}>Adicionar Marco</Button>
-        </div>
+      <div style={wizardLayoutStyles.cardSubtle}>
+        <div style={wizardLayoutStyles.journeyStack}>
+          <div style={wizardLayoutStyles.journeyPairGrid}>
+            <Field label="Nome do marco">
+              <input value={msTitle} onChange={(e) => setMsTitle(e.target.value)} placeholder="Ex.: Aprovação Técnica" style={wizardLayoutStyles.input} />
+            </Field>
+            <div style={{ alignSelf: "end" }}>
+              <Button tone="primary" disabled={props.readOnly || !msTitle.trim()} onClick={() => {
+                const next = [...props.milestones, { tempId: uid("ms"), Title: msTitle.trim().toUpperCase() }];
+                props.onChange({ milestones: next });
+                setMsTitle("");
+                if (!selectedMs) setSelectedMs(next[0].tempId);
+              }}>Adicionar Marco</Button>
+            </div>
+          </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(180px, 1fr))", gap: 8 }}>
-          <select value={selectedMs} onChange={(e) => setSelectedMs(e.target.value)} disabled={props.readOnly || props.milestones.length === 0} style={wizardLayoutStyles.input}>
-            <option value="">Selecione o marco...</option>
-            {props.milestones.map((m) => <option key={m.tempId} value={m.tempId}>{m.Title}</option>)}
-          </select>
+          <Field label="Marco para nova atividade">
+            <select value={selectedMs} onChange={(e) => setSelectedMs(e.target.value)} disabled={props.readOnly || props.milestones.length === 0} style={wizardLayoutStyles.input}>
+              <option value="">Selecione o marco...</option>
+              {props.milestones.map((m) => <option key={m.tempId} value={m.tempId}>{m.Title}</option>)}
+            </select>
+          </Field>
 
-          <input value={acTitle} onChange={(e) => setAcTitle(e.target.value)} placeholder="Título da atividade" style={wizardLayoutStyles.input} />
+          <div style={wizardLayoutStyles.journeyPairGrid}>
+            <Field label="Título da atividade">
+              <input value={acTitle} onChange={(e) => setAcTitle(e.target.value)} placeholder="Ex.: Obra civil" style={wizardLayoutStyles.input} />
+            </Field>
 
-          <input
-            value={acAmount}
-            onChange={(e) => {
-              if (e.target.value === "" || /^\d+$/.test(e.target.value)) setAcAmount(e.target.value);
-            }}
-            placeholder="Valor da Atividade (R$)"
-            style={wizardLayoutStyles.input}
-          />
+            <Field label="Valor da Atividade (R$)">
+              <input
+                value={acAmount}
+                onChange={(e) => {
+                  if (e.target.value === "" || /^\d+$/.test(e.target.value)) setAcAmount(e.target.value);
+                }}
+                placeholder="Somente números inteiros"
+                style={wizardLayoutStyles.input}
+              />
+            </Field>
+          </div>
 
-          <select value={acPepElement} onChange={(e) => setAcPepElement(e.target.value)} style={wizardLayoutStyles.input}>
-            <option value="">Elemento PEP...</option>
-            {PEP_ELEMENT_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-          </select>
+          <div style={wizardLayoutStyles.journeyPairGrid}>
+            <Field label="Elemento PEP">
+              <select value={acPepElement} onChange={(e) => setAcPepElement(e.target.value)} style={wizardLayoutStyles.input}>
+                <option value="">Selecione o elemento...</option>
+                {PEP_ELEMENT_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+              </select>
+            </Field>
 
-          <input type="date" min={props.projectStartDate} max={props.projectEndDate} value={acStartDate} onChange={(e) => setAcStartDate(e.target.value)} style={wizardLayoutStyles.input} />
+            <Field label="Fornecedor">
+              <input value={acSupplier} onChange={(e) => setAcSupplier(e.target.value)} placeholder="Fornecedor (opcional)" style={wizardLayoutStyles.input} />
+            </Field>
+          </div>
 
-          <input type="date" min={acStartDate || props.projectStartDate} max={props.projectEndDate} value={acEndDate} onChange={(e) => setAcEndDate(e.target.value)} style={wizardLayoutStyles.input} />
+          <div style={wizardLayoutStyles.journeyPairGrid}>
+            <Field label="Data de início">
+              <input type="date" min={props.projectStartDate} max={props.projectEndDate} value={acStartDate} onChange={(e) => setAcStartDate(e.target.value)} style={wizardLayoutStyles.input} />
+            </Field>
+            <Field label="Data de término">
+              <input type="date" min={acStartDate || props.projectStartDate} max={props.projectEndDate} value={acEndDate} onChange={(e) => setAcEndDate(e.target.value)} style={wizardLayoutStyles.input} />
+            </Field>
+          </div>
 
-          <input value={acSupplier} onChange={(e) => setAcSupplier(e.target.value)} placeholder="Fornecedor" style={wizardLayoutStyles.input} />
+          <Field label="Descrição da atividade">
+            <input value={acDescription} onChange={(e) => setAcDescription(e.target.value)} placeholder="Descrição geral da atividade" style={wizardLayoutStyles.input} />
+          </Field>
 
-          <input value={acDescription} onChange={(e) => setAcDescription(e.target.value)} placeholder="Descrição geral da atividade" style={wizardLayoutStyles.input} />
-        </div>
+          <div>
+            <Button tone="primary" disabled={props.readOnly || !canAddActivity} onClick={() => {
+              const amount = toIntOrUndefined(acAmount);
+              if (!amount || amount <= 0) return props.onValidationError("Valor da Atividade deve ser inteiro > 0.");
+              if (props.projectStartDate && acStartDate && acStartDate < props.projectStartDate) return props.onValidationError("Início da atividade não pode ser antes do início do projeto.");
+              if (acStartDate && acEndDate && acEndDate < acStartDate) return props.onValidationError("Término da atividade não pode ser antes do início.");
+              if (props.projectEndDate && acEndDate && acEndDate > props.projectEndDate) return props.onValidationError("Término da atividade não pode ser após término do projeto.");
 
-        <div>
-          <Button tone="primary" disabled={props.readOnly || !canAddActivity} onClick={() => {
-            const amount = toIntOrUndefined(acAmount);
-            if (!amount || amount <= 0) return props.onValidationError("Valor da Atividade deve ser inteiro > 0.");
-            if (props.projectStartDate && acStartDate && acStartDate < props.projectStartDate) return props.onValidationError("Início da atividade não pode ser antes do início do projeto.");
-            if (acStartDate && acEndDate && acEndDate < acStartDate) return props.onValidationError("Término da atividade não pode ser antes do início.");
-            if (props.projectEndDate && acEndDate && acEndDate > props.projectEndDate) return props.onValidationError("Término da atividade não pode ser após término do projeto.");
-
-            props.onChange({
-              activities: [
-                ...props.activities,
-                {
-                  tempId: uid("ac"),
-                  Title: acTitle.trim().toUpperCase(),
-                  milestoneTempId: selectedMs,
-                  amountBrl: amount,
-                  pepElement: acPepElement,
-                  startDate: acStartDate || undefined,
-                  endDate: acEndDate || undefined,
-                  supplier: acSupplier.trim() || undefined,
-                  activityDescription: acDescription.trim() || undefined
-                }
-              ]
-            });
-            setAcTitle("");
-            setAcAmount("");
-            setAcPepElement("");
-            setAcStartDate("");
-            setAcEndDate("");
-            setAcSupplier("");
-            setAcDescription("");
-          }}>Adicionar Atividade</Button>
+              props.onChange({
+                activities: [
+                  ...props.activities,
+                  {
+                    tempId: uid("ac"),
+                    Title: acTitle.trim().toUpperCase(),
+                    milestoneTempId: selectedMs,
+                    amountBrl: amount,
+                    pepElement: acPepElement,
+                    startDate: acStartDate || undefined,
+                    endDate: acEndDate || undefined,
+                    supplier: acSupplier.trim() || undefined,
+                    activityDescription: acDescription.trim() || undefined
+                  }
+                ]
+              });
+              setAcTitle("");
+              setAcAmount("");
+              setAcPepElement("");
+              setAcStartDate("");
+              setAcEndDate("");
+              setAcSupplier("");
+              setAcDescription("");
+            }}>Adicionar Atividade</Button>
+          </div>
         </div>
       </div>
 
