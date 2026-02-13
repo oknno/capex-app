@@ -82,6 +82,18 @@ export const KPI_TYPE_OPTIONS: SelectOption[] = [
   { value: "SAUDE_E_SEGURANCA", label: "SAÚDE E SEGURANÇA" },
   { value: "OUTROS", label: "OUTROS" }
 ];
+
+export const ROCE_AVAILABILITY_OPTIONS: SelectOption[] = [
+  { value: "SIM", label: "SIM" },
+  { value: "NAO", label: "NÃO" }
+];
+
+export const ROCE_CLASS_OPTIONS: SelectOption[] = [
+  { value: "GANHO", label: "GANHO" },
+  { value: "PERDA", label: "PERDA" },
+  { value: "AMBOS", label: "AMBOS" }
+];
+
 export const PEP_ELEMENT_OPTIONS: SelectOption[] = Array.from({ length: 18 }, (_, i) => ({ value: `PEP_${i + 1}`, label: `Elemento PEP ${i + 1}` }));
 
 export const INVESTMENT_LEVEL_OPTIONS: Array<SelectOption & { minUsd: number; maxUsd?: number }> = [
