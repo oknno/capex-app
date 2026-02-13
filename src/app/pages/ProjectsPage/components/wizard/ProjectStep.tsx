@@ -12,6 +12,7 @@ import {
   INVESTMENT_TYPE_OPTIONS,
   KPI_TYPE_OPTIONS,
   LOCATION_OPTIONS_BY_UNIT,
+  PROGRAM_OPTIONS,
   ROCE_CLASS_OPTIONS,
   UNIT_OPTIONS_BY_CENTER,
   todayIsoDate,
@@ -67,7 +68,10 @@ export function ProjectStep(props: { draft: ProjectDraft; readOnly: boolean; onC
       <div style={wizardLayoutStyles.card}>
         <SectionTitle title="2. Origem e Função" />
         <div style={wizardLayoutStyles.journeyStack}>
-          <FieldSelect label="Origem da Verba" value={d.fundingSource ?? ""} options={FUNDING_SOURCE_OPTIONS} disabled={props.readOnly} onChange={(v) => props.onChange({ fundingSource: v || undefined })} />
+          <div style={wizardLayoutStyles.journeyPairGrid}>
+            <FieldSelect label="Origem da Verba" value={d.fundingSource ?? ""} options={FUNDING_SOURCE_OPTIONS} disabled={props.readOnly} onChange={(v) => props.onChange({ fundingSource: v || undefined })} />
+            <FieldSelect label="Programa" value={d.program ?? ""} options={PROGRAM_OPTIONS} disabled={props.readOnly} onChange={(v) => props.onChange({ program: v || undefined })} />
+          </div>
           <FieldText label="Função do Projeto" value={d.projectFunction ?? ""} maxLength={35} disabled={props.readOnly} onChange={(v) => props.onChange({ projectFunction: v.toUpperCase().slice(0, 35) })} />
         </div>
       </div>
