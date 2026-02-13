@@ -57,8 +57,20 @@ export const CATEGORY_OPTIONS: SelectOption[] = [
   { value: "J2", label: "Cat 11 - Cilindros de Laminadores" },
   { value: "J3", label: "Cat 12 - Energia" }
 ];
-export const INVESTMENT_TYPE_OPTIONS: SelectOption[] = Array.from({ length: 5 }, (_, i) => ({ value: `INV_${i + 1}`, label: `Tipo de Investimento ${i + 1}` }));
-export const ASSET_TYPE_OPTIONS: SelectOption[] = Array.from({ length: 5 }, (_, i) => ({ value: `ASSET_${i + 1}`, label: `Tipo de Ativo ${i + 1}` }));
+export const INVESTMENT_TYPE_OPTIONS: SelectOption[] = [
+  { value: "CILINDROS_E_DISCOS", label: "CILINDROS E DISCOS" },
+  { value: "ESTRATEGICOS", label: "ESTRATÉGICOS" },
+  { value: "NORMATIVO", label: "NORMATIVO" },
+  { value: "RELINES_GRANDES_REFORMAS", label: "RELINES (GRANDES REFORMAS)" }
+];
+
+export const ASSET_TYPE_OPTIONS: SelectOption[] = [
+  { value: "01", label: "01 - EDIFICAÇÕES/BENFEITORIAS EM IMÓVEIS PRÓPRIOS" },
+  { value: "02", label: "02 - EDIFICAÇÕES/BENFEITORIAS EM IMÓVEIS TERCEIROS" },
+  { value: "03", label: "03 - MÁQUINAS/EQUIPAMENTOS/INSTALAÇÃO" },
+  { value: "06", label: "06 - VEÍCULOS" },
+  { value: "99", label: "99 - INFORMÁTICA (HARDWARE/SOFTWARE)" }
+];
 export const KPI_TYPE_OPTIONS: SelectOption[] = Array.from({ length: 5 }, (_, i) => ({ value: `KPI_${i + 1}`, label: `Tipo de KPI ${i + 1}` }));
 export const ROCE_CLASS_OPTIONS: SelectOption[] = Array.from({ length: 5 }, (_, i) => ({ value: `ROCE_${i + 1}`, label: `Classificação ROCE ${i + 1}` }));
 export const PEP_ELEMENT_OPTIONS: SelectOption[] = Array.from({ length: 18 }, (_, i) => ({ value: `PEP_${i + 1}`, label: `Elemento PEP ${i + 1}` }));
