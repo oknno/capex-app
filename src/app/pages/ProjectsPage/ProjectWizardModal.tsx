@@ -122,7 +122,8 @@ export function ProjectWizardModal(props: {
       try {
         const full = await getProjectById(props.initial!.Id);
         setProjectId(full.Id);
-        setState((prev) => ({ ...prev, project: { ...prev.project, ...full } }));
+        const { Id: _ignoredId, ...fullProjectDraft } = full;
+        setState((prev) => ({ ...prev, project: { ...prev.project, ...fullProjectDraft } }));
 
         const loadStartedAt = performance.now();
         const [milestones, activities, peps] = await Promise.all([

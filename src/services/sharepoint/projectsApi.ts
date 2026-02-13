@@ -55,13 +55,46 @@ type SpListResponse = {
   __next?: unknown;
 };
 
-const PROJECT_SELECT_BASE =
-  "Id,Title,approvalYear,budgetBrl,status,investmentLevel,fundingSource,company,center,unit,location," +
-  "depreciationCostCenter,category,investmentType,assetType,projectFunction,projectLeader,projectUser," +
-  "startDate,endDate,businessNeed,proposedSolution,kpiType,kpiName,kpiDescription,kpiCurrent,kpiExpected," +
-  "roceGain,roceGainDescription,roceLoss,roceLossDescription,roceClassification";
+const PROJECT_FIELDS: Array<keyof ProjectRow> = [
+  "Id",
+  "Title",
+  "approvalYear",
+  "budgetBrl",
+  "status",
+  "investmentLevel",
+  "fundingSource",
+  "company",
+  "center",
+  "unit",
+  "location",
+  "depreciationCostCenter",
+  "category",
+  "investmentType",
+  "assetType",
+  "projectFunction",
+  "projectLeader",
+  "projectUser",
+  "startDate",
+  "endDate",
+  "businessNeed",
+  "proposedSolution",
+  "kpiType",
+  "kpiName",
+  "kpiDescription",
+  "kpiCurrent",
+  "kpiExpected",
+  "roce",
+  "roceGain",
+  "roceGainDescription",
+  "roceLoss",
+  "roceLossDescription",
+  "roceClassification"
+];
 
+const PROJECT_DEFAULT_SELECT = PROJECT_FIELDS.join(",");
+const PROJECT_READ_MANDATORY_FIELDS = new Set(["Id", "Title"]);
 const FALLBACK_UNSUPPORTED_FIELDS = new Set(["roce"]);
+const BLOCKED_PROJECT_PAYLOAD_KEYS = new Set(["Id"]);
 let projectsFieldNamesPromise: Promise<Set<string> | null> | null = null;
 
 function asRecord(value: unknown): SpRecord {
@@ -96,6 +129,7 @@ function pickNextLink(data: SpListResponse): string | undefined {
 function buildRawProjectPayload(source: ProjectUpdate): Record<string, unknown> {
   const payload: Record<string, unknown> = {};
   (Object.keys(source) as Array<keyof ProjectUpdate>).forEach((key) => {
+    if (BLOCKED_PROJECT_PAYLOAD_KEYS.has(String(key))) return;
     const value = source[key];
     if (value !== undefined) payload[key] = value;
   });
@@ -109,6 +143,18 @@ async function getProjectsFieldNames(): Promise<Set<string> | null> {
       .catch(() => null);
   }
   return projectsFieldNamesPromise;
+}
+
+async function getProjectsSelectClause(): Promise<string> {
+  const schemaFieldNames = await getProjectsFieldNames();
+  if (!schemaFieldNames) return PROJECT_DEFAULT_SELECT;
+
+  const available = PROJECT_FIELDS.filter((field) =>
+    PROJECT_READ_MANDATORY_FIELDS.has(field) || schemaFieldNames.has(field)
+  );
+
+  if (available.length === 0) return "Id,Title";
+  return available.join(",");
 }
 
 async function buildProjectPayload(source: ProjectUpdate): Promise<Record<string, unknown>> {
@@ -191,7 +237,8 @@ async function fetchProjectsPage(args: {
   orderExpr: string;
   filters?: string;
 }): Promise<SpListResponse> {
-  return spGetJson<SpListResponse>(buildProjectsPageUrl(args, PROJECT_SELECT_BASE));
+  const selectClause = await getProjectsSelectClause();
+  return spGetJson<SpListResponse>(buildProjectsPageUrl(args, selectClause));
 }
 
 function buildProjectsPageUrl(
@@ -206,7 +253,8 @@ function buildProjectsPageUrl(
 }
 
 async function fetchProjectById(id: number): Promise<SpRecord> {
-  return spGetJson<SpRecord>(buildProjectByIdUrl(id, PROJECT_SELECT_BASE));
+  const selectClause = await getProjectsSelectClause();
+  return spGetJson<SpRecord>(buildProjectByIdUrl(id, selectClause));
 }
 
 function buildProjectByIdUrl(id: number, select: string): string {
