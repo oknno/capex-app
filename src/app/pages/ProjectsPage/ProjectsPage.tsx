@@ -247,7 +247,6 @@ export function ProjectsPage(props: { onWantsRefreshHeader?: () => void; onRegis
             selectedId={list.selectedId}
             selectedFull={selectedFull}
             selectedFullState={selectedFullState}
-            onRefresh={list.loadFirstPage}
           />
         </Card>
       </div>
