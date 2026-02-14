@@ -1,5 +1,4 @@
 import { Badge } from "../../../components/ui/Badge";
-import { Button } from "../../../components/ui/Button";
 import { Field } from "../../../components/ui/Field";
 import { StateMessage } from "../../../components/ui/StateMessage";
 import { uiTokens } from "../../../components/ui/tokens";
@@ -9,13 +8,11 @@ export function ProjectSummarySection(props: {
   selectedId: number | null;
   selectedFull: ProjectRow | null;
   selectedFullState: "idle" | "loading" | "error";
-  onRefresh: () => void;
 }) {
   return (
     <>
       <div style={styles.summaryHeader}>
         <div style={styles.summaryTitle}>Resumo</div>
-        <Button onClick={props.onRefresh}>Atualizar</Button>
       </div>
 
       {!props.selectedId && <StateMessage state="empty" message="Selecione um projeto para ver o resumo." />}
