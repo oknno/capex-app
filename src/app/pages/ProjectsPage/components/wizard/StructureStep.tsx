@@ -38,6 +38,7 @@ export function StructureStep(props: {
 }) {
   const [msTitle, setMsTitle] = useState("");
   const [formsByMilestone, setFormsByMilestone] = useState<Record<string, ActivityFormState>>({});
+  const [editingByMilestone, setEditingByMilestone] = useState<Record<string, string | undefined>>({});
 
   const activitiesByMilestone = useMemo(() => {
     const grouped: Record<string, ActivityDraftLocal[]> = {};
@@ -62,6 +63,7 @@ export function StructureStep(props: {
 
   function clearMilestoneForm(milestoneTempId: string) {
     setFormsByMilestone((prev) => ({ ...prev, [milestoneTempId]: emptyActivityForm() }));
+    setEditingByMilestone((prev) => ({ ...prev, [milestoneTempId]: undefined }));
   }
 
   function removeMilestone(milestoneTempId: string) {
@@ -74,10 +76,68 @@ export function StructureStep(props: {
       delete next[milestoneTempId];
       return next;
     });
+    setEditingByMilestone((prev) => {
+      const next = { ...prev };
+      delete next[milestoneTempId];
+      return next;
+    });
   }
 
-  function removeActivity(activityTempId: string) {
+  function removeActivity(milestoneTempId: string, activityTempId: string) {
     props.onChange({ activities: props.activities.filter((a) => a.tempId !== activityTempId) });
+    setEditingByMilestone((prev) => {
+      if (prev[milestoneTempId] !== activityTempId) return prev;
+      return { ...prev, [milestoneTempId]: undefined };
+    });
+  }
+
+  function startEditingActivity(milestoneTempId: string, activity: ActivityDraftLocal) {
+    setEditingByMilestone((prev) => ({ ...prev, [milestoneTempId]: activity.tempId }));
+    setFormsByMilestone((prev) => ({
+      ...prev,
+      [milestoneTempId]: {
+        acTitle: activity.Title,
+        acAmount: String(activity.amountBrl ?? ""),
+        acPepElement: activity.pepElement ?? "",
+        acStartDate: activity.startDate ?? "",
+        acEndDate: activity.endDate ?? "",
+        acSupplier: activity.supplier ?? "",
+        acDescription: activity.activityDescription ?? ""
+      }
+    }));
+  }
+
+  function saveActivity(milestoneTempId: string) {
+    const activityTempId = editingByMilestone[milestoneTempId];
+    if (!activityTempId) return;
+
+    const form = getForm(milestoneTempId);
+    const amount = toIntOrUndefined(form.acAmount);
+
+    if (!form.acTitle.trim()) return props.onValidationError("Título da atividade é obrigatório.");
+    if (!amount || amount <= 0) return props.onValidationError("Valor da Atividade deve ser inteiro > 0.");
+    if (!form.acPepElement) return props.onValidationError("Selecione o elemento PEP da atividade.");
+    if (props.projectStartDate && form.acStartDate && form.acStartDate < props.projectStartDate) return props.onValidationError("Início da atividade não pode ser antes do início do projeto.");
+    if (form.acStartDate && form.acEndDate && form.acEndDate < form.acStartDate) return props.onValidationError("Término da atividade não pode ser antes do início.");
+    if (props.projectEndDate && form.acEndDate && form.acEndDate > props.projectEndDate) return props.onValidationError("Término da atividade não pode ser após término do projeto.");
+
+    props.onChange({
+      activities: props.activities.map((activity) => {
+        if (activity.tempId !== activityTempId) return activity;
+        return {
+          ...activity,
+          Title: form.acTitle.trim().toUpperCase(),
+          amountBrl: amount,
+          pepElement: form.acPepElement,
+          startDate: form.acStartDate || undefined,
+          endDate: form.acEndDate || undefined,
+          supplier: form.acSupplier.trim() || undefined,
+          activityDescription: form.acDescription.trim() || undefined
+        };
+      })
+    });
+
+    clearMilestoneForm(milestoneTempId);
   }
 
   function addActivity(milestoneTempId: string) {
@@ -142,6 +202,8 @@ export function StructureStep(props: {
             {props.milestones.map((milestone) => {
               const form = getForm(milestone.tempId);
               const milestoneActivities = activitiesByMilestone[milestone.tempId] ?? [];
+              const editingActivityTempId = editingByMilestone[milestone.tempId];
+              const isEditing = Boolean(editingActivityTempId);
               const canAddActivity = Boolean(form.acTitle.trim() && form.acAmount.trim() && form.acPepElement);
 
               return (
@@ -155,7 +217,10 @@ export function StructureStep(props: {
                   </div>
 
                   <div style={wizardLayoutStyles.cardSubtle}>
-                    <div style={{ fontWeight: 600, marginBottom: 4 }}>Atividade</div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: uiTokens.spacing.sm }}>
+                      <div style={{ fontWeight: 600, marginBottom: 4 }}>{isEditing ? "Editar atividade" : "Nova atividade"}</div>
+                      {isEditing ? <div style={{ fontSize: 12, color: uiTokens.colors.accent, fontWeight: 600 }}>Editando atividade existente</div> : null}
+                    </div>
                     <div style={wizardLayoutStyles.journeyPairGrid}>
                       <Field label="Título da Atividade">
                         <input value={form.acTitle} onChange={(e) => setFormField(milestone.tempId, { acTitle: e.target.value })} placeholder="Ex.: Obra civil" style={wizardLayoutStyles.input} />
@@ -198,23 +263,30 @@ export function StructureStep(props: {
                     </Field>
 
                     <div>
-                      <Button tone="primary" disabled={props.readOnly || !canAddActivity} onClick={() => addActivity(milestone.tempId)}>Adicionar Atividade</Button>
+                      <div style={{ display: "flex", gap: uiTokens.spacing.sm, flexWrap: "wrap" }}>
+                        <Button tone="primary" disabled={props.readOnly || !canAddActivity} onClick={() => isEditing ? saveActivity(milestone.tempId) : addActivity(milestone.tempId)}>
+                          {isEditing ? "Salvar alterações" : "Adicionar Atividade"}
+                        </Button>
+                        {isEditing ? <Button disabled={props.readOnly} onClick={() => clearMilestoneForm(milestone.tempId)}>Cancelar edição</Button> : null}
+                      </div>
                     </div>
                   </div>
 
                   {!milestoneActivities.length ? (
                     <div style={wizardLayoutStyles.empty}><StateMessage state="empty" message="Nenhuma atividade cadastrada para este marco." /></div>
                   ) : (
-                    <div style={{ border: `1px solid ${uiTokens.colors.borderMuted}`, borderRadius: uiTokens.radius.sm, overflow: "hidden" }}>
+                    <div style={{ display: "grid", gap: uiTokens.spacing.xs }}>
+                      <div style={{ fontWeight: 600 }}>Atividades cadastradas</div>
                       {milestoneActivities.map((activity) => (
-                        <div key={activity.tempId} style={{ ...wizardLayoutStyles.row, display: "flex", justifyContent: "space-between", gap: uiTokens.spacing.sm }}>
+                        <div key={activity.tempId} style={{ ...wizardLayoutStyles.cardSubtle, borderColor: editingActivityTempId === activity.tempId ? uiTokens.colors.accent : uiTokens.colors.borderMuted }}>
                           <div>
                             <div style={{ fontWeight: 700 }}>{activity.Title}</div>
                             <div style={{ fontSize: 12, color: "#6b7280" }}>Valor: {(activity.amountBrl ?? 0).toLocaleString("pt-BR")} • PEP: {activity.pepElement ?? "-"}</div>
                             <div style={{ fontSize: 12, color: "#6b7280" }}>{activity.startDate ?? ""}{activity.endDate ? ` → ${activity.endDate}` : ""}{activity.supplier ? ` • ${activity.supplier}` : ""}</div>
                           </div>
-                          <div>
-                            <Button disabled={props.readOnly} onClick={() => removeActivity(activity.tempId)}>Remover atividade</Button>
+                          <div style={{ display: "flex", justifyContent: "flex-end", gap: uiTokens.spacing.sm, flexWrap: "wrap" }}>
+                            <Button disabled={props.readOnly} onClick={() => startEditingActivity(milestone.tempId, activity)}>Editar</Button>
+                            <Button disabled={props.readOnly} onClick={() => removeActivity(milestone.tempId, activity.tempId)}>Remover atividade</Button>
                           </div>
                         </div>
                       ))}
