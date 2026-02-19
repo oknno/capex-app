@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { toIntOrUndefined } from "../../../../../domain/projects/project.calculations";
 import type { ActivityDraftLocal, MilestoneDraftLocal } from "../../../../../domain/projects/project.validators";
@@ -39,6 +39,8 @@ export function StructureStep(props: {
   const [msTitle, setMsTitle] = useState("");
   const [formsByMilestone, setFormsByMilestone] = useState<Record<string, ActivityFormState>>({});
   const [editingByMilestone, setEditingByMilestone] = useState<Record<string, string | undefined>>({});
+  const [editingMilestoneById, setEditingMilestoneById] = useState<Record<string, boolean>>({});
+  const [milestoneTitleDraftById, setMilestoneTitleDraftById] = useState<Record<string, string>>({});
 
   const activitiesByMilestone = useMemo(() => {
     const grouped: Record<string, ActivityDraftLocal[]> = {};
@@ -49,6 +51,34 @@ export function StructureStep(props: {
     }
     return grouped;
   }, [props.milestones, props.activities]);
+
+  useEffect(() => {
+    if (props.readOnly || props.milestones.length > 0) return;
+    const tempId = uid("ms");
+    props.onChange({ milestones: [{ tempId, Title: "NOVO MARCO" }] });
+  }, [props.readOnly, props.milestones.length]);
+
+  useEffect(() => {
+    for (const milestone of props.milestones) {
+      const hasEditorOpen = Boolean(editingByMilestone[milestone.tempId]);
+      if (hasEditorOpen) continue;
+      const firstActivity = activitiesByMilestone[milestone.tempId]?.[0];
+      if (!firstActivity) continue;
+      setEditingByMilestone((prev) => ({ ...prev, [milestone.tempId]: firstActivity.tempId }));
+      setFormsByMilestone((prev) => ({
+        ...prev,
+        [milestone.tempId]: {
+          acTitle: firstActivity.Title,
+          acAmount: String(firstActivity.amountBrl ?? ""),
+          acPepElement: firstActivity.pepElement ?? "",
+          acStartDate: firstActivity.startDate ?? "",
+          acEndDate: firstActivity.endDate ?? "",
+          acSupplier: firstActivity.supplier ?? "",
+          acDescription: firstActivity.activityDescription ?? ""
+        }
+      }));
+    }
+  }, [props.milestones, activitiesByMilestone, editingByMilestone]);
 
   function getForm(milestoneTempId: string): ActivityFormState {
     return formsByMilestone[milestoneTempId] ?? emptyActivityForm();
@@ -81,6 +111,28 @@ export function StructureStep(props: {
       delete next[milestoneTempId];
       return next;
     });
+    setEditingMilestoneById((prev) => {
+      const next = { ...prev };
+      delete next[milestoneTempId];
+      return next;
+    });
+    setMilestoneTitleDraftById((prev) => {
+      const next = { ...prev };
+      delete next[milestoneTempId];
+      return next;
+    });
+  }
+
+  function startEditingMilestoneTitle(milestone: MilestoneDraftLocal) {
+    setEditingMilestoneById((prev) => ({ ...prev, [milestone.tempId]: true }));
+    setMilestoneTitleDraftById((prev) => ({ ...prev, [milestone.tempId]: milestone.Title }));
+  }
+
+  function saveMilestoneTitle(milestoneTempId: string) {
+    const draft = String(milestoneTitleDraftById[milestoneTempId] ?? "").trim();
+    if (!draft) return props.onValidationError("Nome do marco é obrigatório.");
+    props.onChange({ milestones: props.milestones.map((milestone) => (milestone.tempId === milestoneTempId ? { ...milestone, Title: draft.toUpperCase() } : milestone)) });
+    setEditingMilestoneById((prev) => ({ ...prev, [milestoneTempId]: false }));
   }
 
   function removeActivity(milestoneTempId: string, activityTempId: string) {
@@ -207,9 +259,32 @@ export function StructureStep(props: {
 
               return (
                 <div key={milestone.tempId} style={{ ...wizardLayoutStyles.card, background: "#f9fafb" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: uiTokens.spacing.sm }}>
-                    <div>
-                      <div style={{ fontWeight: 700 }}>{milestone.Title}</div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: uiTokens.spacing.sm }}>
+                    <div style={{ flex: 1 }}>
+                      {editingMilestoneById[milestone.tempId] ? (
+                        <div style={{ display: "flex", gap: uiTokens.spacing.xs }}>
+                          <input
+                            value={milestoneTitleDraftById[milestone.tempId] ?? ""}
+                            onChange={(e) => setMilestoneTitleDraftById((prev) => ({ ...prev, [milestone.tempId]: e.target.value }))}
+                            style={wizardLayoutStyles.input}
+                          />
+                          <Button tone="primary" disabled={props.readOnly} onClick={() => saveMilestoneTitle(milestone.tempId)}>Salvar</Button>
+                        </div>
+                      ) : (
+                        <div style={{ display: "flex", alignItems: "center", gap: uiTokens.spacing.sm }}>
+                          <div style={{ fontWeight: 700 }}>{milestone.Title}</div>
+                          <button
+                            type="button"
+                            disabled={props.readOnly}
+                            onClick={() => startEditingMilestoneTitle(milestone)}
+                            style={{ border: "none", background: "transparent", cursor: props.readOnly ? "not-allowed" : "pointer", color: "#6b7280", fontSize: 16 }}
+                            aria-label="Editar marco"
+                            title="Editar marco"
+                          >
+                            ✏️
+                          </button>
+                        </div>
+                      )}
                       <div style={{ fontSize: uiTokens.typography.xs, color: uiTokens.colors.textMuted }}>Atividades ({milestoneActivities.length})</div>
                     </div>
                     <button
@@ -285,12 +360,23 @@ export function StructureStep(props: {
                       {milestoneActivities.map((activity) => (
                         <div key={activity.tempId} style={{ ...wizardLayoutStyles.cardSubtle, borderColor: editingActivityTempId === activity.tempId ? uiTokens.colors.accent : uiTokens.colors.borderMuted }}>
                           <div>
-                            <div style={{ fontWeight: 700 }}>{activity.Title}</div>
+                            <div style={{ display: "flex", alignItems: "center", gap: uiTokens.spacing.sm }}>
+                              <div style={{ fontWeight: 700 }}>{activity.Title}</div>
+                              <button
+                                type="button"
+                                disabled={props.readOnly}
+                                onClick={() => startEditingActivity(milestone.tempId, activity)}
+                                style={{ border: "none", background: "transparent", cursor: props.readOnly ? "not-allowed" : "pointer", color: "#6b7280", fontSize: 16 }}
+                                aria-label="Editar atividade"
+                                title="Editar atividade"
+                              >
+                                ✏️
+                              </button>
+                            </div>
                             <div style={{ fontSize: 12, color: "#6b7280" }}>Valor: {(activity.amountBrl ?? 0).toLocaleString("pt-BR")} • PEP: {activity.pepElement ?? "-"}</div>
                             <div style={{ fontSize: 12, color: "#6b7280" }}>{activity.startDate ?? ""}{activity.endDate ? ` → ${activity.endDate}` : ""}{activity.supplier ? ` • ${activity.supplier}` : ""}</div>
                           </div>
                           <div style={{ display: "flex", justifyContent: "flex-end", gap: uiTokens.spacing.sm, flexWrap: "wrap" }}>
-                            <Button disabled={props.readOnly} onClick={() => startEditingActivity(milestone.tempId, activity)}>Editar</Button>
                             <Button disabled={props.readOnly} onClick={() => removeActivity(milestone.tempId, activity.tempId)}>Remover atividade</Button>
                           </div>
                         </div>
