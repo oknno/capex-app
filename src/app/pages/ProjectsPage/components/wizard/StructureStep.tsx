@@ -37,6 +37,9 @@ export function StructureStep(props: {
   onValidationError: (message: string) => void;
 }) {
   const [formsByMilestone, setFormsByMilestone] = useState<Record<string, ActivityFormState>>({});
+  const [isAddingActivityByMilestone, setIsAddingActivityByMilestone] = useState<Record<string, boolean>>({});
+  const [isAddingMilestone, setIsAddingMilestone] = useState(false);
+  const [newMilestoneTitle, setNewMilestoneTitle] = useState("");
 
   const activitiesByMilestone = useMemo(() => {
     const grouped: Record<string, ActivityDraftLocal[]> = {};
@@ -63,12 +66,22 @@ export function StructureStep(props: {
     setFormsByMilestone((prev) => ({ ...prev, [milestoneTempId]: emptyActivityForm() }));
   }
 
+  function toggleActivityForm(milestoneTempId: string, open: boolean) {
+    setIsAddingActivityByMilestone((prev) => ({ ...prev, [milestoneTempId]: open }));
+    if (!open) clearMilestoneForm(milestoneTempId);
+  }
+
   function removeMilestone(milestoneTempId: string) {
     props.onChange({
       milestones: props.milestones.filter((m) => m.tempId !== milestoneTempId),
       activities: props.activities.filter((a) => a.milestoneTempId !== milestoneTempId)
     });
     setFormsByMilestone((prev) => {
+      const next = { ...prev };
+      delete next[milestoneTempId];
+      return next;
+    });
+    setIsAddingActivityByMilestone((prev) => {
       const next = { ...prev };
       delete next[milestoneTempId];
       return next;
@@ -118,6 +131,15 @@ export function StructureStep(props: {
     });
 
     clearMilestoneForm(milestoneTempId);
+    toggleActivityForm(milestoneTempId, false);
+  }
+
+  function addMilestone() {
+    if (!newMilestoneTitle.trim()) return props.onValidationError("Nome do marco é obrigatório.");
+
+    props.onChange({ milestones: [...props.milestones, { tempId: uid("ms"), Title: newMilestoneTitle.trim().toUpperCase() }] });
+    setNewMilestoneTitle("");
+    setIsAddingMilestone(false);
   }
 
   return (
@@ -133,6 +155,7 @@ export function StructureStep(props: {
               const form = getForm(milestone.tempId);
               const milestoneActivities = activitiesByMilestone[milestone.tempId] ?? [];
               const canAddActivity = Boolean(form.acTitle.trim() && form.acAmount.trim() && form.acPepElement);
+              const isAddingActivity = isAddingActivityByMilestone[milestone.tempId] ?? false;
 
               return (
                 <div key={milestone.tempId} style={{ ...wizardLayoutStyles.card, background: "#f9fafb" }}>
@@ -237,56 +260,65 @@ export function StructureStep(props: {
                     </div>
                   ))}
 
-                  <div style={{ ...wizardLayoutStyles.cardSubtle, background: "#fff" }}>
-                    <div style={{ fontWeight: 600, marginBottom: 2 }}>Atividade</div>
+                  {isAddingActivity ? (
+                    <div style={{ ...wizardLayoutStyles.cardSubtle, background: "#fff" }}>
+                      <div style={{ fontWeight: 600, marginBottom: 2 }}>Atividade</div>
 
-                    <div style={wizardLayoutStyles.journeyPairGrid}>
-                      <Field label="Título da Atividade">
-                        <input value={form.acTitle} onChange={(e) => setFormField(milestone.tempId, { acTitle: e.target.value })} placeholder="Ex.: Obra civil" style={wizardLayoutStyles.input} />
+                      <div style={wizardLayoutStyles.journeyPairGrid}>
+                        <Field label="Título da Atividade">
+                          <input value={form.acTitle} onChange={(e) => setFormField(milestone.tempId, { acTitle: e.target.value })} placeholder="Ex.: Obra civil" style={wizardLayoutStyles.input} />
+                        </Field>
+
+                        <Field label="Valor da Atividade (R$)">
+                          <input
+                            value={form.acAmount}
+                            onChange={(e) => {
+                              if (e.target.value === "" || /^\d+$/.test(e.target.value)) setFormField(milestone.tempId, { acAmount: e.target.value });
+                            }}
+                            placeholder="Ex: 500000 (sem pontos ou vírgulas)"
+                            style={wizardLayoutStyles.input}
+                          />
+                        </Field>
+                      </div>
+
+                      <div style={wizardLayoutStyles.journeyPairGrid}>
+                        <Field label="Início da Atividade">
+                          <input type="date" min={props.projectStartDate} max={props.projectEndDate} value={form.acStartDate} onChange={(e) => setFormField(milestone.tempId, { acStartDate: e.target.value })} style={wizardLayoutStyles.input} />
+                        </Field>
+                        <Field label="Término da Atividade">
+                          <input type="date" min={form.acStartDate || props.projectStartDate} max={props.projectEndDate} value={form.acEndDate} onChange={(e) => setFormField(milestone.tempId, { acEndDate: e.target.value })} style={wizardLayoutStyles.input} />
+                        </Field>
+                      </div>
+
+                      <Field label="Elemento PEP">
+                        <select value={form.acPepElement} onChange={(e) => setFormField(milestone.tempId, { acPepElement: e.target.value })} style={wizardLayoutStyles.input}>
+                          <option value="">Selecione o elemento PEP</option>
+                          {PEP_ELEMENT_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                        </select>
                       </Field>
 
-                      <Field label="Valor da Atividade (R$)">
-                        <input
-                          value={form.acAmount}
-                          onChange={(e) => {
-                            if (e.target.value === "" || /^\d+$/.test(e.target.value)) setFormField(milestone.tempId, { acAmount: e.target.value });
-                          }}
-                          placeholder="Ex: 500000 (sem pontos ou vírgulas)"
-                          style={wizardLayoutStyles.input}
-                        />
+                      <Field label="Fornecedor">
+                        <input value={form.acSupplier} onChange={(e) => setFormField(milestone.tempId, { acSupplier: e.target.value })} placeholder="Fornecedor (opcional)" style={wizardLayoutStyles.input} />
                       </Field>
+
+                      <Field label="Descrição Geral da Atividade">
+                        <textarea value={form.acDescription} onChange={(e) => setFormField(milestone.tempId, { acDescription: e.target.value })} placeholder="Descrição geral da atividade" style={{ ...wizardLayoutStyles.input, ...wizardLayoutStyles.textareaReadable }} />
+                      </Field>
+
+                      <div style={{ display: "flex", gap: uiTokens.spacing.sm, flexWrap: "wrap" }}>
+                        <Button tone="primary" disabled={props.readOnly || !canAddActivity} onClick={() => addActivity(milestone.tempId)}>
+                          Adicionar Atividade
+                        </Button>
+                        <Button disabled={props.readOnly} onClick={() => toggleActivityForm(milestone.tempId, false)}>
+                          Cancelar
+                        </Button>
+                      </div>
                     </div>
-
-                    <div style={wizardLayoutStyles.journeyPairGrid}>
-                      <Field label="Início da Atividade">
-                        <input type="date" min={props.projectStartDate} max={props.projectEndDate} value={form.acStartDate} onChange={(e) => setFormField(milestone.tempId, { acStartDate: e.target.value })} style={wizardLayoutStyles.input} />
-                      </Field>
-                      <Field label="Término da Atividade">
-                        <input type="date" min={form.acStartDate || props.projectStartDate} max={props.projectEndDate} value={form.acEndDate} onChange={(e) => setFormField(milestone.tempId, { acEndDate: e.target.value })} style={wizardLayoutStyles.input} />
-                      </Field>
-                    </div>
-
-                    <Field label="Elemento PEP">
-                      <select value={form.acPepElement} onChange={(e) => setFormField(milestone.tempId, { acPepElement: e.target.value })} style={wizardLayoutStyles.input}>
-                        <option value="">Selecione o elemento PEP</option>
-                        {PEP_ELEMENT_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-                      </select>
-                    </Field>
-
-                    <Field label="Fornecedor">
-                      <input value={form.acSupplier} onChange={(e) => setFormField(milestone.tempId, { acSupplier: e.target.value })} placeholder="Fornecedor (opcional)" style={wizardLayoutStyles.input} />
-                    </Field>
-
-                    <Field label="Descrição Geral da Atividade">
-                      <textarea value={form.acDescription} onChange={(e) => setFormField(milestone.tempId, { acDescription: e.target.value })} placeholder="Descrição geral da atividade" style={{ ...wizardLayoutStyles.input, ...wizardLayoutStyles.textareaReadable }} />
-                    </Field>
-
-                    <div style={{ display: "flex", gap: uiTokens.spacing.sm, flexWrap: "wrap" }}>
-                      <Button tone="primary" disabled={props.readOnly || !canAddActivity} onClick={() => addActivity(milestone.tempId)}>
-                        Adicionar Atividade
-                      </Button>
-                    </div>
-                  </div>
+                  ) : (
+                    <Button tone="primary" disabled={props.readOnly} onClick={() => toggleActivityForm(milestone.tempId, true)}>
+                      Nova atividade
+                    </Button>
+                  )}
 
                   {!milestoneActivities.length ? <div style={wizardLayoutStyles.empty}><StateMessage state="empty" message="Nenhuma atividade cadastrada para este marco." /></div> : null}
                 </div>
@@ -295,17 +327,31 @@ export function StructureStep(props: {
           </div>
         )}
 
-        <Button
-          tone="primary"
-          disabled={props.readOnly}
-          onClick={() => {
-            const nextMilestone = { tempId: uid("ms"), Title: "" };
-            props.onChange({ milestones: [...props.milestones, nextMilestone] });
-          }}
-          style={{ width: "100%", marginTop: uiTokens.spacing.md }}
-        >
-          Adicionar Marco
-        </Button>
+        {isAddingMilestone ? (
+          <div style={{ ...wizardLayoutStyles.cardSubtle, background: "#fff", marginTop: uiTokens.spacing.md }}>
+            <Field label="Nome do Marco">
+              <input value={newMilestoneTitle} onChange={(e) => setNewMilestoneTitle(e.target.value)} style={wizardLayoutStyles.input} placeholder="Ex.: ETAPA 1" />
+            </Field>
+            <div style={{ display: "flex", gap: uiTokens.spacing.sm, flexWrap: "wrap" }}>
+              <Button tone="primary" disabled={props.readOnly || !newMilestoneTitle.trim()} onClick={addMilestone}>
+                Salvar Marco
+              </Button>
+              <Button
+                disabled={props.readOnly}
+                onClick={() => {
+                  setIsAddingMilestone(false);
+                  setNewMilestoneTitle("");
+                }}
+              >
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <Button tone="primary" disabled={props.readOnly} onClick={() => setIsAddingMilestone(true)} style={{ width: "100%", marginTop: uiTokens.spacing.md }}>
+            Adicionar Marco
+          </Button>
+        )}
       </div>
     </div>
   );
