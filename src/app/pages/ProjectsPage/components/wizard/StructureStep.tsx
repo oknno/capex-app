@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { toIntOrUndefined } from "../../../../../domain/projects/project.calculations";
 import type { ActivityDraftLocal, MilestoneDraftLocal } from "../../../../../domain/projects/project.validators";
@@ -36,11 +36,8 @@ export function StructureStep(props: {
   onChange: (patch: Partial<{ milestones: MilestoneDraftLocal[]; activities: ActivityDraftLocal[] }>) => void;
   onValidationError: (message: string) => void;
 }) {
-  const [msTitle, setMsTitle] = useState("");
   const [formsByMilestone, setFormsByMilestone] = useState<Record<string, ActivityFormState>>({});
   const [editingByMilestone, setEditingByMilestone] = useState<Record<string, string | undefined>>({});
-  const [editingMilestoneById, setEditingMilestoneById] = useState<Record<string, boolean>>({});
-  const [milestoneTitleDraftById, setMilestoneTitleDraftById] = useState<Record<string, string>>({});
 
   const activitiesByMilestone = useMemo(() => {
     const grouped: Record<string, ActivityDraftLocal[]> = {};
@@ -51,34 +48,6 @@ export function StructureStep(props: {
     }
     return grouped;
   }, [props.milestones, props.activities]);
-
-  useEffect(() => {
-    if (props.readOnly || props.milestones.length > 0) return;
-    const tempId = uid("ms");
-    props.onChange({ milestones: [{ tempId, Title: "NOVO MARCO" }] });
-  }, [props.readOnly, props.milestones.length]);
-
-  useEffect(() => {
-    for (const milestone of props.milestones) {
-      const hasEditorOpen = Boolean(editingByMilestone[milestone.tempId]);
-      if (hasEditorOpen) continue;
-      const firstActivity = activitiesByMilestone[milestone.tempId]?.[0];
-      if (!firstActivity) continue;
-      setEditingByMilestone((prev) => ({ ...prev, [milestone.tempId]: firstActivity.tempId }));
-      setFormsByMilestone((prev) => ({
-        ...prev,
-        [milestone.tempId]: {
-          acTitle: firstActivity.Title,
-          acAmount: String(firstActivity.amountBrl ?? ""),
-          acPepElement: firstActivity.pepElement ?? "",
-          acStartDate: firstActivity.startDate ?? "",
-          acEndDate: firstActivity.endDate ?? "",
-          acSupplier: firstActivity.supplier ?? "",
-          acDescription: firstActivity.activityDescription ?? ""
-        }
-      }));
-    }
-  }, [props.milestones, activitiesByMilestone, editingByMilestone]);
 
   function getForm(milestoneTempId: string): ActivityFormState {
     return formsByMilestone[milestoneTempId] ?? emptyActivityForm();
@@ -111,28 +80,10 @@ export function StructureStep(props: {
       delete next[milestoneTempId];
       return next;
     });
-    setEditingMilestoneById((prev) => {
-      const next = { ...prev };
-      delete next[milestoneTempId];
-      return next;
-    });
-    setMilestoneTitleDraftById((prev) => {
-      const next = { ...prev };
-      delete next[milestoneTempId];
-      return next;
-    });
   }
 
-  function startEditingMilestoneTitle(milestone: MilestoneDraftLocal) {
-    setEditingMilestoneById((prev) => ({ ...prev, [milestone.tempId]: true }));
-    setMilestoneTitleDraftById((prev) => ({ ...prev, [milestone.tempId]: milestone.Title }));
-  }
-
-  function saveMilestoneTitle(milestoneTempId: string) {
-    const draft = String(milestoneTitleDraftById[milestoneTempId] ?? "").trim();
-    if (!draft) return props.onValidationError("Nome do marco é obrigatório.");
-    props.onChange({ milestones: props.milestones.map((milestone) => (milestone.tempId === milestoneTempId ? { ...milestone, Title: draft.toUpperCase() } : milestone)) });
-    setEditingMilestoneById((prev) => ({ ...prev, [milestoneTempId]: false }));
+  function updateMilestoneTitle(milestoneTempId: string, nextTitle: string) {
+    props.onChange({ milestones: props.milestones.map((milestone) => (milestone.tempId === milestoneTempId ? { ...milestone, Title: nextTitle.toUpperCase() } : milestone)) });
   }
 
   function removeActivity(milestoneTempId: string, activityTempId: string) {
@@ -165,7 +116,9 @@ export function StructureStep(props: {
 
     const form = getForm(milestoneTempId);
     const amount = toIntOrUndefined(form.acAmount);
+    const milestoneTitle = props.milestones.find((milestone) => milestone.tempId === milestoneTempId)?.Title ?? "";
 
+    if (!milestoneTitle.trim()) return props.onValidationError("Nome do marco é obrigatório.");
     if (!form.acTitle.trim()) return props.onValidationError("Título da atividade é obrigatório.");
     if (!amount || amount <= 0) return props.onValidationError("Valor da Atividade deve ser inteiro > 0.");
     if (!form.acPepElement) return props.onValidationError("Selecione o elemento PEP da atividade.");
@@ -195,7 +148,9 @@ export function StructureStep(props: {
   function addActivity(milestoneTempId: string) {
     const form = getForm(milestoneTempId);
     const amount = toIntOrUndefined(form.acAmount);
+    const milestoneTitle = props.milestones.find((milestone) => milestone.tempId === milestoneTempId)?.Title ?? "";
 
+    if (!milestoneTitle.trim()) return props.onValidationError("Nome do marco é obrigatório.");
     if (!form.acTitle.trim()) return props.onValidationError("Título da atividade é obrigatório.");
     if (!amount || amount <= 0) return props.onValidationError("Valor da Atividade deve ser inteiro > 0.");
     if (!form.acPepElement) return props.onValidationError("Selecione o elemento PEP da atividade.");
@@ -228,24 +183,6 @@ export function StructureStep(props: {
       <SectionTitle title="8. KEY Projects" subtitle="Disponível para projetos com orçamento igual ou superior a R$ 1.000.000,00." />
 
       <div style={wizardLayoutStyles.cardSubtle}>
-        <Field label="Nome do Marco">
-          <input value={msTitle} onChange={(e) => setMsTitle(e.target.value)} placeholder="Ex.: Aprovação Técnica" style={wizardLayoutStyles.input} />
-        </Field>
-
-        <div style={{ display: "flex", justifyContent: "flex-end" }}>
-          <Button
-            tone="primary"
-            disabled={props.readOnly || !msTitle.trim()}
-            onClick={() => {
-              const nextMilestone = { tempId: uid("ms"), Title: msTitle.trim().toUpperCase() };
-              props.onChange({ milestones: [...props.milestones, nextMilestone] });
-              setMsTitle("");
-            }}
-          >
-            Adicionar Marco
-          </Button>
-        </div>
-
         {!props.milestones.length ? (
           <div style={wizardLayoutStyles.empty}><StateMessage state="empty" message="Nenhum marco cadastrado." /></div>
         ) : (
@@ -261,30 +198,9 @@ export function StructureStep(props: {
                 <div key={milestone.tempId} style={{ ...wizardLayoutStyles.card, background: "#f9fafb" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: uiTokens.spacing.sm }}>
                     <div style={{ flex: 1 }}>
-                      {editingMilestoneById[milestone.tempId] ? (
-                        <div style={{ display: "flex", gap: uiTokens.spacing.xs }}>
-                          <input
-                            value={milestoneTitleDraftById[milestone.tempId] ?? ""}
-                            onChange={(e) => setMilestoneTitleDraftById((prev) => ({ ...prev, [milestone.tempId]: e.target.value }))}
-                            style={wizardLayoutStyles.input}
-                          />
-                          <Button tone="primary" disabled={props.readOnly} onClick={() => saveMilestoneTitle(milestone.tempId)}>Salvar</Button>
-                        </div>
-                      ) : (
-                        <div style={{ display: "flex", alignItems: "center", gap: uiTokens.spacing.sm }}>
-                          <div style={{ fontWeight: 700 }}>{milestone.Title}</div>
-                          <button
-                            type="button"
-                            disabled={props.readOnly}
-                            onClick={() => startEditingMilestoneTitle(milestone)}
-                            style={{ border: "none", background: "transparent", cursor: props.readOnly ? "not-allowed" : "pointer", color: "#6b7280", fontSize: 16 }}
-                            aria-label="Editar marco"
-                            title="Editar marco"
-                          >
-                            ✏️
-                          </button>
-                        </div>
-                      )}
+                      <Field label="Nome do Marco">
+                        <input value={milestone.Title} onChange={(e) => updateMilestoneTitle(milestone.tempId, e.target.value)} style={wizardLayoutStyles.input} />
+                      </Field>
                       <div style={{ fontSize: uiTokens.typography.xs, color: uiTokens.colors.textMuted }}>Atividades ({milestoneActivities.length})</div>
                     </div>
                     <button
@@ -388,6 +304,18 @@ export function StructureStep(props: {
             })}
           </div>
         )}
+
+        <Button
+          tone="primary"
+          disabled={props.readOnly}
+          onClick={() => {
+            const nextMilestone = { tempId: uid("ms"), Title: "" };
+            props.onChange({ milestones: [...props.milestones, nextMilestone] });
+          }}
+          style={{ width: "100%", marginTop: uiTokens.spacing.md }}
+        >
+          Adicionar Marco
+        </Button>
       </div>
     </div>
   );
