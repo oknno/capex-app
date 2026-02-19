@@ -37,7 +37,6 @@ export function StructureStep(props: {
   onValidationError: (message: string) => void;
 }) {
   const [formsByMilestone, setFormsByMilestone] = useState<Record<string, ActivityFormState>>({});
-  const [editingByMilestone, setEditingByMilestone] = useState<Record<string, string | undefined>>({});
 
   const activitiesByMilestone = useMemo(() => {
     const grouped: Record<string, ActivityDraftLocal[]> = {};
@@ -62,7 +61,6 @@ export function StructureStep(props: {
 
   function clearMilestoneForm(milestoneTempId: string) {
     setFormsByMilestone((prev) => ({ ...prev, [milestoneTempId]: emptyActivityForm() }));
-    setEditingByMilestone((prev) => ({ ...prev, [milestoneTempId]: undefined }));
   }
 
   function removeMilestone(milestoneTempId: string) {
@@ -75,74 +73,18 @@ export function StructureStep(props: {
       delete next[milestoneTempId];
       return next;
     });
-    setEditingByMilestone((prev) => {
-      const next = { ...prev };
-      delete next[milestoneTempId];
-      return next;
-    });
   }
 
   function updateMilestoneTitle(milestoneTempId: string, nextTitle: string) {
     props.onChange({ milestones: props.milestones.map((milestone) => (milestone.tempId === milestoneTempId ? { ...milestone, Title: nextTitle.toUpperCase() } : milestone)) });
   }
 
-  function removeActivity(milestoneTempId: string, activityTempId: string) {
+  function removeActivity(activityTempId: string) {
     props.onChange({ activities: props.activities.filter((a) => a.tempId !== activityTempId) });
-    setEditingByMilestone((prev) => {
-      if (prev[milestoneTempId] !== activityTempId) return prev;
-      return { ...prev, [milestoneTempId]: undefined };
-    });
   }
 
-  function startEditingActivity(milestoneTempId: string, activity: ActivityDraftLocal) {
-    setEditingByMilestone((prev) => ({ ...prev, [milestoneTempId]: activity.tempId }));
-    setFormsByMilestone((prev) => ({
-      ...prev,
-      [milestoneTempId]: {
-        acTitle: activity.Title,
-        acAmount: String(activity.amountBrl ?? ""),
-        acPepElement: activity.pepElement ?? "",
-        acStartDate: activity.startDate ?? "",
-        acEndDate: activity.endDate ?? "",
-        acSupplier: activity.supplier ?? "",
-        acDescription: activity.activityDescription ?? ""
-      }
-    }));
-  }
-
-  function saveActivity(milestoneTempId: string) {
-    const activityTempId = editingByMilestone[milestoneTempId];
-    if (!activityTempId) return;
-
-    const form = getForm(milestoneTempId);
-    const amount = toIntOrUndefined(form.acAmount);
-    const milestoneTitle = props.milestones.find((milestone) => milestone.tempId === milestoneTempId)?.Title ?? "";
-
-    if (!milestoneTitle.trim()) return props.onValidationError("Nome do marco é obrigatório.");
-    if (!form.acTitle.trim()) return props.onValidationError("Título da atividade é obrigatório.");
-    if (!amount || amount <= 0) return props.onValidationError("Valor da Atividade deve ser inteiro > 0.");
-    if (!form.acPepElement) return props.onValidationError("Selecione o elemento PEP da atividade.");
-    if (props.projectStartDate && form.acStartDate && form.acStartDate < props.projectStartDate) return props.onValidationError("Início da atividade não pode ser antes do início do projeto.");
-    if (form.acStartDate && form.acEndDate && form.acEndDate < form.acStartDate) return props.onValidationError("Término da atividade não pode ser antes do início.");
-    if (props.projectEndDate && form.acEndDate && form.acEndDate > props.projectEndDate) return props.onValidationError("Término da atividade não pode ser após término do projeto.");
-
-    props.onChange({
-      activities: props.activities.map((activity) => {
-        if (activity.tempId !== activityTempId) return activity;
-        return {
-          ...activity,
-          Title: form.acTitle.trim().toUpperCase(),
-          amountBrl: amount,
-          pepElement: form.acPepElement,
-          startDate: form.acStartDate || undefined,
-          endDate: form.acEndDate || undefined,
-          supplier: form.acSupplier.trim() || undefined,
-          activityDescription: form.acDescription.trim() || undefined
-        };
-      })
-    });
-
-    clearMilestoneForm(milestoneTempId);
+  function updateActivity(activityTempId: string, patch: Partial<ActivityDraftLocal>) {
+    props.onChange({ activities: props.activities.map((activity) => (activity.tempId === activityTempId ? { ...activity, ...patch } : activity)) });
   }
 
   function addActivity(milestoneTempId: string) {
@@ -190,8 +132,6 @@ export function StructureStep(props: {
             {props.milestones.map((milestone) => {
               const form = getForm(milestone.tempId);
               const milestoneActivities = activitiesByMilestone[milestone.tempId] ?? [];
-              const editingActivityTempId = editingByMilestone[milestone.tempId];
-              const isEditing = Boolean(editingActivityTempId);
               const canAddActivity = Boolean(form.acTitle.trim() && form.acAmount.trim() && form.acPepElement);
 
               return (
@@ -215,9 +155,90 @@ export function StructureStep(props: {
                     </button>
                   </div>
 
+                  {milestoneActivities.map((activity) => (
+                    <div key={activity.tempId} style={{ ...wizardLayoutStyles.cardSubtle, background: "#fff" }}>
+                      <div style={{ fontWeight: 600, marginBottom: uiTokens.spacing.sm }}>Atividade</div>
+
+                      <div style={wizardLayoutStyles.journeyPairGrid}>
+                        <Field label="Título da Atividade">
+                          <input
+                            value={activity.Title}
+                            onChange={(e) => updateActivity(activity.tempId, { Title: e.target.value.toUpperCase() })}
+                            placeholder="Ex.: Obra civil"
+                            style={wizardLayoutStyles.input}
+                          />
+                        </Field>
+
+                        <Field label="Valor da Atividade (R$)">
+                          <input
+                            value={activity.amountBrl ?? ""}
+                            onChange={(e) => {
+                              if (e.target.value === "" || /^\d+$/.test(e.target.value)) {
+                                updateActivity(activity.tempId, { amountBrl: toIntOrUndefined(e.target.value) });
+                              }
+                            }}
+                            placeholder="Ex: 500000 (sem pontos ou vírgulas)"
+                            style={wizardLayoutStyles.input}
+                          />
+                        </Field>
+                      </div>
+
+                      <div style={wizardLayoutStyles.journeyPairGrid}>
+                        <Field label="Início da Atividade">
+                          <input
+                            type="date"
+                            min={props.projectStartDate}
+                            max={props.projectEndDate}
+                            value={activity.startDate ?? ""}
+                            onChange={(e) => updateActivity(activity.tempId, { startDate: e.target.value || undefined })}
+                            style={wizardLayoutStyles.input}
+                          />
+                        </Field>
+                        <Field label="Término da Atividade">
+                          <input
+                            type="date"
+                            min={(activity.startDate ?? "") || props.projectStartDate}
+                            max={props.projectEndDate}
+                            value={activity.endDate ?? ""}
+                            onChange={(e) => updateActivity(activity.tempId, { endDate: e.target.value || undefined })}
+                            style={wizardLayoutStyles.input}
+                          />
+                        </Field>
+                      </div>
+
+                      <Field label="Elemento PEP">
+                        <select value={activity.pepElement ?? ""} onChange={(e) => updateActivity(activity.tempId, { pepElement: e.target.value || undefined })} style={wizardLayoutStyles.input}>
+                          <option value="">Selecione o elemento PEP</option>
+                          {PEP_ELEMENT_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                        </select>
+                      </Field>
+
+                      <Field label="Fornecedor">
+                        <input
+                          value={activity.supplier ?? ""}
+                          onChange={(e) => updateActivity(activity.tempId, { supplier: e.target.value || undefined })}
+                          placeholder="Fornecedor (opcional)"
+                          style={wizardLayoutStyles.input}
+                        />
+                      </Field>
+
+                      <Field label="Descrição Geral da Atividade">
+                        <textarea
+                          value={activity.activityDescription ?? ""}
+                          onChange={(e) => updateActivity(activity.tempId, { activityDescription: e.target.value || undefined })}
+                          placeholder="Descrição geral da atividade"
+                          style={{ ...wizardLayoutStyles.input, ...wizardLayoutStyles.textareaReadable }}
+                        />
+                      </Field>
+
+                      <div style={{ display: "flex", justifyContent: "flex-end", gap: uiTokens.spacing.sm, flexWrap: "wrap" }}>
+                        <Button disabled={props.readOnly} onClick={() => removeActivity(activity.tempId)}>Remover atividade</Button>
+                      </div>
+                    </div>
+                  ))}
+
                   <div style={{ ...wizardLayoutStyles.cardSubtle, background: "#fff" }}>
-                    <div style={{ fontWeight: 600, marginBottom: 2 }}>{isEditing ? "Editar atividade" : "Atividade"}</div>
-                    {isEditing ? <div style={{ fontSize: 12, color: uiTokens.colors.accent, fontWeight: 600 }}>Editando atividade existente</div> : null}
+                    <div style={{ fontWeight: 600, marginBottom: 2 }}>Atividade</div>
 
                     <div style={wizardLayoutStyles.journeyPairGrid}>
                       <Field label="Título da Atividade">
@@ -261,44 +282,13 @@ export function StructureStep(props: {
                     </Field>
 
                     <div style={{ display: "flex", gap: uiTokens.spacing.sm, flexWrap: "wrap" }}>
-                      <Button tone="primary" disabled={props.readOnly || !canAddActivity} onClick={() => isEditing ? saveActivity(milestone.tempId) : addActivity(milestone.tempId)}>
-                        {isEditing ? "Salvar alterações" : "Adicionar Atividade"}
+                      <Button tone="primary" disabled={props.readOnly || !canAddActivity} onClick={() => addActivity(milestone.tempId)}>
+                        Adicionar Atividade
                       </Button>
-                      {isEditing ? <Button disabled={props.readOnly} onClick={() => clearMilestoneForm(milestone.tempId)}>Cancelar edição</Button> : null}
                     </div>
                   </div>
 
-                  {!milestoneActivities.length ? (
-                    <div style={wizardLayoutStyles.empty}><StateMessage state="empty" message="Nenhuma atividade cadastrada para este marco." /></div>
-                  ) : (
-                    <div style={{ display: "grid", gap: uiTokens.spacing.xs }}>
-                      <div style={{ fontWeight: 600 }}>Atividades cadastradas</div>
-                      {milestoneActivities.map((activity) => (
-                        <div key={activity.tempId} style={{ ...wizardLayoutStyles.cardSubtle, borderColor: editingActivityTempId === activity.tempId ? uiTokens.colors.accent : uiTokens.colors.borderMuted }}>
-                          <div>
-                            <div style={{ display: "flex", alignItems: "center", gap: uiTokens.spacing.sm }}>
-                              <div style={{ fontWeight: 700 }}>{activity.Title}</div>
-                              <button
-                                type="button"
-                                disabled={props.readOnly}
-                                onClick={() => startEditingActivity(milestone.tempId, activity)}
-                                style={{ border: "none", background: "transparent", cursor: props.readOnly ? "not-allowed" : "pointer", color: "#6b7280", fontSize: 16 }}
-                                aria-label="Editar atividade"
-                                title="Editar atividade"
-                              >
-                                ✏️
-                              </button>
-                            </div>
-                            <div style={{ fontSize: 12, color: "#6b7280" }}>Valor: {(activity.amountBrl ?? 0).toLocaleString("pt-BR")} • PEP: {activity.pepElement ?? "-"}</div>
-                            <div style={{ fontSize: 12, color: "#6b7280" }}>{activity.startDate ?? ""}{activity.endDate ? ` → ${activity.endDate}` : ""}{activity.supplier ? ` • ${activity.supplier}` : ""}</div>
-                          </div>
-                          <div style={{ display: "flex", justifyContent: "flex-end", gap: uiTokens.spacing.sm, flexWrap: "wrap" }}>
-                            <Button disabled={props.readOnly} onClick={() => removeActivity(milestone.tempId, activity.tempId)}>Remover atividade</Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  {!milestoneActivities.length ? <div style={wizardLayoutStyles.empty}><StateMessage state="empty" message="Nenhuma atividade cadastrada para este marco." /></div> : null}
                 </div>
               );
             })}
