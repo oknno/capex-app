@@ -176,23 +176,22 @@ export function StructureStep(props: {
       <SectionTitle title="8. KEY Projects" subtitle="Disponível para projetos com orçamento igual ou superior a R$ 1.000.000,00." />
 
       <div style={wizardLayoutStyles.cardSubtle}>
-        <div style={wizardLayoutStyles.journeyPairGrid}>
-          <Field label="Nome do Marco">
-            <input value={msTitle} onChange={(e) => setMsTitle(e.target.value)} placeholder="Ex.: Aprovação Técnica" style={wizardLayoutStyles.input} />
-          </Field>
-          <div style={{ alignSelf: "end" }}>
-            <Button
-              tone="primary"
-              disabled={props.readOnly || !msTitle.trim()}
-              onClick={() => {
-                const nextMilestone = { tempId: uid("ms"), Title: msTitle.trim().toUpperCase() };
-                props.onChange({ milestones: [...props.milestones, nextMilestone] });
-                setMsTitle("");
-              }}
-            >
-              Adicionar Marco
-            </Button>
-          </div>
+        <Field label="Nome do Marco">
+          <input value={msTitle} onChange={(e) => setMsTitle(e.target.value)} placeholder="Ex.: Aprovação Técnica" style={wizardLayoutStyles.input} />
+        </Field>
+
+        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+          <Button
+            tone="primary"
+            disabled={props.readOnly || !msTitle.trim()}
+            onClick={() => {
+              const nextMilestone = { tempId: uid("ms"), Title: msTitle.trim().toUpperCase() };
+              props.onChange({ milestones: [...props.milestones, nextMilestone] });
+              setMsTitle("");
+            }}
+          >
+            Adicionar Marco
+          </Button>
         </div>
 
         {!props.milestones.length ? (
@@ -207,20 +206,28 @@ export function StructureStep(props: {
               const canAddActivity = Boolean(form.acTitle.trim() && form.acAmount.trim() && form.acPepElement);
 
               return (
-                <div key={milestone.tempId} style={wizardLayoutStyles.card}>
+                <div key={milestone.tempId} style={{ ...wizardLayoutStyles.card, background: "#f9fafb" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: uiTokens.spacing.sm }}>
                     <div>
                       <div style={{ fontWeight: 700 }}>{milestone.Title}</div>
                       <div style={{ fontSize: uiTokens.typography.xs, color: uiTokens.colors.textMuted }}>Atividades ({milestoneActivities.length})</div>
                     </div>
-                    <Button disabled={props.readOnly} onClick={() => removeMilestone(milestone.tempId)}>Remover marco</Button>
+                    <button
+                      type="button"
+                      disabled={props.readOnly}
+                      onClick={() => removeMilestone(milestone.tempId)}
+                      style={{ border: "none", background: "transparent", cursor: props.readOnly ? "not-allowed" : "pointer", color: "#6b7280", fontSize: 16 }}
+                      aria-label="Remover marco"
+                      title="Remover marco"
+                    >
+                      🗑️
+                    </button>
                   </div>
 
-                  <div style={wizardLayoutStyles.cardSubtle}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: uiTokens.spacing.sm }}>
-                      <div style={{ fontWeight: 600, marginBottom: 4 }}>{isEditing ? "Editar atividade" : "Nova atividade"}</div>
-                      {isEditing ? <div style={{ fontSize: 12, color: uiTokens.colors.accent, fontWeight: 600 }}>Editando atividade existente</div> : null}
-                    </div>
+                  <div style={{ ...wizardLayoutStyles.cardSubtle, background: "#fff" }}>
+                    <div style={{ fontWeight: 600, marginBottom: 2 }}>{isEditing ? "Editar atividade" : "Atividade"}</div>
+                    {isEditing ? <div style={{ fontSize: 12, color: uiTokens.colors.accent, fontWeight: 600 }}>Editando atividade existente</div> : null}
+
                     <div style={wizardLayoutStyles.journeyPairGrid}>
                       <Field label="Título da Atividade">
                         <input value={form.acTitle} onChange={(e) => setFormField(milestone.tempId, { acTitle: e.target.value })} placeholder="Ex.: Obra civil" style={wizardLayoutStyles.input} />
@@ -262,13 +269,11 @@ export function StructureStep(props: {
                       <textarea value={form.acDescription} onChange={(e) => setFormField(milestone.tempId, { acDescription: e.target.value })} placeholder="Descrição geral da atividade" style={{ ...wizardLayoutStyles.input, ...wizardLayoutStyles.textareaReadable }} />
                     </Field>
 
-                    <div>
-                      <div style={{ display: "flex", gap: uiTokens.spacing.sm, flexWrap: "wrap" }}>
-                        <Button tone="primary" disabled={props.readOnly || !canAddActivity} onClick={() => isEditing ? saveActivity(milestone.tempId) : addActivity(milestone.tempId)}>
-                          {isEditing ? "Salvar alterações" : "Adicionar Atividade"}
-                        </Button>
-                        {isEditing ? <Button disabled={props.readOnly} onClick={() => clearMilestoneForm(milestone.tempId)}>Cancelar edição</Button> : null}
-                      </div>
+                    <div style={{ display: "flex", gap: uiTokens.spacing.sm, flexWrap: "wrap" }}>
+                      <Button tone="primary" disabled={props.readOnly || !canAddActivity} onClick={() => isEditing ? saveActivity(milestone.tempId) : addActivity(milestone.tempId)}>
+                        {isEditing ? "Salvar alterações" : "Adicionar Atividade"}
+                      </Button>
+                      {isEditing ? <Button disabled={props.readOnly} onClick={() => clearMilestoneForm(milestone.tempId)}>Cancelar edição</Button> : null}
                     </div>
                   </div>
 
