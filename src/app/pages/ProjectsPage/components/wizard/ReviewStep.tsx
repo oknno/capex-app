@@ -10,11 +10,16 @@ function renderValue(value: SummaryValue) {
   return value === undefined || value === "" ? "—" : String(value);
 }
 
+function toDateLabel(value?: string) {
+  if (!value) return "—";
+  return new Date(`${value}T00:00:00`).toLocaleDateString("pt-BR");
+}
+
 function SummaryField(props: { label: string; value: SummaryValue; minWidth?: number }) {
   return (
     <div style={{ minWidth: props.minWidth ?? 180 }}>
       <div style={{ fontSize: 14, fontWeight: 600, color: "#374151", marginBottom: 4 }}>{props.label}</div>
-      <div style={{ fontSize: 14, color: "#111827", lineHeight: 1.4, wordBreak: "break-word" }}>{renderValue(props.value)}</div>
+      <div style={{ fontSize: 14, color: "#111827", lineHeight: 1.4, wordBreak: "break-word", whiteSpace: "pre-wrap" }}>{renderValue(props.value)}</div>
     </div>
   );
 }
@@ -30,17 +35,17 @@ function SummarySection(props: {
     padding: 22,
     display: "grid",
     gap: 16,
-    background: "#f9fafb",
+    background: "#f9fafb"
   };
 
   return (
     <section style={style}>
-      <h3 style={{ margin: 0, fontSize: 32 / 2, fontWeight: 700, color: "#111827" }}>{props.title}</h3>
+      <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#111827" }}>{props.title}</h3>
       <div
         style={{
           display: "grid",
           gap: 14,
-          gridTemplateColumns: `repeat(${props.columns ?? 3}, minmax(180px, 1fr))`,
+          gridTemplateColumns: `repeat(${props.columns ?? 3}, minmax(180px, 1fr))`
         }}
       >
         {props.children}
@@ -58,37 +63,95 @@ export function ReviewStep(props: {
 }) {
   const { project, milestones, activities, peps } = props.state;
 
+  const ganttItems = activities
+    .filter((activity) => activity.startDate && activity.endDate)
+    .map((activity) => ({
+      milestone: milestones.find((item) => item.tempId === activity.milestoneTempId)?.Title ?? "MARCO",
+      title: activity.Title,
+      startDate: activity.startDate as string,
+      endDate: activity.endDate as string
+    }));
+
+  const ganttBounds = ganttItems.length > 0
+    ? {
+      min: Math.min(...ganttItems.map((item) => new Date(`${item.startDate}T00:00:00`).getTime())),
+      max: Math.max(...ganttItems.map((item) => new Date(`${item.endDate}T00:00:00`).getTime()))
+    }
+    : null;
+
   return (
     <div style={{ padding: 14, display: "grid", gap: 16 }}>
-      <SectionTitle title="Resumo para validação" subtitle="Conferência final com dados separados por tópicos." />
+      <SectionTitle title="Resumo para validação" subtitle="Conferência final das informações preenchidas nas etapas 1 e 2." />
 
-      <SummarySection title="1. Sobre o Projeto">
+      <SummarySection title="1 - Toda a informação do projeto" columns={3}>
         <SummaryField label="Nome" value={project.Title} />
         <SummaryField label="Orçamento (R$)" value={project.budgetBrl?.toLocaleString("pt-BR")} />
         <SummaryField label="Nível de investimento" value={project.investmentLevel} />
         <SummaryField label="Ano" value={project.approvalYear} />
-        <SummaryField label="Início" value={project.startDate} />
-        <SummaryField label="Término" value={project.endDate} />
-      </SummarySection>
-
-      <SummarySection title="2/3/4/6/7">
+        <SummaryField label="Início" value={toDateLabel(project.startDate)} />
+        <SummaryField label="Término" value={toDateLabel(project.endDate)} />
+        <SummaryField label="Função" value={project.projectFunction} />
         <SummaryField label="Origem da verba" value={project.fundingSource} />
         <SummaryField label="Programa" value={project.program} />
         <SummaryField label="Projeto de origem" value={project.sourceProjectCode} />
-        <SummaryField label="Função" value={project.projectFunction} />
+        <SummaryField label="Empresa" value={project.company} />
+        <SummaryField label="Centro" value={project.center} />
+        <SummaryField label="Unidade" value={project.unit} />
+        <SummaryField label="Local" value={project.location} />
+        <SummaryField label="Centro de custo depreciação" value={project.depreciationCostCenter} />
+        <SummaryField label="Categoria" value={project.category} />
         <SummaryField label="Tipo de investimento" value={project.investmentType} />
         <SummaryField label="Tipo de ativo" value={project.assetType} />
-        <SummaryField label="Empresa / Centro / Unidade" value={[project.company, project.center, project.unit].filter(Boolean).join(" / ")} />
-        <SummaryField label="KPI" value={[project.kpiType, project.kpiName].filter(Boolean).join(" - ")} />
+        <SummaryField label="Líder do projeto" value={project.projectLeader} />
+        <SummaryField label="Usuário do projeto" value={project.projectUser} />
+        <SummaryField label="Necessidade do negócio" value={project.businessNeed} />
+        <SummaryField label="Solução proposta" value={project.proposedSolution} />
+        <SummaryField label="Tipo de KPI" value={project.kpiType} />
+        <SummaryField label="Nome do KPI" value={project.kpiName} />
+        <SummaryField label="KPI atual" value={project.kpiCurrent} />
+        <SummaryField label="KPI esperado" value={project.kpiExpected} />
+        <SummaryField label="Descrição do KPI" value={project.kpiDescription} />
         <SummaryField label="Tem ROCE" value={project.hasRoce} />
         <SummaryField label="ROCE" value={project.roce} />
+        <SummaryField label="Ganho ROCE (R$)" value={project.roceGain?.toLocaleString("pt-BR")} />
+        <SummaryField label="Descrição do ganho" value={project.roceGainDescription} />
+        <SummaryField label="Perda ROCE (R$)" value={project.roceLoss?.toLocaleString("pt-BR")} />
+        <SummaryField label="Descrição da perda" value={project.roceLossDescription} />
+        <SummaryField label="Classificação ROCE" value={project.roceClassification} />
       </SummarySection>
 
-      <SummarySection title={props.needStructure ? "8. KEY Projects" : "5. Elemento PEP (projeto abaixo de 1M)"} columns={props.needStructure ? 4 : 2}>
+      <SummarySection title="2 - PEPs acima ou abaixo de 1000000" columns={4}>
         {props.needStructure && <SummaryField label="Marcos" value={milestones.length} />}
         {props.needStructure && <SummaryField label="Atividades" value={activities.length} />}
         <SummaryField label="PEPs" value={peps.length} />
         <SummaryField label="Total PEPs (R$)" value={peps.reduce((acc, pep) => acc + (Number(pep.amountBrl) || 0), 0).toLocaleString("pt-BR")} />
+      </SummarySection>
+
+      <SummarySection title="Cronograma (Gantt)" columns={1}>
+        {!ganttBounds || ganttItems.length === 0 ? (
+          <SummaryField label="Status" value="Sem atividades com início e término para exibir cronograma." />
+        ) : (
+          <div style={{ display: "grid", gap: 10 }}>
+            {ganttItems.map((item) => {
+              const total = Math.max(ganttBounds.max - ganttBounds.min, 1);
+              const start = new Date(`${item.startDate}T00:00:00`).getTime();
+              const end = new Date(`${item.endDate}T00:00:00`).getTime();
+              const left = ((start - ganttBounds.min) / total) * 100;
+              const width = (Math.max(end - start, 86400000) / total) * 100;
+              return (
+                <div key={`${item.milestone}_${item.title}_${item.startDate}_${item.endDate}`}>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 12, color: "#4b5563", marginBottom: 4 }}>
+                    <span>{item.milestone} • {item.title}</span>
+                    <span>{toDateLabel(item.startDate)} - {toDateLabel(item.endDate)}</span>
+                  </div>
+                  <div style={{ position: "relative", height: 14, borderRadius: 999, background: "#e5e7eb", overflow: "hidden" }}>
+                    <div style={{ position: "absolute", left: `${left}%`, width: `${Math.min(width, 100 - left)}%`, top: 0, bottom: 0, background: "#0f172a", borderRadius: 999 }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </SummarySection>
 
       {props.projectId && (
