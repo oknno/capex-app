@@ -1,5 +1,4 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { Badge } from "../../components/ui/Badge";
 import { UNIT_OPTIONS_BY_CENTER } from "./components/wizard/wizardOptions";
 
 type SortBy = "Title" | "Id" | "approvalYear";
@@ -66,9 +65,7 @@ export function CommandBar(props: {
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-        <div style={{ fontWeight: 800, color: "#111827" }}>CAPEX · Projetos</div>
-        <Badge text={`Carregados: ${props.totalLoaded}`} tone="neutral" />
-        {hasSelection && <Badge text={`Selecionado: #${props.selectedId}`} tone="info" />}
+        <div style={{ fontWeight: 800, color: "#111827" }}>Termo de Abertura de Projeto - TAP 2.0</div>
       </div>
 
       <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
