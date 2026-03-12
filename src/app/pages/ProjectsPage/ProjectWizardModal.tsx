@@ -52,8 +52,10 @@ export function ProjectWizardModal(props: {
   onSubmitProject: (draft: ProjectDraft) => Promise<number>;
 }) {
   const readOnly = props.mode === "view";
+  const normalizedInitialStatus = String(props.initial?.status ?? "").trim().toLowerCase();
+  const summaryOnlyView = readOnly && normalizedInitialStatus === "em aprovação";
   const { notify } = useToast();
-  const [step, setStep] = useState<StepKey>("project");
+  const [step, setStep] = useState<StepKey>(summaryOnlyView ? "review" : "project");
   const [structureInitialized, setStructureInitialized] = useState(false);
   const [projectId, setProjectId] = useState<number | null>(props.initial?.Id ?? null);
   const [loadingHeader, setLoadingHeader] = useState(false);
@@ -295,7 +297,13 @@ export function ProjectWizardModal(props: {
   });
 
 
-  const stepOrder = useMemo<StepKey[]>(() => ["project", "execution", "review"], []);
+  const stepOrder = useMemo<StepKey[]>(() => (summaryOnlyView ? ["review"] : ["project", "execution", "review"]), [summaryOnlyView]);
+
+  useEffect(() => {
+    if (summaryOnlyView) {
+      setStep("review");
+    }
+  }, [summaryOnlyView]);
 
   const projectRequiredFields = useMemo(
     () => [
@@ -406,7 +414,7 @@ export function ProjectWizardModal(props: {
   const stepLabel = (k: StepKey) => {
     if (k === "project") return "Toda a informação do projeto";
     if (k === "execution") return "PEPs acima ou abaixo de 1000000";
-    return "Resumo para validar";
+    return summaryOnlyView ? "Resumo" : "Resumo para validar";
   };
 
   const footerAlert = useMemo(() => {
@@ -436,6 +444,7 @@ export function ProjectWizardModal(props: {
           <Button onClick={props.onClose}>Fechar</Button>
         </div>
 
+        {!summaryOnlyView && (
         <div style={styles.tabsRow}>
           {stepOrder.map((stepKey, index) => {
             const isCurrent = stepKey === step;
@@ -454,6 +463,7 @@ export function ProjectWizardModal(props: {
           })}
           {!readOnly && <span style={{ marginLeft: 8, fontSize: 12, color: uiTokens.colors.textMuted }}>Dica: use principalmente os botões Próximo/Voltar.</span>}
         </div>
+        )}
 
 
         <div style={styles.body}>
@@ -501,6 +511,7 @@ export function ProjectWizardModal(props: {
           )}
         </div>
 
+        {!summaryOnlyView && (
         <div style={styles.footer}>
           <StateMessage state={footerAlert.state} message={footerAlert.message} />
           <div style={{ display: "flex", gap: 8 }}>
@@ -509,6 +520,7 @@ export function ProjectWizardModal(props: {
             {!readOnly && step === "review" && <Button tone="primary" onClick={commitAll} disabled={committing}>{committing ? "Enviando..." : "Confirmar envio para aprovação"}</Button>}
           </div>
         </div>
+        )}
       </div>
 
       <ConfirmDialog
