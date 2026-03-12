@@ -83,7 +83,7 @@ export function ReviewStep(props: {
     <div style={{ padding: 14, display: "grid", gap: 16 }}>
       <SectionTitle title="Resumo para validação" subtitle="Conferência final das informações preenchidas nas etapas 1 e 2." />
 
-      <SummarySection title="1 - Toda a informação do projeto" columns={3}>
+      <SummarySection title="1. Sobre o Projeto" columns={3}>
         <SummaryField label="Nome" value={project.Title} />
         <SummaryField label="Orçamento (R$)" value={project.budgetBrl?.toLocaleString("pt-BR")} />
         <SummaryField label="Nível de investimento" value={project.investmentLevel} />
@@ -91,9 +91,15 @@ export function ReviewStep(props: {
         <SummaryField label="Início" value={toDateLabel(project.startDate)} />
         <SummaryField label="Término" value={toDateLabel(project.endDate)} />
         <SummaryField label="Função" value={project.projectFunction} />
+      </SummarySection>
+
+      <SummarySection title="2. Origem e Programa" columns={3}>
         <SummaryField label="Origem da verba" value={project.fundingSource} />
         <SummaryField label="Programa" value={project.program} />
         <SummaryField label="Projeto de origem" value={project.sourceProjectCode} />
+      </SummarySection>
+
+      <SummarySection title="3. Informação Operacional" columns={3}>
         <SummaryField label="Empresa" value={project.company} />
         <SummaryField label="Centro" value={project.center} />
         <SummaryField label="Unidade" value={project.unit} />
@@ -104,13 +110,29 @@ export function ReviewStep(props: {
         <SummaryField label="Tipo de ativo" value={project.assetType} />
         <SummaryField label="Líder do projeto" value={project.projectLeader} />
         <SummaryField label="Usuário do projeto" value={project.projectUser} />
+      </SummarySection>
+
+      <SummarySection title="4. Detalhamento Complementar" columns={2}>
         <SummaryField label="Necessidade do negócio" value={project.businessNeed} />
         <SummaryField label="Solução proposta" value={project.proposedSolution} />
+      </SummarySection>
+
+      <SummarySection title="5. Estrutura e PEPs" columns={4}>
+        {props.needStructure && <SummaryField label="Marcos" value={milestones.length} />}
+        {props.needStructure && <SummaryField label="Atividades" value={activities.length} />}
+        <SummaryField label="PEPs" value={peps.length} />
+        <SummaryField label="Total PEPs (R$)" value={peps.reduce((acc, pep) => acc + (Number(pep.amountBrl) || 0), 0).toLocaleString("pt-BR")} />
+      </SummarySection>
+
+      <SummarySection title="6. Indicadores de Desempenho" columns={3}>
         <SummaryField label="Tipo de KPI" value={project.kpiType} />
         <SummaryField label="Nome do KPI" value={project.kpiName} />
         <SummaryField label="KPI atual" value={project.kpiCurrent} />
         <SummaryField label="KPI esperado" value={project.kpiExpected} />
         <SummaryField label="Descrição do KPI" value={project.kpiDescription} />
+      </SummarySection>
+
+      <SummarySection title="7. ROCE" columns={3}>
         <SummaryField label="Tem ROCE" value={project.hasRoce} />
         <SummaryField label="ROCE" value={project.roce} />
         <SummaryField label="Ganho ROCE (R$)" value={project.roceGain?.toLocaleString("pt-BR")} />
@@ -118,13 +140,6 @@ export function ReviewStep(props: {
         <SummaryField label="Perda ROCE (R$)" value={project.roceLoss?.toLocaleString("pt-BR")} />
         <SummaryField label="Descrição da perda" value={project.roceLossDescription} />
         <SummaryField label="Classificação ROCE" value={project.roceClassification} />
-      </SummarySection>
-
-      <SummarySection title="2 - PEPs acima ou abaixo de 1000000" columns={4}>
-        {props.needStructure && <SummaryField label="Marcos" value={milestones.length} />}
-        {props.needStructure && <SummaryField label="Atividades" value={activities.length} />}
-        <SummaryField label="PEPs" value={peps.length} />
-        <SummaryField label="Total PEPs (R$)" value={peps.reduce((acc, pep) => acc + (Number(pep.amountBrl) || 0), 0).toLocaleString("pt-BR")} />
       </SummarySection>
 
       <SummarySection title="Cronograma (Gantt)" columns={1}>
