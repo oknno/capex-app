@@ -41,6 +41,10 @@ import { normalizeError } from "../../../application/errors/appError";
 type StepKey = "project" | "execution" | "review";
 type PendingItem = { id: string; section: Exclude<StepKey, "review">; message: string };
 
+function uid(prefix: string) {
+  return `${prefix}_${Math.random().toString(16).slice(2)}_${Date.now()}`;
+}
+
 export function ProjectWizardModal(props: {
   mode: "create" | "edit" | "view";
   initial?: ProjectRow;
@@ -50,6 +54,7 @@ export function ProjectWizardModal(props: {
   const readOnly = props.mode === "view";
   const { notify } = useToast();
   const [step, setStep] = useState<StepKey>("project");
+  const [structureInitialized, setStructureInitialized] = useState(false);
   const [projectId, setProjectId] = useState<number | null>(props.initial?.Id ?? null);
   const [loadingHeader, setLoadingHeader] = useState(false);
   const [errHeader, setErrHeader] = useState("");
@@ -113,6 +118,39 @@ export function ProjectWizardModal(props: {
   }, [needStructure, state.activities, state.peps, state.project.approvalYear]);
 
   const draftState = useMemo(() => ({ ...state, peps: effectivePeps }), [effectivePeps, state]);
+
+  useEffect(() => {
+    if (props.mode !== "create") return;
+    if (!needStructure) {
+      setStructureInitialized(false);
+      return;
+    }
+    if (structureInitialized) return;
+    if (state.milestones.length > 0 || state.activities.length > 0) {
+      setStructureInitialized(true);
+      return;
+    }
+
+    const milestoneTempId = uid("ms");
+    setState((prev) => ({
+      ...prev,
+      milestones: [{ tempId: milestoneTempId, Title: "NOVO MARCO" }],
+      activities: [
+        {
+          tempId: uid("ac"),
+          Title: "NOVA ATIVIDADE",
+          milestoneTempId,
+          amountBrl: undefined,
+          pepElement: undefined,
+          startDate: prev.project.startDate,
+          endDate: prev.project.endDate,
+          supplier: undefined,
+          activityDescription: undefined
+        }
+      ]
+    }));
+    setStructureInitialized(true);
+  }, [needStructure, props.mode, state.activities.length, state.milestones.length, structureInitialized, state.project.startDate, state.project.endDate]);
 
   useEffect(() => {
     if (!props.initial?.Id || props.mode === "create") return;
