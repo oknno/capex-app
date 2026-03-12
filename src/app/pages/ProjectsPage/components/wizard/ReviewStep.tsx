@@ -63,6 +63,17 @@ export function ReviewStep(props: {
 }) {
   const { project, milestones, activities, peps } = props.state;
 
+  const pepSummaryItems = peps.map((pep) => {
+    const activity = activities.find((item) => item.tempId === pep.activityTempId);
+    const milestone = milestones.find((item) => item.tempId === activity?.milestoneTempId);
+    return {
+      pepTitle: pep.Title,
+      activity: activity?.Title,
+      milestone: milestone?.Title,
+      amountBrl: Number(pep.amountBrl) || 0
+    };
+  });
+
   const ganttItems = activities
     .filter((activity) => activity.startDate && activity.endDate)
     .map((activity) => ({
@@ -117,14 +128,7 @@ export function ReviewStep(props: {
         <SummaryField label="Solução proposta" value={project.proposedSolution} />
       </SummarySection>
 
-      <SummarySection title="5. Estrutura e PEPs" columns={4}>
-        {props.needStructure && <SummaryField label="Marcos" value={milestones.length} />}
-        {props.needStructure && <SummaryField label="Atividades" value={activities.length} />}
-        <SummaryField label="PEPs" value={peps.length} />
-        <SummaryField label="Total PEPs (R$)" value={peps.reduce((acc, pep) => acc + (Number(pep.amountBrl) || 0), 0).toLocaleString("pt-BR")} />
-      </SummarySection>
-
-      <SummarySection title="6. Indicadores de Desempenho" columns={3}>
+      <SummarySection title="5. Indicadores de Desempenho" columns={3}>
         <SummaryField label="Tipo de KPI" value={project.kpiType} />
         <SummaryField label="Nome do KPI" value={project.kpiName} />
         <SummaryField label="KPI atual" value={project.kpiCurrent} />
@@ -132,7 +136,7 @@ export function ReviewStep(props: {
         <SummaryField label="Descrição do KPI" value={project.kpiDescription} />
       </SummarySection>
 
-      <SummarySection title="7. ROCE" columns={3}>
+      <SummarySection title="6. ROCE" columns={3}>
         <SummaryField label="Tem ROCE" value={project.hasRoce} />
         <SummaryField label="ROCE" value={project.roce} />
         <SummaryField label="Ganho ROCE (R$)" value={project.roceGain?.toLocaleString("pt-BR")} />
@@ -142,7 +146,25 @@ export function ReviewStep(props: {
         <SummaryField label="Classificação ROCE" value={project.roceClassification} />
       </SummarySection>
 
-      <SummarySection title="Cronograma (Gantt)" columns={1}>
+      <SummarySection title="7. Resumo de Estrutura e PEPs" columns={1}>
+        {!pepSummaryItems.length ? (
+          <SummaryField label="Status" value="Nenhum PEP cadastrado." />
+        ) : (
+          <div style={{ display: "grid", gap: 10 }}>
+            {pepSummaryItems.map((item, index) => (
+              <div key={`${item.pepTitle}_${item.activity ?? "sem-atividade"}_${index}`} style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 12, background: "#fff" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
+                  <SummaryField label="Marco" value={item.milestone ?? "—"} minWidth={0} />
+                  <SummaryField label="Atividade" value={item.activity ?? item.pepTitle} minWidth={0} />
+                  <SummaryField label="Valor (R$)" value={item.amountBrl.toLocaleString("pt-BR")} minWidth={0} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </SummarySection>
+
+      <SummarySection title="8. Cronograma (Gantt)" columns={1}>
         {!ganttBounds || ganttItems.length === 0 ? (
           <SummaryField label="Status" value="Sem atividades com início e término para exibir cronograma." />
         ) : (
