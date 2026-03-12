@@ -81,6 +81,11 @@ export function StructureStep(props: {
     };
   }, [ganttItems]);
 
+  const ganttRangeLabel = useMemo(() => {
+    if (!ganttBounds) return null;
+    return `${new Date(ganttBounds.min).toLocaleDateString("pt-BR")} - ${new Date(ganttBounds.max).toLocaleDateString("pt-BR")}`;
+  }, [ganttBounds]);
+
   function getForm(milestoneTempId: string): ActivityFormState {
     return formsByMilestone[milestoneTempId] ?? emptyActivityForm();
   }
@@ -196,16 +201,14 @@ export function StructureStep(props: {
                       </Field>
                       <div style={{ fontSize: uiTokens.typography.xs, color: uiTokens.colors.textMuted }}>Atividades ({milestoneActivities.length})</div>
                     </div>
-                    <button
-                      type="button"
+                    <Button
                       disabled={props.readOnly}
                       onClick={() => removeMilestone(milestone.tempId)}
-                      style={{ border: "none", background: "transparent", cursor: props.readOnly ? "not-allowed" : "pointer", color: "#6b7280", fontSize: 14, fontWeight: 600, textDecoration: "underline" }}
                       aria-label="Remover marco"
                       title="Remover marco"
                     >
                       Remover marco
-                    </button>
+                    </Button>
                   </div>
 
                   {milestoneActivities.map((activity) => (
@@ -345,7 +348,7 @@ export function StructureStep(props: {
                       </div>
                     </div>
                   ) : (
-                    <Button tone="primary" disabled={props.readOnly} onClick={() => toggleActivityForm(milestone.tempId, true)}>
+                    <Button disabled={props.readOnly} onClick={() => toggleActivityForm(milestone.tempId, true)}>
                       Nova atividade
                     </Button>
                   )}
@@ -378,7 +381,7 @@ export function StructureStep(props: {
             </div>
           </div>
         ) : (
-          <Button tone="primary" disabled={props.readOnly} onClick={() => setIsAddingMilestone(true)} style={{ width: "100%", marginTop: uiTokens.spacing.md }}>
+          <Button disabled={props.readOnly} onClick={() => setIsAddingMilestone(true)} style={{ marginTop: uiTokens.spacing.md }}>
             Adicionar Marco
           </Button>
         )}
@@ -389,6 +392,9 @@ export function StructureStep(props: {
             <StateMessage state="empty" message="Preencha início e término das atividades para visualizar o cronograma." />
           ) : (
             <div style={{ display: "grid", gap: uiTokens.spacing.sm }}>
+              <div style={{ fontSize: 12, color: uiTokens.colors.textMuted }}>
+                Período do cronograma: {ganttRangeLabel}
+              </div>
               {ganttItems.map((item) => {
                 const total = Math.max(ganttBounds.max - ganttBounds.min, 1);
                 const start = new Date(`${item.startDate}T00:00:00`).getTime();
