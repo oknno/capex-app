@@ -68,6 +68,7 @@ export function ReviewStep(props: {
     const milestone = milestones.find((item) => item.tempId === activity?.milestoneTempId);
     return {
       pepTitle: pep.Title,
+      year: pep.year,
       activity: activity?.Title,
       milestone: milestone?.Title,
       amountBrl: Number(pep.amountBrl) || 0
@@ -146,16 +147,25 @@ export function ReviewStep(props: {
         <SummaryField label="Classificação ROCE" value={project.roceClassification} />
       </SummarySection>
 
-      <SummarySection title="7. Resumo de Estrutura e PEPs" columns={1}>
+      <SummarySection title={props.needStructure ? "7. Resumo de Estrutura e PEPs" : "7. Resumo de PEPs"} columns={1}>
         {!pepSummaryItems.length ? (
           <SummaryField label="Status" value="Nenhum PEP cadastrado." />
         ) : (
           <div style={{ display: "grid", gap: 10 }}>
             {pepSummaryItems.map((item, index) => (
               <div key={`${item.pepTitle}_${item.activity ?? "sem-atividade"}_${index}`} style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 12, background: "#fff" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
-                  <SummaryField label="Marco" value={item.milestone ?? "—"} minWidth={0} />
-                  <SummaryField label="Atividade" value={item.activity ?? item.pepTitle} minWidth={0} />
+                <div style={{ display: "grid", gridTemplateColumns: props.needStructure ? "repeat(3, minmax(0, 1fr))" : "repeat(3, minmax(0, 1fr))", gap: 12 }}>
+                  {props.needStructure ? (
+                    <>
+                      <SummaryField label="Marco" value={item.milestone ?? "—"} minWidth={0} />
+                      <SummaryField label="Atividade" value={item.activity ?? item.pepTitle} minWidth={0} />
+                    </>
+                  ) : (
+                    <>
+                      <SummaryField label="Elemento PEP" value={item.pepTitle} minWidth={0} />
+                      <SummaryField label="Ano" value={item.year} minWidth={0} />
+                    </>
+                  )}
                   <SummaryField label="Valor (R$)" value={item.amountBrl.toLocaleString("pt-BR")} minWidth={0} />
                 </div>
               </div>
@@ -164,32 +174,34 @@ export function ReviewStep(props: {
         )}
       </SummarySection>
 
-      <SummarySection title="8. Cronograma (Gantt)" columns={1}>
-        {!ganttBounds || ganttItems.length === 0 ? (
-          <SummaryField label="Status" value="Sem atividades com início e término para exibir cronograma." />
-        ) : (
-          <div style={{ display: "grid", gap: 10 }}>
-            {ganttItems.map((item) => {
-              const total = Math.max(ganttBounds.max - ganttBounds.min, 1);
-              const start = new Date(`${item.startDate}T00:00:00`).getTime();
-              const end = new Date(`${item.endDate}T00:00:00`).getTime();
-              const left = ((start - ganttBounds.min) / total) * 100;
-              const width = (Math.max(end - start, 86400000) / total) * 100;
-              return (
-                <div key={`${item.milestone}_${item.title}_${item.startDate}_${item.endDate}`}>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 12, color: "#4b5563", marginBottom: 4 }}>
-                    <span>{item.milestone} • {item.title}</span>
-                    <span>{toDateLabel(item.startDate)} - {toDateLabel(item.endDate)}</span>
+      {props.needStructure && (
+        <SummarySection title="8. Cronograma (Gantt)" columns={1}>
+          {!ganttBounds || ganttItems.length === 0 ? (
+            <SummaryField label="Status" value="Sem atividades com início e término para exibir cronograma." />
+          ) : (
+            <div style={{ display: "grid", gap: 10 }}>
+              {ganttItems.map((item) => {
+                const total = Math.max(ganttBounds.max - ganttBounds.min, 1);
+                const start = new Date(`${item.startDate}T00:00:00`).getTime();
+                const end = new Date(`${item.endDate}T00:00:00`).getTime();
+                const left = ((start - ganttBounds.min) / total) * 100;
+                const width = (Math.max(end - start, 86400000) / total) * 100;
+                return (
+                  <div key={`${item.milestone}_${item.title}_${item.startDate}_${item.endDate}`}>
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 12, color: "#4b5563", marginBottom: 4 }}>
+                      <span>{item.milestone} • {item.title}</span>
+                      <span>{toDateLabel(item.startDate)} - {toDateLabel(item.endDate)}</span>
+                    </div>
+                    <div style={{ position: "relative", height: 14, borderRadius: 999, background: "#e5e7eb", overflow: "hidden" }}>
+                      <div style={{ position: "absolute", left: `${left}%`, width: `${Math.min(width, 100 - left)}%`, top: 0, bottom: 0, background: "#0f172a", borderRadius: 999 }} />
+                    </div>
                   </div>
-                  <div style={{ position: "relative", height: 14, borderRadius: 999, background: "#e5e7eb", overflow: "hidden" }}>
-                    <div style={{ position: "absolute", left: `${left}%`, width: `${Math.min(width, 100 - left)}%`, top: 0, bottom: 0, background: "#0f172a", borderRadius: 999 }} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </SummarySection>
+                );
+              })}
+            </div>
+          )}
+        </SummarySection>
+      )}
 
       {props.projectId && (
         <div style={{ fontSize: 12, color: "#6b7280" }}>
