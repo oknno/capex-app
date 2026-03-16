@@ -1,7 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 
 import type { WizardDraftState } from "../../../../../domain/projects/project.validators";
-import { Button } from "../../../../components/ui/Button";
 import { SectionTitle } from "./WizardUi";
 
 type SummaryValue = string | number | undefined;
@@ -55,11 +54,9 @@ function SummarySection(props: {
 }
 
 export function ReviewStep(props: {
-  readOnly: boolean;
   projectId: number | null;
   state: WizardDraftState;
   needStructure: boolean;
-  onBackToDraft: () => Promise<void>;
 }) {
   const { project, milestones, activities, peps } = props.state;
 
@@ -208,8 +205,6 @@ export function ReviewStep(props: {
           ProjectId atual no SharePoint: <b>{props.projectId}</b>
         </div>
       )}
-
-      {!props.readOnly && props.projectId && <Button onClick={props.onBackToDraft}>Voltar para Rascunho (SharePoint)</Button>}
     </div>
   );
 }
