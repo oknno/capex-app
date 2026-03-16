@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 
-import { isLockedStatus } from "../../../services/sharepoint/projectsWorkflow";
 import { getProjectById } from "../../../services/sharepoint/projectsApi";
 import type { ProjectDraft, ProjectRow } from "../../../services/sharepoint/projectsApi";
 import { createProject } from "../../../application/use-cases/createProject";
@@ -213,8 +212,9 @@ export function ProjectsPage(props: { onWantsRefreshHeader?: () => void; onRegis
         onView={() => list.selected && setWizard({ mode: "view", initial: list.selected })}
         onEdit={() => {
           if (!list.selected) return;
-          if (isLockedStatus(list.selected.status)) {
-            notify("Projeto travado (Em Aprovação / Aprovado).", "info");
+          const normalizedStatus = (list.selected.status ?? "").trim().toLowerCase();
+          if (normalizedStatus && normalizedStatus !== "rascunho") {
+            notify("Apenas projetos em rascunho podem ser editados.", "info");
             return;
           }
           setWizard({ mode: "edit", initial: list.selected });
