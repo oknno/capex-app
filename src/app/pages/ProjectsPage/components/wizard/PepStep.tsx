@@ -113,16 +113,16 @@ export function PepStep(props: {
               <div key={pep.tempId} style={{ ...wizardLayoutStyles.cardSubtle, background: "#fff" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: uiTokens.spacing.sm }}>
                   <div style={{ fontWeight: 600 }}>PEP</div>
-                  <button
+                  <Button
                     type="button"
                     disabled={props.readOnly}
                     onClick={() => removePep(pep.tempId)}
-                    style={{ border: "none", background: "transparent", cursor: props.readOnly ? "not-allowed" : "pointer", color: "#6b7280", fontSize: 16 }}
+                    style={{ padding: "6px 10px" }}
                     aria-label="Remover PEP"
                     title="Remover PEP"
                   >
-                    🗑️
-                  </button>
+                    Remover PEP
+                  </Button>
                 </div>
 
                 <Field label="Elemento PEP">
