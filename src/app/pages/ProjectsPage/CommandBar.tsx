@@ -47,6 +47,7 @@ export function CommandBar(props: {
 }) {
   const hasSelection = props.selectedId != null;
   const normalizedStatus = (props.selectedStatus ?? "").trim().toLowerCase();
+  const canEdit = hasSelection && (!normalizedStatus || normalizedStatus === "rascunho");
   const canDelete = hasSelection && (!normalizedStatus || normalizedStatus === "rascunho");
 
   return (
@@ -73,7 +74,7 @@ export function CommandBar(props: {
         <button className="btn primary" onClick={props.onNew}>Novo</button>
 
         <button className="btn" disabled={!hasSelection} onClick={props.onView}>Visualizar</button>
-        <button className="btn" disabled={!hasSelection} onClick={props.onEdit}>Editar</button>
+        <button className="btn" disabled={!canEdit} onClick={props.onEdit}>Editar</button>
         <button className="btn" disabled={!canDelete} onClick={props.onDelete}>Excluir</button>
 
         <span style={{ width: 1, height: 26, background: "#e5e7eb", margin: "0 4px" }} />
