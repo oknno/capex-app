@@ -35,7 +35,6 @@ import { useToast } from "../../components/notifications/useToast";
 import { Button } from "../../components/ui/Button";
 import { StateMessage } from "../../components/ui/StateMessage";
 import { uiTokens } from "../../components/ui/tokens";
-import { moveProjectBackToDraft } from "../../../application/use-cases/backToDraft";
 import { normalizeError } from "../../../application/errors/appError";
 
 type StepKey = "project" | "execution" | "review";
@@ -494,19 +493,7 @@ export function ProjectWizardModal(props: {
                 </div>
               )}
 
-              <ReviewStep readOnly={readOnly} projectId={projectId} state={draftState} needStructure={needStructure} onBackToDraft={async () => {
-                if (!projectId) return;
-                const confirmed = await askConfirm("Voltar status para Rascunho?");
-                if (!confirmed) return;
-                try {
-                  const p = await getProjectById(projectId);
-                  await moveProjectBackToDraft(p);
-                  notify("Status alterado para Rascunho.", "success");
-                } catch (e: unknown) {
-                  const appError = normalizeError(e, "Não foi possível voltar para rascunho.");
-                  notify(appError.technicalDetails ? `${appError.userMessage} (${appError.technicalDetails})` : appError.userMessage, "error");
-                }
-              }} />
+              <ReviewStep projectId={projectId} state={draftState} needStructure={needStructure} />
             </>
           )}
         </div>
