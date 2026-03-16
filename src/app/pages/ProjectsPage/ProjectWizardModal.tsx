@@ -51,8 +51,7 @@ export function ProjectWizardModal(props: {
   onSubmitProject: (draft: ProjectDraft) => Promise<number>;
 }) {
   const readOnly = props.mode === "view";
-  const normalizedInitialStatus = String(props.initial?.status ?? "").trim().toLowerCase();
-  const summaryOnlyView = readOnly && normalizedInitialStatus === "em aprovação";
+  const summaryOnlyView = readOnly;
   const { notify } = useToast();
   const [step, setStep] = useState<StepKey>(summaryOnlyView ? "review" : "project");
   const [structureInitialized, setStructureInitialized] = useState(false);
