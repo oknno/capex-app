@@ -16,7 +16,10 @@ export function canSendToApproval(p: ProjectRow | null): { ok: boolean; reason?:
   if (!p) return { ok: false, reason: "Selecione um projeto." };
 
   const st = norm(p.status);
-  if (!st || st === "rascunho") return { ok: true };
+  if (st === "rascunho") return { ok: true };
+
+  if (!st)
+    return { ok: false, reason: "Projeto sem status. Apenas projetos em rascunho podem ser enviados para aprovação." };
 
   if (st === "em aprovação" || st === "em aprovacao")
     return { ok: false, reason: "Projeto já está em aprovação." };
@@ -24,9 +27,8 @@ export function canSendToApproval(p: ProjectRow | null): { ok: boolean; reason?:
   if (st === "aprovado")
     return { ok: false, reason: "Projeto já está aprovado." };
 
-  // reprovado: decisão saudável -> pode reenviar depois de revisar
   if (st === "reprovado")
-    return { ok: false, reason: "Projeto reprovado. Ajuste o projeto antes de reenviar." };
+    return { ok: false, reason: "Projeto reprovado não pode ser reenviado automaticamente. Volte para rascunho antes de enviar." };
 
   return { ok: false, reason: `Status atual (“${p.status}”) não permite envio automático.` };
 }
