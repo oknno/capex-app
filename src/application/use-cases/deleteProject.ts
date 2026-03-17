@@ -23,14 +23,11 @@ export async function deleteDraftProjectAndRelated(project: ProjectRow | null): 
     throw new Error(check.reason ?? "Não foi possível excluir o projeto.");
   }
 
-  const [milestones, activities] = await Promise.all([
+  const [milestones, activities, peps] = await Promise.all([
     getMilestonesByProject(project.Id),
-    getActivitiesBatchByProject(project.Id)
+    getActivitiesBatchByProject(project.Id),
+    getPepsBatchByProject(project.Id)
   ]);
-
-  const peps = await getPepsBatchByProject(project.Id, {
-    activityIds: activities.map((activity) => activity.Id)
-  });
 
   for (const pep of peps) {
     await deletePep(pep.Id);
