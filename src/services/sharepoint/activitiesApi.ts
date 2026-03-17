@@ -1,5 +1,5 @@
 import { spConfig } from "./spConfig";
-import { spGetJson, getDigest, spPostJson } from "./spHttp";
+import { spGetJson, getDigest, spPostJson, spPatchJson } from "./spHttp";
 
 export type ActivityRow = {
   Id: number;
@@ -96,6 +96,22 @@ export async function createActivity(draft: ActivityDraft): Promise<number> {
 
   const created = await spPostJson<{ Id?: unknown }>(url, body, digest);
   return Number(created.Id);
+}
+
+export async function updateActivity(id: number, patch: Partial<ActivityDraft>): Promise<void> {
+  const url = `${spConfig.siteUrl}/_api/web/lists/getbytitle('${encodeURIComponent(spConfig.activitiesListTitle)}')/items(${id})`;
+  const digest = await getDigest();
+
+  const body: Record<string, unknown> = {};
+  if (patch.Title !== undefined) body.Title = String(patch.Title ?? "").trim();
+  if (patch.startDate !== undefined) body.startDate = patch.startDate;
+  if (patch.endDate !== undefined) body.endDate = patch.endDate;
+  if (patch.supplier !== undefined) body.supplier = patch.supplier;
+  if (patch.activityDescription !== undefined) body.activityDescription = patch.activityDescription;
+  if (patch.milestonesIdId !== undefined) body.milestonesIdId = patch.milestonesIdId;
+  if (patch.projectsIdId !== undefined) body.projectsIdId = patch.projectsIdId;
+
+  await spPatchJson(url, body, digest);
 }
 
 export async function deleteActivity(id: number): Promise<void> {

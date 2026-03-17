@@ -1,9 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 
-import { getProjectById } from "../../../../services/sharepoint/projectsApi";
 import type { ProjectDraft } from "../../../../services/sharepoint/projectsApi";
 import { CommitProjectStructureError, commitProjectStructure } from "../../../../services/sharepoint/commitProjectStructure";
-import { sendProjectToApproval } from "../../../../application/use-cases/sendToApproval";
 import type { WizardDraftState } from "../../../../domain/projects/project.validators";
 import { validateProjectBasics, validateStructure } from "../../../../domain/projects/project.validators";
 import { normalizeError } from "../../../../application/errors/appError";
@@ -23,9 +21,7 @@ function formatCommitError(error: CommitProjectStructureError): string {
 }
 
 type UseWizardCommitDeps = {
-  getProjectById: typeof getProjectById;
   commitProjectStructure: typeof commitProjectStructure;
-  sendProjectToApproval: typeof sendProjectToApproval;
 };
 
 export function useWizardCommit(params: {
@@ -39,7 +35,7 @@ export function useWizardCommit(params: {
   onClose: () => void;
   askConfirm: (message: string) => Promise<boolean>;
   notify: (message: string, tone?: "success" | "error" | "info") => void;
-}, deps: UseWizardCommitDeps = { getProjectById, commitProjectStructure, sendProjectToApproval }) {
+}, deps: UseWizardCommitDeps = { commitProjectStructure }) {
   const [committing, setCommitting] = useState(false);
   const commitInFlightRef = useRef(false);
 
@@ -57,11 +53,11 @@ export function useWizardCommit(params: {
         ? `${params.state.milestones.length} marcos e ${params.state.activities.length} atividades`
         : "não obrigatória para este projeto";
       const confirmationMessage = [
-        "Confirma o envio final deste projeto?",
-        `• Status após envio: Em Aprovação`,
+        "Confirma salvar este projeto como rascunho?",
+        `• Status após salvar: Rascunho`,
         `• Estrutura: ${structureSummary}`,
         `• PEPs: ${params.state.peps.length} registro(s) serão persistidos`,
-        "• Envio: projeto, estrutura e PEPs serão gravados no SharePoint e encaminhados para Aprovação"
+        "• Persistência: projeto, estrutura e PEPs serão gravados no SharePoint"
       ].join("\n");
 
       const confirmed = await params.askConfirm(confirmationMessage);
@@ -81,10 +77,7 @@ export function useWizardCommit(params: {
       id = commitResult.projectId;
       params.setProjectId(id);
 
-      const full = await deps.getProjectById(id);
-      await deps.sendProjectToApproval(full);
-
-      params.notify("Commit concluído e enviado para Aprovação.", "success");
+      params.notify("Projeto salvo como rascunho com sucesso.", "success");
       params.onClose();
     } catch (error: unknown) {
       if (error instanceof CommitProjectStructureError) {

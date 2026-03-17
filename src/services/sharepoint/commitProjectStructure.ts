@@ -1,8 +1,8 @@
 import type { ProjectDraft } from "./projectsApi";
 import { updateProject, deleteProject } from "./projectsApi";
-import { createMilestone, deleteMilestone } from "./milestonesApi";
-import { createActivity, deleteActivity } from "./activitiesApi";
-import { createPep, deletePep } from "./pepsApi";
+import { createMilestone, deleteMilestone, getMilestonesByProject, updateMilestone } from "./milestonesApi";
+import { createActivity, deleteActivity, getActivitiesBatchByProject, updateActivity } from "./activitiesApi";
+import { createPep, deletePep, getPepsBatchByProject, updatePep } from "./pepsApi";
 
 import type {
   ActivityDraftLocal,
@@ -43,9 +43,19 @@ export class CommitProjectStructureError extends Error {
   }
 }
 
-
 function toErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown delete error";
+}
+
+function parseExistingId(tempId: string | undefined, prefix: string): number | null {
+  if (!tempId) return null;
+  if (!tempId.startsWith(`${prefix}_`)) return null;
+  const raw = Number(tempId.slice(prefix.length + 1));
+  return Number.isFinite(raw) && raw > 0 ? raw : null;
+}
+
+function normalizeText(value?: string): string {
+  return String(value ?? "").trim();
 }
 
 type CommitProjectStructureArgs = {
@@ -104,11 +114,7 @@ export async function commitProjectStructure(args: CommitProjectStructureArgs): 
       try {
         await deleteProject(journal.createdProjectId);
       } catch (error: unknown) {
-        rollbackIssues.push({
-          entity: "project",
-          id: journal.createdProjectId,
-          reason: toErrorMessage(error)
-        });
+        rollbackIssues.push({ entity: "project", id: journal.createdProjectId, reason: toErrorMessage(error) });
       }
     }
 
@@ -122,56 +128,118 @@ export async function commitProjectStructure(args: CommitProjectStructureArgs): 
 
   try {
     if (!id) {
-      id = await args.createProject(args.normalizedProject);
+      id = await args.createProject({ ...args.normalizedProject, status: "Rascunho" });
       journal.createdProjectId = id;
     } else {
-      await updateProject(id, args.normalizedProject);
+      await updateProject(id, { ...args.normalizedProject, status: "Rascunho" });
     }
 
+    const [existingMilestones, existingActivities, existingPeps] = await Promise.all([
+      getMilestonesByProject(id),
+      getActivitiesBatchByProject(id, { pageSize: 500, maxPages: 20 }),
+      getPepsBatchByProject(id, { pageSize: 500, maxPages: 20 })
+    ]);
+
     if (!args.needStructure) {
-      const autoMilestoneId = await createMilestone({
-        Title: "SEM MARCOS (AUTO)",
-        projectsIdId: id
-      });
-      journal.milestoneIds.push(autoMilestoneId);
+      for (const activity of args.activities) {
+        const existingActivityId = parseExistingId(activity.tempId, "ac");
+        if (existingActivityId) {
+          activityIdMap.set(activity.tempId, existingActivityId);
+        }
+      }
 
-      const autoActivityId = await createActivity({
-        Title: "PEP DIRETO (AUTO)",
-        projectsIdId: id,
-        milestonesIdId: autoMilestoneId
-      });
-      journal.activityIds.push(autoActivityId);
+      if (activityIdMap.size === 0 && existingActivities.length > 0) {
+        const fallback = existingActivities[0].Id;
+        activityIdMap.set(`ac_${fallback}`, fallback);
+      }
 
+      if (activityIdMap.size === 0) {
+        let milestoneId = existingMilestones[0]?.Id;
+        if (!milestoneId) {
+          milestoneId = await createMilestone({ Title: "SEM MARCOS (AUTO)", projectsIdId: id });
+          journal.milestoneIds.push(milestoneId);
+        }
+
+        const createdActivityId = await createActivity({
+          Title: "PEP DIRETO (AUTO)",
+          projectsIdId: id,
+          milestonesIdId: milestoneId
+        });
+        journal.activityIds.push(createdActivityId);
+        activityIdMap.set(`ac_${createdActivityId}`, createdActivityId);
+      }
+
+      const desiredPepIds = new Set<number>();
       for (const pep of args.peps) {
-        const createdPepId = await createPep({
+        const existingPepId = parseExistingId(pep.tempId, "pp");
+        const explicitActivityId = parseExistingId(pep.activityTempId, "ac");
+        const mappedActivityId = pep.activityTempId ? activityIdMap.get(pep.activityTempId) : undefined;
+        const fallbackActivityId = activityIdMap.values().next().value as number | undefined;
+        const activityId = mappedActivityId ?? explicitActivityId ?? fallbackActivityId;
+        if (!activityId) throw new Error("PEP sem Activity (commit).");
+
+        const payload = {
           Title: pep.Title.trim(),
           year: pep.year,
           amountBrl: Math.round(pep.amountBrl),
           projectsIdId: id,
-          activitiesIdId: autoActivityId
-        });
+          activitiesIdId: activityId
+        };
+
+        if (existingPepId) {
+          desiredPepIds.add(existingPepId);
+          await updatePep(existingPepId, payload);
+          continue;
+        }
+
+        const createdPepId = await createPep(payload);
         journal.pepIds.push(createdPepId);
+        desiredPepIds.add(createdPepId);
+      }
+
+      for (const existingPep of existingPeps) {
+        if (!desiredPepIds.has(existingPep.Id)) {
+          await deletePep(existingPep.Id);
+        }
       }
 
       return { projectId: id, journal };
     }
 
+    const desiredMilestoneIds = new Set<number>();
     for (const milestone of args.milestones) {
-      const milestoneId = await createMilestone({
-        Title: milestone.Title.trim().toUpperCase(),
-        projectsIdId: id
-      });
-      journal.milestoneIds.push(milestoneId);
-      milestoneIdMap.set(milestone.tempId, milestoneId);
+      const existingMilestoneId = parseExistingId(milestone.tempId, "ms");
+      const title = milestone.Title.trim().toUpperCase();
+
+      if (existingMilestoneId) {
+        desiredMilestoneIds.add(existingMilestoneId);
+        const existingMilestone = existingMilestones.find((item) => item.Id === existingMilestoneId);
+        if (!existingMilestone || normalizeText(existingMilestone.Title).toUpperCase() !== title) {
+          await updateMilestone(existingMilestoneId, {
+            Title: title,
+            projectsIdId: id
+          });
+        }
+        milestoneIdMap.set(milestone.tempId, existingMilestoneId);
+      } else {
+        const createdMilestoneId = await createMilestone({
+          Title: title,
+          projectsIdId: id
+        });
+        journal.milestoneIds.push(createdMilestoneId);
+        desiredMilestoneIds.add(createdMilestoneId);
+        milestoneIdMap.set(milestone.tempId, createdMilestoneId);
+      }
     }
 
+    const desiredActivityIds = new Set<number>();
     for (const activity of args.activities) {
-      const milestoneId = milestoneIdMap.get(activity.milestoneTempId);
-      if (!milestoneId) {
-        throw new Error("Activity sem milestone válido (commit).");
-      }
+      const mappedMilestoneId = milestoneIdMap.get(activity.milestoneTempId);
+      const milestoneId = mappedMilestoneId ?? parseExistingId(activity.milestoneTempId, "ms");
+      if (!milestoneId) throw new Error("Activity sem milestone válido (commit).");
 
-      const activityId = await createActivity({
+      const existingActivityId = parseExistingId(activity.tempId, "ac");
+      const payload = {
         Title: activity.Title.trim().toUpperCase(),
         startDate: activity.startDate ? `${activity.startDate}T00:00:00Z` : undefined,
         endDate: activity.endDate ? `${activity.endDate}T00:00:00Z` : undefined,
@@ -179,31 +247,61 @@ export async function commitProjectStructure(args: CommitProjectStructureArgs): 
         activityDescription: activity.activityDescription,
         projectsIdId: id,
         milestonesIdId: milestoneId
-      });
+      };
 
-      journal.activityIds.push(activityId);
-      activityIdMap.set(activity.tempId, activityId);
+      if (existingActivityId) {
+        desiredActivityIds.add(existingActivityId);
+        await updateActivity(existingActivityId, payload);
+        activityIdMap.set(activity.tempId, existingActivityId);
+      } else {
+        const createdActivityId = await createActivity(payload);
+        journal.activityIds.push(createdActivityId);
+        desiredActivityIds.add(createdActivityId);
+        activityIdMap.set(activity.tempId, createdActivityId);
+      }
     }
 
+    const desiredPepIds = new Set<number>();
     for (const pep of args.peps) {
-      const activityTempId = pep.activityTempId;
-      if (!activityTempId) {
-        throw new Error("PEP sem Activity (commit).");
-      }
+      const mappedActivityId = pep.activityTempId ? activityIdMap.get(pep.activityTempId) : undefined;
+      const activityId = mappedActivityId ?? parseExistingId(pep.activityTempId, "ac");
+      if (!activityId) throw new Error("PEP com Activity inválida (commit).");
 
-      const activityId = activityIdMap.get(activityTempId);
-      if (!activityId) {
-        throw new Error("PEP com Activity inválida (commit).");
-      }
-
-      const pepId = await createPep({
+      const existingPepId = parseExistingId(pep.tempId, "pp");
+      const payload = {
         Title: pep.Title.trim(),
         year: pep.year,
         amountBrl: Math.round(pep.amountBrl),
         projectsIdId: id,
         activitiesIdId: activityId
-      });
-      journal.pepIds.push(pepId);
+      };
+
+      if (existingPepId) {
+        desiredPepIds.add(existingPepId);
+        await updatePep(existingPepId, payload);
+      } else {
+        const createdPepId = await createPep(payload);
+        journal.pepIds.push(createdPepId);
+        desiredPepIds.add(createdPepId);
+      }
+    }
+
+    for (const existingPep of existingPeps) {
+      if (!desiredPepIds.has(existingPep.Id)) {
+        await deletePep(existingPep.Id);
+      }
+    }
+
+    for (const existingActivity of existingActivities) {
+      if (!desiredActivityIds.has(existingActivity.Id)) {
+        await deleteActivity(existingActivity.Id);
+      }
+    }
+
+    for (const existingMilestone of existingMilestones) {
+      if (!desiredMilestoneIds.has(existingMilestone.Id)) {
+        await deleteMilestone(existingMilestone.Id);
+      }
     }
 
     return { projectId: id, journal };
