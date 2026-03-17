@@ -100,7 +100,7 @@ const PROJECT_DEFAULT_SELECT = PROJECT_FIELDS.join(",");
 const PROJECT_READ_MANDATORY_FIELDS = new Set(["Id", "Title"]);
 const FALLBACK_UNSUPPORTED_FIELDS = new Set(["roce"]);
 const BLOCKED_PROJECT_PAYLOAD_KEYS = new Set(["Id"]);
-let projectsFieldNamesPromise: Promise<Set<string> | null> | null = null;
+let projectsFieldNamesIndexPromise: Promise<Map<string, string> | null> | null = null;
 
 function asRecord(value: unknown): SpRecord {
   return value && typeof value === "object" ? (value as SpRecord) : {};
@@ -114,13 +114,23 @@ function readItems(data: SpListResponse): SpRecord[] {
   return legacy ? legacy.map(asRecord) : [];
 }
 
+function readFieldValue(source: SpRecord, key: keyof ProjectDraft | "Id"): unknown {
+  if (key in source) return source[key];
+
+  const lowerKey = String(key).toLowerCase();
+  for (const [candidateKey, candidateValue] of Object.entries(source)) {
+    if (candidateKey.toLowerCase() === lowerKey) return candidateValue;
+  }
+  return undefined;
+}
+
 function readString(source: SpRecord, key: keyof ProjectDraft | "Id"): string | undefined {
-  const value = source[key];
+  const value = readFieldValue(source, key);
   return value == null ? undefined : String(value);
 }
 
 function readNumber(source: SpRecord, key: keyof ProjectDraft | "Id"): number | undefined {
-  const value = source[key];
+  const value = readFieldValue(source, key);
   if (value == null) return undefined;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
@@ -147,22 +157,31 @@ function buildRawProjectPayload(source: ProjectUpdate): Record<string, unknown> 
   return payload;
 }
 
-async function getProjectsFieldNames(): Promise<Set<string> | null> {
-  if (!projectsFieldNamesPromise) {
-    projectsFieldNamesPromise = getListFieldsCached(spConfig.projectsListTitle)
-      .then((fields) => new Set(fields.map((field) => field.InternalName)))
+async function getProjectsFieldNameIndex(): Promise<Map<string, string> | null> {
+  if (!projectsFieldNamesIndexPromise) {
+    projectsFieldNamesIndexPromise = getListFieldsCached(spConfig.projectsListTitle)
+      .then((fields) => {
+        const index = new Map<string, string>();
+        fields.forEach((field) => {
+          const internalName = String(field.InternalName ?? "").trim();
+          if (!internalName) return;
+          index.set(internalName.toLowerCase(), internalName);
+        });
+        return index;
+      })
       .catch(() => null);
   }
-  return projectsFieldNamesPromise;
+  return projectsFieldNamesIndexPromise;
 }
 
 async function getProjectsSelectClause(): Promise<string> {
-  const schemaFieldNames = await getProjectsFieldNames();
-  if (!schemaFieldNames) return PROJECT_DEFAULT_SELECT;
+  const schemaFieldNameIndex = await getProjectsFieldNameIndex();
+  if (!schemaFieldNameIndex) return PROJECT_DEFAULT_SELECT;
 
-  const available = PROJECT_FIELDS.filter((field) =>
-    PROJECT_READ_MANDATORY_FIELDS.has(field) || schemaFieldNames.has(field)
-  );
+  const available = PROJECT_FIELDS.map((field) => {
+    if (PROJECT_READ_MANDATORY_FIELDS.has(field)) return field;
+    return schemaFieldNameIndex.get(field.toLowerCase());
+  }).filter((field): field is string => Boolean(field));
 
   if (available.length === 0) return "Id,Title";
   return available.join(",");
@@ -170,9 +189,9 @@ async function getProjectsSelectClause(): Promise<string> {
 
 async function buildProjectPayload(source: ProjectUpdate): Promise<Record<string, unknown>> {
   const payload = buildRawProjectPayload(source);
-  const schemaFieldNames = await getProjectsFieldNames();
+  const schemaFieldNameIndex = await getProjectsFieldNameIndex();
 
-  if (!schemaFieldNames) {
+  if (!schemaFieldNameIndex) {
     for (const unsupportedField of FALLBACK_UNSUPPORTED_FIELDS) {
       delete payload[unsupportedField];
     }
@@ -180,7 +199,16 @@ async function buildProjectPayload(source: ProjectUpdate): Promise<Record<string
   }
 
   for (const key of Object.keys(payload)) {
-    if (!schemaFieldNames.has(key)) delete payload[key];
+    const internalName = schemaFieldNameIndex.get(key.toLowerCase());
+    if (!internalName) {
+      delete payload[key];
+      continue;
+    }
+
+    if (internalName !== key) {
+      payload[internalName] = payload[key];
+      delete payload[key];
+    }
   }
 
   return payload;
