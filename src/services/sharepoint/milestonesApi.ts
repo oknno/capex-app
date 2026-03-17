@@ -1,5 +1,5 @@
 import { spConfig } from "./spConfig";
-import { spGetJson, getDigest, spPostJson } from "./spHttp";
+import { spGetJson, getDigest, spPostJson, spPatchJson } from "./spHttp";
 
 export type MilestoneRow = {
   Id: number;
@@ -48,6 +48,17 @@ export async function createMilestone(draft: MilestoneDraft): Promise<number> {
 
   const created = await spPostJson<{ Id?: unknown }>(url, body, digest);
   return Number(created.Id);
+}
+
+export async function updateMilestone(id: number, patch: Partial<MilestoneDraft>): Promise<void> {
+  const url = `${spConfig.siteUrl}/_api/web/lists/getbytitle('${encodeURIComponent(spConfig.milestonesListTitle)}')/items(${id})`;
+  const digest = await getDigest();
+
+  const body: Record<string, unknown> = {};
+  if (patch.Title !== undefined) body.Title = String(patch.Title ?? "").trim();
+  if (patch.projectsIdId !== undefined) body.projectsIdId = patch.projectsIdId;
+
+  await spPatchJson(url, body, digest);
 }
 
 export async function deleteMilestone(id: number): Promise<void> {

@@ -264,7 +264,7 @@ export function ProjectWizardModal(props: {
       sourceProjectCode: toUpperOrUndefined(p.sourceProjectCode),
       budgetBrl: budget,
       investmentLevel: calculateInvestmentLevel(budget),
-      status: p.status ?? "Rascunho",
+      status: "Rascunho",
       ...(p.hasRoce === "SIM" ? {} : {
         roce: undefined,
         roceGain: undefined,
@@ -435,7 +435,7 @@ export function ProjectWizardModal(props: {
         <div style={styles.modalHeader}>
           <div>
             <div style={{ fontSize: 14, fontWeight: 800, color: uiTokens.colors.textStrong }}>{props.mode === "create" ? "Novo Projeto" : props.mode === "view" ? `Visualizar Projeto #${props.initial?.Id ?? ""}` : `Editar Projeto #${props.initial?.Id ?? ""}`}</div>
-            <div style={{ fontSize: 12, color: uiTokens.colors.textMuted, marginTop: 2 }}>{readOnly ? "Modo visualização: campos bloqueados." : "Preencha, revise e faça commit no final."}</div>
+            <div style={{ fontSize: 12, color: uiTokens.colors.textMuted, marginTop: 2 }}>{readOnly ? "Modo visualização: campos bloqueados." : "Preencha, revise e salve como rascunho. O envio para aprovação é uma ação separada."}</div>
             {loadingHeader && <div style={{ marginTop: 4 }}><StateMessage state="loading" message="Carregando dados do BD…" /></div>}
             {errHeader && <div style={{ marginTop: 4 }}><StateMessage state="error" message={errHeader} /></div>}
           </div>
@@ -503,7 +503,7 @@ export function ProjectWizardModal(props: {
           <div style={{ display: "flex", gap: 8 }}>
             <Button onClick={goBack} disabled={step === "project"}>Voltar</Button>
             {!readOnly && step !== "review" && <Button tone="primary" onClick={goNext} disabled={transitioning}>{transitioning ? "Validando..." : nextCtaLabel}</Button>}
-            {!readOnly && step === "review" && <Button tone="primary" onClick={commitAll} disabled={committing}>{committing ? "Enviando..." : "Confirmar envio para aprovação"}</Button>}
+            {!readOnly && step === "review" && <Button tone="primary" onClick={commitAll} disabled={committing}>{committing ? "Salvando..." : "Salvar rascunho"}</Button>}
           </div>
         </div>
         )}
