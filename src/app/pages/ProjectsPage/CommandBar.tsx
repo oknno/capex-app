@@ -49,6 +49,7 @@ export function CommandBar(props: {
   const normalizedStatus = (props.selectedStatus ?? "").trim().toLowerCase();
   const canEdit = hasSelection && (!normalizedStatus || normalizedStatus === "rascunho");
   const canDelete = hasSelection && (!normalizedStatus || normalizedStatus === "rascunho");
+  const canBackStatus = hasSelection && normalizedStatus !== "aprovado";
 
   return (
     <div
@@ -80,7 +81,7 @@ export function CommandBar(props: {
         <span style={{ width: 1, height: 26, background: "#e5e7eb", margin: "0 4px" }} />
 
         <button className="btn" disabled={!hasSelection} onClick={props.onSendToApproval}>Enviar p/ Aprovação</button>
-        <button className="btn" disabled={!hasSelection} onClick={props.onBackStatus}>Voltar Status</button>
+        <button className="btn" disabled={!canBackStatus} onClick={props.onBackStatus}>Voltar Status</button>
 
         <span style={{ width: 1, height: 26, background: "#e5e7eb", margin: "0 4px" }} />
 
