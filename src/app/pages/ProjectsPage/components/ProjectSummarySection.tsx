@@ -76,7 +76,7 @@ function getSapCodeDisplay(project: ProjectRow): string {
   const status = String(project.status ?? "").trim().toLowerCase();
   if (!status.includes("aprovado")) return "Pendente";
 
-  const sapCode = String(project.sourceProjectCode ?? "").trim();
+  const sapCode = String(project.codigoSAP ?? "").trim();
   return sapCode || "Pendente";
 }
 
