@@ -26,6 +26,10 @@ export function ProjectSummarySection(props: {
             <StatusBadge status={String(props.selectedFull.status ?? "Rascunho")} />
           </div>
 
+          <div style={styles.sapCodeText}>
+            Código SAP: {getSapCodeDisplay(props.selectedFull)}
+          </div>
+
           <div style={styles.fieldGrid}>
             <Field label="Orçamento (BRL)" layout="inline">{fmtMoney(props.selectedFull.budgetBrl)}</Field>
             <Field label="Responsável" layout="inline">{String(props.selectedFull.projectLeader ?? "-")}</Field>
@@ -68,6 +72,14 @@ function StatusBadge({ status }: { status: string }) {
   return <Badge text={status} tone={tone} />;
 }
 
+function getSapCodeDisplay(project: ProjectRow): string {
+  const status = String(project.status ?? "").trim().toLowerCase();
+  if (!status.includes("aprovado")) return "Pendente";
+
+  const sapCode = String(project.sourceProjectCode ?? "").trim();
+  return sapCode || "Pendente";
+}
+
 
 function fmtMoney(v?: number) {
   if (v == null || !Number.isFinite(Number(v))) return "-";
@@ -92,6 +104,7 @@ const styles = {
   summaryContent: { display: "grid", gap: 10 },
   summaryTitleRow: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 },
   projectTitle: { fontWeight: 800, color: uiTokens.colors.textStrong, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
+  sapCodeText: { fontSize: 14, color: uiTokens.colors.text, fontWeight: 600 },
   fieldGrid: { borderTop: `1px solid ${uiTokens.colors.borderMuted}`, paddingTop: 10, display: "grid", gap: 8 },
   longTextWrap: { borderTop: `1px solid ${uiTokens.colors.borderMuted}`, paddingTop: 10, display: "grid", gap: 10 },
   longText: { fontSize: 13, color: uiTokens.colors.text, whiteSpace: "pre-wrap" },
