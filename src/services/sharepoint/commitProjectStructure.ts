@@ -148,35 +148,12 @@ export async function commitProjectStructure(args: CommitProjectStructureArgs): 
         }
       }
 
-      if (activityIdMap.size === 0 && existingActivities.length > 0) {
-        const fallback = existingActivities[0].Id;
-        activityIdMap.set(`ac_${fallback}`, fallback);
-      }
-
-      if (activityIdMap.size === 0) {
-        let milestoneId = existingMilestones[0]?.Id;
-        if (!milestoneId) {
-          milestoneId = await createMilestone({ Title: "SEM MARCOS (AUTO)", projectsIdId: id });
-          journal.milestoneIds.push(milestoneId);
-        }
-
-        const createdActivityId = await createActivity({
-          Title: "PEP DIRETO (AUTO)",
-          projectsIdId: id,
-          milestonesIdId: milestoneId
-        });
-        journal.activityIds.push(createdActivityId);
-        activityIdMap.set(`ac_${createdActivityId}`, createdActivityId);
-      }
-
       const desiredPepIds = new Set<number>();
       for (const pep of args.peps) {
         const existingPepId = parseExistingId(pep.tempId, "pp");
         const explicitActivityId = parseExistingId(pep.activityTempId, "ac");
         const mappedActivityId = pep.activityTempId ? activityIdMap.get(pep.activityTempId) : undefined;
-        const fallbackActivityId = activityIdMap.values().next().value as number | undefined;
-        const activityId = mappedActivityId ?? explicitActivityId ?? fallbackActivityId;
-        if (!activityId) throw new Error("PEP sem Activity (commit).");
+        const activityId = mappedActivityId ?? explicitActivityId;
 
         const payload = {
           Title: pep.Title.trim(),

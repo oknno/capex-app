@@ -15,7 +15,7 @@ export type PepDraft = {
   amountBrl?: number;
   year?: number;
   projectsIdId: number;
-  activitiesIdId: number;
+  activitiesIdId?: number | null;
 };
 
 type ODataListResponse<T> = {
@@ -152,9 +152,12 @@ export async function createPep(draft: PepDraft): Promise<number> {
     Title: draft.Title,
     amountBrl: draft.amountBrl,
     year: draft.year,
-    projectsIdId: draft.projectsIdId,
-    activitiesIdId: draft.activitiesIdId
+    projectsIdId: draft.projectsIdId
   };
+
+  if (draft.activitiesIdId !== undefined) {
+    body.activitiesIdId = draft.activitiesIdId;
+  }
 
   const created = await spPostJson<{ Id?: unknown }>(url, body, digest);
   return Number(created.Id);
@@ -193,7 +196,7 @@ export async function updatePep(id: number, patch: Partial<PepDraft>): Promise<v
   if (patch.amountBrl !== undefined) body.amountBrl = patch.amountBrl;
   if (patch.year !== undefined) body.year = patch.year;
   if (patch.projectsIdId !== undefined) body.projectsIdId = patch.projectsIdId;
-  if (patch.activitiesIdId !== undefined) body.activitiesIdId = patch.activitiesIdId;
+  if ("activitiesIdId" in patch) body.activitiesIdId = patch.activitiesIdId ?? null;
 
   const digest = await getDigest();
   await spPatchJson(url, body, digest);
