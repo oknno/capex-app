@@ -27,7 +27,7 @@ export function ProjectSummarySection(props: {
           </div>
 
           <div style={styles.sapCodeText}>
-            Código SAP: {getSapCodeDisplay(props.selectedFull)}
+            codigoSAP: {getSapCodeDisplay(props.selectedFull)}
           </div>
 
           <div style={styles.fieldGrid}>
