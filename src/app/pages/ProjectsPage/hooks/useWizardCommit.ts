@@ -27,13 +27,20 @@ type UseWizardCommitDeps = {
 export function useWizardCommit(params: {
   readOnly: boolean;
   needStructure: boolean;
+  originalNeedStructure: boolean;
   projectId: number | null;
   setProjectId: (id: number) => void;
   state: WizardDraftState;
   normalizeProjectForCommit: (draft: ProjectDraft) => ProjectDraft;
   onSubmitProject: (draft: ProjectDraft) => Promise<number>;
   onClose: () => void;
-  askConfirm: (message: string) => Promise<boolean>;
+  askConfirm: (options: {
+    title?: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    tone?: "danger" | "neutral";
+  }) => Promise<boolean>;
   notify: (message: string, tone?: "success" | "error" | "info") => void;
 }, deps: UseWizardCommitDeps = { commitProjectStructure }) {
   const [committing, setCommitting] = useState(false);
@@ -49,18 +56,46 @@ export function useWizardCommit(params: {
       validateProjectBasics(normalizedProject);
       validateStructure({ ...params.state, project: normalizedProject });
 
+      const shouldConfirmStructureRemoval =
+        params.originalNeedStructure &&
+        !params.needStructure &&
+        (params.state.milestones.length > 0 || params.state.activities.length > 0);
+
+      if (shouldConfirmStructureRemoval) {
+        const removalConfirmed = await params.askConfirm({
+          title: "Excluir estrutura antiga?",
+          message: [
+            "Este projeto deixou de ser KEY Project (orçamento abaixo de R$ 1.000.000,00).",
+            "Para salvar como projeto simples, a estrutura existente será removida:",
+            `• Marcos: ${params.state.milestones.length}`,
+            `• Atividades: ${params.state.activities.length}`,
+            "",
+            "Deseja continuar e excluir essa estrutura antiga agora?"
+          ].join("\n"),
+          confirmText: "Excluir estrutura",
+          cancelText: "Voltar e revisar",
+          tone: "danger"
+        });
+
+        if (!removalConfirmed) {
+          params.notify("Salvamento cancelado. Revise a estrutura antes de continuar.", "info");
+          return;
+        }
+      }
+
       const structureSummary = params.needStructure
         ? `${params.state.milestones.length} marcos e ${params.state.activities.length} atividades`
         : "não obrigatória para este projeto";
-      const confirmationMessage = [
-        "Confirma salvar este projeto como rascunho?",
-        `• Status após salvar: Rascunho`,
-        `• Estrutura: ${structureSummary}`,
-        `• PEPs: ${params.state.peps.length} registro(s) serão persistidos`,
-        "• Persistência: projeto, estrutura e PEPs serão gravados no SharePoint"
-      ].join("\n");
-
-      const confirmed = await params.askConfirm(confirmationMessage);
+      const confirmed = await params.askConfirm({
+        title: "Confirmação",
+        message: [
+          "Confirma salvar este projeto como rascunho?",
+          `• Status após salvar: Rascunho`,
+          `• Estrutura: ${structureSummary}`,
+          `• PEPs: ${params.state.peps.length} registro(s) serão persistidos`,
+          "• Persistência: projeto, estrutura e PEPs serão gravados no SharePoint"
+        ].join("\n")
+      });
       if (!confirmed) return;
 
       let id = params.projectId;
@@ -68,6 +103,7 @@ export function useWizardCommit(params: {
         projectId: id,
         normalizedProject,
         needStructure: params.needStructure,
+        purgeStructureWhenNotNeeded: shouldConfirmStructureRemoval,
         milestones: params.state.milestones,
         activities: params.state.activities,
         peps: params.state.peps,

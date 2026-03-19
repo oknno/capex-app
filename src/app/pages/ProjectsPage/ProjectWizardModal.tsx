@@ -96,11 +96,20 @@ export function ProjectWizardModal(props: {
   const { notify } = useToast();
   const [step, setStep] = useState<StepKey>(summaryOnlyView ? "review" : "project");
   const [structureInitialized, setStructureInitialized] = useState(false);
-  const [projectId, setProjectId] = useState<number | null>(isDuplicating ? null : props.initial?.Id ?? null);
+  const initialProjectId = props.initial?.Id;
+  const [projectId, setProjectId] = useState<number | null>(isDuplicating ? null : initialProjectId ?? null);
+  const [originalNeedStructure, setOriginalNeedStructure] = useState(() => !isDuplicating && props.mode === "edit" && requiresStructure(props.initial?.budgetBrl));
   const [loadingHeader, setLoadingHeader] = useState(false);
   const [errHeader, setErrHeader] = useState("");
   const [transitioning, setTransitioning] = useState(false);
-  const [confirmState, setConfirmState] = useState<{ message: string; title: string; resolve: (ok: boolean) => void } | null>(null);
+  const [confirmState, setConfirmState] = useState<{
+    message: string;
+    title: string;
+    confirmText?: string;
+    cancelText?: string;
+    tone?: "danger" | "neutral";
+    resolve: (ok: boolean) => void;
+  } | null>(null);
 
   const [state, setState] = useState<WizardDraftState>(() => ({
     project: sanitizeProjectForDuplication(props.initial),
@@ -160,15 +169,17 @@ export function ProjectWizardModal(props: {
   }, [needStructure, props.mode, state.activities.length, state.milestones.length, structureInitialized, state.project.startDate, state.project.endDate]);
 
   useEffect(() => {
-    if (!props.initial?.Id || props.mode === "create") return;
+    if (!initialProjectId || props.mode === "create") return;
 
     (async () => {
       setLoadingHeader(true);
       setErrHeader("");
       try {
-        const full = await getProjectById(props.initial!.Id);
+        const full = await getProjectById(initialProjectId);
+        const loadedNeedStructure = requiresStructure(full.budgetBrl);
         if (!isDuplicating) {
           setProjectId(full.Id);
+          setOriginalNeedStructure(props.mode === "edit" && loadedNeedStructure);
         }
         setState((prev) => ({ ...prev, project: { ...prev.project, ...sanitizeProjectForDuplication(full) } }));
 
@@ -227,7 +238,7 @@ export function ProjectWizardModal(props: {
             pepElement: firstPep?.Title ?? activity.pepElement
           };
         }));
-        const pepsLocal: PepDraftLocal[] = needStructure
+        const pepsLocal: PepDraftLocal[] = loadedNeedStructure
           ? actsLocal.flatMap((a) => {
             const activityId = Number(a.tempId.replace("ac_", ""));
             return activityMap.get(activityId) ?? [];
@@ -263,7 +274,7 @@ export function ProjectWizardModal(props: {
         setLoadingHeader(false);
       }
     })();
-  }, [isDuplicating, props.mode, props.initial?.Id]);
+  }, [initialProjectId, isDuplicating, props.mode]);
 
   function patchProject(patch: Partial<ProjectDraft>) {
     setState((s) => ({ ...s, project: { ...s.project, ...patch } }));
@@ -292,14 +303,28 @@ export function ProjectWizardModal(props: {
     };
   }, []);
 
-  const askConfirm = (message: string) =>
+  const askConfirm = (options: {
+    title?: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    tone?: "danger" | "neutral";
+  }) =>
     new Promise<boolean>((resolve) => {
-      setConfirmState({ title: "Confirmação", message, resolve });
+      setConfirmState({
+        title: options.title ?? "Confirmação",
+        message: options.message,
+        confirmText: options.confirmText,
+        cancelText: options.cancelText,
+        tone: options.tone,
+        resolve
+      });
     });
 
   const { committing, commitAll } = useWizardCommit({
     readOnly,
     needStructure,
+    originalNeedStructure,
     projectId,
     setProjectId: (id) => setProjectId(id),
     state: draftState,
@@ -543,6 +568,9 @@ export function ProjectWizardModal(props: {
         open={Boolean(confirmState)}
         title={confirmState?.title ?? "Confirmar"}
         message={confirmState?.message ?? ""}
+        confirmText={confirmState?.confirmText}
+        cancelText={confirmState?.cancelText}
+        tone={confirmState?.tone}
         onClose={() => {
           confirmState?.resolve(false);
           setConfirmState(null);
