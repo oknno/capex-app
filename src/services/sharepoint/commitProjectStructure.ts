@@ -62,6 +62,7 @@ type CommitProjectStructureArgs = {
   projectId: number | null;
   normalizedProject: ProjectDraft;
   needStructure: boolean;
+  purgeStructureWhenNotNeeded?: boolean;
   milestones: MilestoneDraftLocal[];
   activities: ActivityDraftLocal[];
   peps: PepDraftLocal[];
@@ -177,6 +178,16 @@ export async function commitProjectStructure(args: CommitProjectStructureArgs): 
       for (const existingPep of existingPeps) {
         if (!desiredPepIds.has(existingPep.Id)) {
           await deletePep(existingPep.Id);
+        }
+      }
+
+      if (args.purgeStructureWhenNotNeeded) {
+        for (const existingActivity of existingActivities) {
+          await deleteActivity(existingActivity.Id);
+        }
+
+        for (const existingMilestone of existingMilestones) {
+          await deleteMilestone(existingMilestone.Id);
         }
       }
 

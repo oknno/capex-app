@@ -41,7 +41,7 @@ export function ConfirmDialog(props: {
           <div style={{ fontWeight: 900, color: "#111827" }}>{props.title}</div>
         </div>
 
-        <div style={{ padding: 14, color: "#374151", lineHeight: 1.35 }}>
+        <div style={{ padding: 14, color: "#374151", lineHeight: 1.35, whiteSpace: "pre-line" }}>
           {props.message}
         </div>
 
