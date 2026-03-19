@@ -11,13 +11,23 @@ type UseProjectsListDeps = {
   getProjectsPage: typeof getProjectsPage;
 };
 
+type UseProjectsListOptions = {
+  initialItems?: ProjectRow[];
+  initialNextLink?: string;
+  initialState?: LoadState;
+};
+
 const PAGE_SIZE = 15;
 
-export function useProjectsList(initialFilters: ProjectsFilters, deps: UseProjectsListDeps = { getProjectsPage }) {
-  const [items, setItems] = useState<ProjectRow[]>([]);
+export function useProjectsList(
+  initialFilters: ProjectsFilters,
+  options: UseProjectsListOptions = {},
+  deps: UseProjectsListDeps = { getProjectsPage }
+) {
+  const [items, setItems] = useState<ProjectRow[]>(options.initialItems ?? []);
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [nextLink, setNextLink] = useState<string | undefined>(undefined);
-  const [state, setState] = useState<LoadState>("idle");
+  const [nextLink, setNextLink] = useState<string | undefined>(options.initialNextLink);
+  const [state, setState] = useState<LoadState>(options.initialState ?? "idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [filters, setFilters] = useState<ProjectsFilters>(initialFilters);
 
