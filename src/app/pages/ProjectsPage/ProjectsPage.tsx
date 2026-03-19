@@ -61,8 +61,23 @@ function exportProjectsCsv(items: ProjectRow[]): boolean {
   return true;
 }
 
-export function ProjectsPage(props: { onWantsRefreshHeader?: () => void; onRegisterRefresh?: (fn: () => void) => void }) {
-  const list = useProjectsList({ searchTitle: "", status: "", unit: "", sortBy: "Id", sortDir: "desc" });
+export function ProjectsPage(props: {
+  onWantsRefreshHeader?: () => void;
+  onRegisterRefresh?: (fn: () => void) => void;
+  initialItems?: ProjectRow[];
+  initialNextLink?: string;
+  skipInitialLoad?: boolean;
+}) {
+  const { onRegisterRefresh, skipInitialLoad } = props;
+  const list = useProjectsList(
+    { searchTitle: "", status: "", unit: "", sortBy: "Id", sortDir: "desc" },
+    {
+      initialItems: props.initialItems,
+      initialNextLink: props.initialNextLink,
+      initialState: "idle"
+    }
+  );
+  const loadFirstPage = list.loadFirstPage;
   const { notify } = useToast();
   const [wizard, setWizard] = useState<{ mode: "create" | "edit" | "view" | "duplicate"; initial?: ProjectRow } | null>(null);
   const [selectedFull, setSelectedFull] = useState<ProjectRow | null>(null);
@@ -71,9 +86,11 @@ export function ProjectsPage(props: { onWantsRefreshHeader?: () => void; onRegis
 
 
   useEffect(() => {
-    list.loadFirstPage();
-    props.onRegisterRefresh?.(list.loadFirstPage);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!skipInitialLoad) {
+      void loadFirstPage();
+    }
+    onRegisterRefresh?.(loadFirstPage);
+  }, [loadFirstPage, onRegisterRefresh, skipInitialLoad]);
 
   useEffect(() => {
     if (!list.selectedId) {
