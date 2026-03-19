@@ -38,6 +38,7 @@ export function CommandBar(props: {
   onNew: () => void;
   onView: () => void;
   onEdit: () => void;
+  onDuplicate: () => void;
   onDelete: () => void;
 
   onSendToApproval: () => void;
@@ -76,6 +77,7 @@ export function CommandBar(props: {
 
         <button className="btn" disabled={!hasSelection} onClick={props.onView}>Visualizar</button>
         <button className="btn" disabled={!canEdit} onClick={props.onEdit}>Editar</button>
+        <button className="btn" disabled={!hasSelection} onClick={props.onDuplicate}>Duplicar</button>
         <button className="btn" disabled={!canDelete} onClick={props.onDelete}>Excluir</button>
 
         <span style={{ width: 1, height: 26, background: "#e5e7eb", margin: "0 4px" }} />

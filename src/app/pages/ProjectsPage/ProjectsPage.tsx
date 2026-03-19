@@ -64,7 +64,7 @@ function exportProjectsCsv(items: ProjectRow[]): boolean {
 export function ProjectsPage(props: { onWantsRefreshHeader?: () => void; onRegisterRefresh?: (fn: () => void) => void }) {
   const list = useProjectsList({ searchTitle: "", status: "", unit: "", sortBy: "Id", sortDir: "desc" });
   const { notify } = useToast();
-  const [wizard, setWizard] = useState<{ mode: "create" | "edit" | "view"; initial?: ProjectRow } | null>(null);
+  const [wizard, setWizard] = useState<{ mode: "create" | "edit" | "view" | "duplicate"; initial?: ProjectRow } | null>(null);
   const [selectedFull, setSelectedFull] = useState<ProjectRow | null>(null);
   const [selectedFullState, setSelectedFullState] = useState<"idle" | "loading" | "error">("idle");
   const [confirmState, setConfirmState] = useState<{ title: string; message: string; onConfirm: () => void; tone?: "danger" | "neutral" } | null>(null);
@@ -218,6 +218,10 @@ export function ProjectsPage(props: { onWantsRefreshHeader?: () => void; onRegis
             return;
           }
           setWizard({ mode: "edit", initial: list.selected });
+        }}
+        onDuplicate={() => {
+          if (!list.selected) return;
+          setWizard({ mode: "duplicate", initial: list.selected });
         }}
         onDelete={onDelete}
         onSendToApproval={onSendToApproval}
