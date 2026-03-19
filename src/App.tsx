@@ -14,7 +14,9 @@ type BootstrapData = {
   nextLink?: string;
 };
 
-const MIN_BOOT_DURATION_MS = 4000;
+const MIN_BOOT_DURATION_MS = 2000;
+const LOADING_TITLES = ["Carregando projetos", "Carregando atividades", "Carregando KPIs"];
+const LOADING_TITLE_INTERVAL_MS = 700;
 
 const INITIAL_FILTERS = {
   searchTitle: "",
@@ -28,6 +30,19 @@ export default function App() {
   const [bootState, setBootState] = useState<BootState>("loading");
   const [bootstrapData, setBootstrapData] = useState<BootstrapData>({ items: [] });
   const [bootError, setBootError] = useState("");
+  const [loadingTitleIndex, setLoadingTitleIndex] = useState(0);
+
+  useEffect(() => {
+    if (bootState !== "loading") return;
+
+    const intervalId = window.setInterval(() => {
+      setLoadingTitleIndex((currentIndex) => (currentIndex + 1) % LOADING_TITLES.length);
+    }, LOADING_TITLE_INTERVAL_MS);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [bootState]);
 
   useEffect(() => {
     let cancelled = false;
@@ -36,6 +51,7 @@ export default function App() {
       const bootStartedAt = Date.now();
       setBootState("loading");
       setBootError("");
+      setLoadingTitleIndex(0);
 
       try {
         const result = await getProjectsPage({
@@ -79,8 +95,8 @@ export default function App() {
     if (bootState === "loading") {
       return (
         <BootstrapLoader
-          title="Carregando CAPEX"
-          subtitle="Conectando ao SharePoint e carregando projetos..."
+          title={LOADING_TITLES[loadingTitleIndex]}
+          subtitle="Conectando ao SharePoint..."
         />
       );
     }
@@ -88,7 +104,7 @@ export default function App() {
     if (bootState === "error") {
       return (
         <BootstrapLoader
-          title="Falha ao iniciar o CAPEX"
+          title="Falha ao iniciar"
           subtitle={bootError || "Não foi possível conectar ao SharePoint no carregamento inicial."}
         />
       );
@@ -101,7 +117,7 @@ export default function App() {
         skipInitialLoad
       />
     );
-  }, [bootError, bootState, bootstrapData.items, bootstrapData.nextLink]);
+  }, [bootError, bootState, bootstrapData.items, bootstrapData.nextLink, loadingTitleIndex]);
 
   return (
     <ToastProvider>
