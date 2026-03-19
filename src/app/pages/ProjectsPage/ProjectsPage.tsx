@@ -119,7 +119,10 @@ export function ProjectsPage(props: { onWantsRefreshHeader?: () => void; onRegis
 
   async function onSendToApproval() {
     const selected = list.selected;
-    if (!selected) return;
+    if (!selected) {
+      notify("Selecione um projeto para enviar para aprovação.", "info");
+      return;
+    }
 
     requestConfirm({
       title: "Enviar para aprovação",
@@ -141,7 +144,10 @@ export function ProjectsPage(props: { onWantsRefreshHeader?: () => void; onRegis
 
   async function onBackStatus() {
     const selected = list.selected;
-    if (!selected) return;
+    if (!selected) {
+      notify("Selecione um projeto para voltar o status para rascunho.", "info");
+      return;
+    }
 
     requestConfirm({
       title: "Voltar para rascunho",
