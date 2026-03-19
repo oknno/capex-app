@@ -14,6 +14,8 @@ type BootstrapData = {
   nextLink?: string;
 };
 
+const MIN_BOOT_DURATION_MS = 4000;
+
 const INITIAL_FILTERS = {
   searchTitle: "",
   status: "",
@@ -31,6 +33,7 @@ export default function App() {
     let cancelled = false;
 
     async function bootstrap() {
+      const bootStartedAt = Date.now();
       setBootState("loading");
       setBootError("");
 
@@ -44,11 +47,22 @@ export default function App() {
           orderDir: INITIAL_FILTERS.sortDir
         });
 
+        const remainingDelay = Math.max(0, MIN_BOOT_DURATION_MS - (Date.now() - bootStartedAt));
+        if (remainingDelay > 0) {
+          await new Promise((resolve) => window.setTimeout(resolve, remainingDelay));
+        }
+
         if (cancelled) return;
         setBootstrapData(result);
         setBootState("ready");
       } catch (error) {
         console.error(error);
+
+        const remainingDelay = Math.max(0, MIN_BOOT_DURATION_MS - (Date.now() - bootStartedAt));
+        if (remainingDelay > 0) {
+          await new Promise((resolve) => window.setTimeout(resolve, remainingDelay));
+        }
+
         if (cancelled) return;
         setBootError("Não foi possível carregar os projetos iniciais. Tente novamente em instantes.");
         setBootState("error");
