@@ -227,10 +227,18 @@ export function ProjectWizardModal(props: {
             pepElement: firstPep?.Title ?? activity.pepElement
           };
         }));
-        const pepsLocal: PepDraftLocal[] = actsLocal.flatMap((a) => {
-          const activityId = Number(a.tempId.replace("ac_", ""));
-          return activityMap.get(activityId) ?? [];
-        });
+        const pepsLocal: PepDraftLocal[] = needStructure
+          ? actsLocal.flatMap((a) => {
+            const activityId = Number(a.tempId.replace("ac_", ""));
+            return activityMap.get(activityId) ?? [];
+          })
+          : peps.map((pep) => ({
+            tempId: `pp_${pep.Id}`,
+            Title: String(pep.Title ?? ""),
+            year: Number(pep.year ?? new Date().getFullYear()),
+            amountBrl: Math.round(Number(pep.amountBrl ?? 0)),
+            activityTempId: pep.activitiesIdId ? `ac_${pep.activitiesIdId}` : undefined
+          }));
 
         const loadFinishedAt = performance.now();
         const estimatedSequentialRoundTrips = 2 + milestones.length + activities.length;
