@@ -44,59 +44,66 @@ function uid(prefix: string) {
   return `${prefix}_${Math.random().toString(16).slice(2)}_${Date.now()}`;
 }
 
+function sanitizeProjectForDuplication(project?: ProjectRow): ProjectDraft {
+  return {
+    Title: project?.Title ?? "",
+    approvalYear: project?.approvalYear,
+    budgetBrl: project?.budgetBrl,
+    status: "Rascunho",
+    investmentLevel: project?.investmentLevel,
+    fundingSource: project?.fundingSource,
+    program: project?.program,
+    company: project?.company,
+    center: project?.center,
+    unit: project?.unit,
+    location: project?.location,
+    depreciationCostCenter: project?.depreciationCostCenter,
+    category: project?.category,
+    investmentType: project?.investmentType,
+    assetType: project?.assetType,
+    projectFunction: project?.projectFunction,
+    projectLeader: project?.projectLeader,
+    projectUser: project?.projectUser,
+    sourceProjectCode: project?.sourceProjectCode,
+    hasRoce: project?.hasRoce,
+    startDate: project?.startDate,
+    endDate: project?.endDate,
+    businessNeed: project?.businessNeed,
+    proposedSolution: project?.proposedSolution,
+    kpiType: project?.kpiType,
+    kpiName: project?.kpiName,
+    kpiDescription: project?.kpiDescription,
+    kpiCurrent: project?.kpiCurrent ?? "",
+    kpiExpected: project?.kpiExpected ?? "",
+    roce: project?.roce,
+    roceGain: project?.roceGain,
+    roceGainDescription: project?.roceGainDescription,
+    roceLoss: project?.roceLoss,
+    roceLossDescription: project?.roceLossDescription,
+    roceClassification: project?.roceClassification,
+  };
+}
+
 export function ProjectWizardModal(props: {
-  mode: "create" | "edit" | "view";
+  mode: "create" | "edit" | "view" | "duplicate";
   initial?: ProjectRow;
   onClose: () => void;
   onSubmitProject: (draft: ProjectDraft) => Promise<number>;
 }) {
+  const isDuplicating = props.mode === "duplicate";
   const readOnly = props.mode === "view";
   const summaryOnlyView = readOnly;
   const { notify } = useToast();
   const [step, setStep] = useState<StepKey>(summaryOnlyView ? "review" : "project");
   const [structureInitialized, setStructureInitialized] = useState(false);
-  const [projectId, setProjectId] = useState<number | null>(props.initial?.Id ?? null);
+  const [projectId, setProjectId] = useState<number | null>(isDuplicating ? null : props.initial?.Id ?? null);
   const [loadingHeader, setLoadingHeader] = useState(false);
   const [errHeader, setErrHeader] = useState("");
   const [transitioning, setTransitioning] = useState(false);
   const [confirmState, setConfirmState] = useState<{ message: string; title: string; resolve: (ok: boolean) => void } | null>(null);
 
   const [state, setState] = useState<WizardDraftState>(() => ({
-    project: {
-      Title: props.initial?.Title ?? "",
-      approvalYear: props.initial?.approvalYear,
-      budgetBrl: props.initial?.budgetBrl,
-      status: props.initial?.status ?? (props.mode === "create" ? "Rascunho" : props.initial?.status),
-      investmentLevel: props.initial?.investmentLevel,
-      fundingSource: props.initial?.fundingSource,
-      program: props.initial?.program,
-      company: props.initial?.company,
-      center: props.initial?.center,
-      unit: props.initial?.unit,
-      location: props.initial?.location,
-      depreciationCostCenter: props.initial?.depreciationCostCenter,
-      category: props.initial?.category,
-      investmentType: props.initial?.investmentType,
-      assetType: props.initial?.assetType,
-      projectFunction: props.initial?.projectFunction,
-      projectLeader: props.initial?.projectLeader,
-      projectUser: props.initial?.projectUser,
-      startDate: props.initial?.startDate,
-      endDate: props.initial?.endDate,
-      businessNeed: props.initial?.businessNeed,
-      proposedSolution: props.initial?.proposedSolution,
-      kpiType: props.initial?.kpiType,
-      kpiName: props.initial?.kpiName,
-      kpiDescription: props.initial?.kpiDescription,
-      kpiCurrent: props.initial?.kpiCurrent ?? "",
-      kpiExpected: props.initial?.kpiExpected ?? "",
-      roce: props.initial?.roce,
-      roceGain: props.initial?.roceGain,
-      roceGainDescription: props.initial?.roceGainDescription,
-      roceLoss: props.initial?.roceLoss,
-      roceLossDescription: props.initial?.roceLossDescription,
-      roceClassification: props.initial?.roceClassification
-    },
+    project: sanitizeProjectForDuplication(props.initial),
     milestones: [],
     activities: [],
     peps: []
@@ -160,9 +167,10 @@ export function ProjectWizardModal(props: {
       setErrHeader("");
       try {
         const full = await getProjectById(props.initial!.Id);
-        setProjectId(full.Id);
-        const { Id: _ignoredId, ...fullProjectDraft } = full;
-        setState((prev) => ({ ...prev, project: { ...prev.project, ...fullProjectDraft } }));
+        if (!isDuplicating) {
+          setProjectId(full.Id);
+        }
+        setState((prev) => ({ ...prev, project: { ...prev.project, ...sanitizeProjectForDuplication(full) } }));
 
         const loadStartedAt = performance.now();
         const [milestones, activities, peps] = await Promise.all([
@@ -247,7 +255,7 @@ export function ProjectWizardModal(props: {
         setLoadingHeader(false);
       }
     })();
-  }, [props.mode, props.initial?.Id]);
+  }, [isDuplicating, props.mode, props.initial?.Id]);
 
   function patchProject(patch: Partial<ProjectDraft>) {
     setState((s) => ({ ...s, project: { ...s.project, ...patch } }));
@@ -434,8 +442,22 @@ export function ProjectWizardModal(props: {
       <div style={styles.modal}>
         <div style={styles.modalHeader}>
           <div>
-            <div style={{ fontSize: 14, fontWeight: 800, color: uiTokens.colors.textStrong }}>{props.mode === "create" ? "Novo Projeto" : props.mode === "view" ? `Visualizar Projeto #${props.initial?.Id ?? ""}` : `Editar Projeto #${props.initial?.Id ?? ""}`}</div>
-            <div style={{ fontSize: 12, color: uiTokens.colors.textMuted, marginTop: 2 }}>{readOnly ? "Modo visualização: campos bloqueados." : "Preencha, revise e salve como rascunho. O envio para aprovação é uma ação separada."}</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: uiTokens.colors.textStrong }}>
+              {props.mode === "create"
+                ? "Novo Projeto"
+                : props.mode === "view"
+                  ? `Visualizar Projeto #${props.initial?.Id ?? ""}`
+                  : props.mode === "duplicate"
+                    ? `Duplicar Projeto #${props.initial?.Id ?? ""}`
+                    : `Editar Projeto #${props.initial?.Id ?? ""}`}
+            </div>
+            <div style={{ fontSize: 12, color: uiTokens.colors.textMuted, marginTop: 2 }}>
+              {readOnly
+                ? "Modo visualização: campos bloqueados."
+                : isDuplicating
+                  ? "Os dados do projeto base foram copiados para um novo rascunho. Ajuste somente o necessário antes de salvar."
+                  : "Preencha, revise e salve como rascunho. O envio para aprovação é uma ação separada."}
+            </div>
             {loadingHeader && <div style={{ marginTop: 4 }}><StateMessage state="loading" message="Carregando dados do BD…" /></div>}
             {errHeader && <div style={{ marginTop: 4 }}><StateMessage state="error" message={errHeader} /></div>}
           </div>
