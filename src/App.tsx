@@ -14,9 +14,9 @@ type BootstrapData = {
   nextLink?: string;
 };
 
-const MIN_BOOT_DURATION_MS = 2000;
+const MIN_BOOT_DURATION_MS = 3000;
 const LOADING_TITLES = ["Carregando projetos", "Carregando atividades", "Carregando KPIs"];
-const LOADING_TITLE_INTERVAL_MS = 700;
+const LOADING_TITLE_INTERVAL_MS = 1000;
 
 const INITIAL_FILTERS = {
   searchTitle: "",
