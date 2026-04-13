@@ -1,14 +1,20 @@
 import { canBackToDraft, backToDraft as backToDraftWorkflow } from "../../services/sharepoint/projectsWorkflow";
-import type { ProjectRow } from "../../services/sharepoint/projectsApi";
+import { projectViewToRow } from "../contracts/projectAdapters";
+import type { ProjectView } from "../contracts/project";
 
 export type BackToDraftDeps = {
-  canBackToDraft: (project: ProjectRow | null) => { ok: boolean; reason?: string };
-  backToDraft: (project: ProjectRow) => Promise<void>;
+  canBackToDraft: (project: ProjectView | null) => { ok: boolean; reason?: string };
+  backToDraft: (project: ProjectView) => Promise<void>;
+};
+
+const defaultDeps: BackToDraftDeps = {
+  canBackToDraft: (project) => canBackToDraft(project ? projectViewToRow(project) : null),
+  backToDraft: (project) => backToDraftWorkflow(projectViewToRow(project))
 };
 
 export async function moveProjectBackToDraft(
-  project: ProjectRow | null,
-  deps: BackToDraftDeps = { canBackToDraft, backToDraft: backToDraftWorkflow }
+  project: ProjectView | null,
+  deps: BackToDraftDeps = defaultDeps
 ): Promise<void> {
   const check = deps.canBackToDraft(project);
   if (!check.ok || !project) {
