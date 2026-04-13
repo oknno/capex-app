@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 
 import { toIntOrUndefined } from "../../../../../domain/projects/project.calculations";
 import type { ActivityDraftLocal, MilestoneDraftLocal, PepDraftLocal } from "../../../../../domain/projects/project.validators";
-import { buildYearOptions, PEP_ELEMENT_OPTIONS } from "./wizardOptions";
+import { buildYearOptions, ensurePepElementOption, getPepElementOptions } from "./wizardOptions";
 import { SectionTitle } from "./WizardUi";
 import { wizardLayoutStyles } from "./wizardLayoutStyles";
 import { Button } from "../../../../components/ui/Button";
@@ -20,6 +20,7 @@ export function PepStep(props: {
   milestones: MilestoneDraftLocal[];
   activities: ActivityDraftLocal[];
   peps: PepDraftLocal[];
+  company?: string;
   defaultYear: number;
   onChange: (next: PepDraftLocal[]) => void;
   onValidationError: (message: string) => void;
@@ -30,6 +31,8 @@ export function PepStep(props: {
   const [selectedActivity, setSelectedActivity] = useState("");
 
   const yearOptions = buildYearOptions(5);
+  const pepOptions = useMemo(() => getPepElementOptions(props.company), [props.company]);
+  const pepOptionsForCreation = useMemo(() => ensurePepElementOption(pepOptions, title), [pepOptions, title]);
 
   const defaultActivityTempId = useMemo(() => {
     if (!props.needStructure || !props.activities.length) return "";
@@ -68,7 +71,7 @@ export function PepStep(props: {
           <Field label="Elemento PEP">
             <select value={title} onChange={(e) => setTitle(e.target.value)} style={wizardLayoutStyles.input}>
               <option value="">Selecione o elemento...</option>
-              {PEP_ELEMENT_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+              {pepOptionsForCreation.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
             </select>
           </Field>
 
@@ -132,7 +135,7 @@ export function PepStep(props: {
                 <Field label="Elemento PEP">
                   <select value={pep.Title} onChange={(e) => updatePep(pep.tempId, { Title: e.target.value })} style={wizardLayoutStyles.input}>
                     <option value="">Selecione o elemento...</option>
-                    {PEP_ELEMENT_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                    {ensurePepElementOption(pepOptions, pep.Title).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                   </select>
                 </Field>
 
