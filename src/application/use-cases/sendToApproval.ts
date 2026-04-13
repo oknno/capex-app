@@ -1,6 +1,7 @@
-import { canSendToApproval, sendToApproval as sendToApprovalWorkflow } from "../../services/sharepoint/projectsWorkflow";
+import { sendToApproval as sendToApprovalWorkflow } from "../../services/sharepoint/projectsWorkflow";
 import { projectViewToRow } from "../contracts/projectAdapters";
 import type { ProjectView } from "../contracts/project";
+import { canSendToApproval } from "../../domain/projects/projectStatusPolicies";
 
 export type SendToApprovalDeps = {
   canSendToApproval: (project: ProjectView | null) => { ok: boolean; reason?: string };
