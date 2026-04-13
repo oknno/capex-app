@@ -194,7 +194,6 @@ export function ProjectStep(props: { draft: ProjectDraft; readOnly: boolean; onC
             onChange={(v) => props.onChange({
               hasRoce: v || undefined,
               ...(v === "SIM" ? {} : {
-                roce: undefined,
                 roceGain: undefined,
                 roceGainDescription: undefined,
                 roceLoss: undefined,
@@ -207,12 +206,6 @@ export function ProjectStep(props: { draft: ProjectDraft; readOnly: boolean; onC
           {hasRoce && (
             <>
               <div style={wizardLayoutStyles.journeyPairGrid}>
-                <FieldNumber label="ROCE" value={d.roce ?? ""} disabled={props.readOnly} onChange={(v) => {
-                  const clean = onlyIntegerOrEmpty(v);
-                  if (clean === null) return;
-                  props.onChange({ roce: clean === "" ? undefined : Number(clean) });
-                }} />
-
                 <FieldNumber label="Ganho (R$)" value={d.roceGain ?? ""} disabled={props.readOnly} onChange={(v) => {
                   const clean = onlyIntegerOrEmpty(v);
                   if (clean === null) return;

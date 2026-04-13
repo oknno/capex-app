@@ -54,7 +54,6 @@ function sanitizeProjectForDuplication(project?: ProjectRow): ProjectDraft {
     kpiDescription: project?.kpiDescription,
     kpiCurrent: project?.kpiCurrent ?? "",
     kpiExpected: project?.kpiExpected ?? "",
-    roce: project?.roce,
     roceGain: project?.roceGain,
     roceGainDescription: project?.roceGainDescription,
     roceLoss: project?.roceLoss,

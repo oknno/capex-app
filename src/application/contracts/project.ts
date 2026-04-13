@@ -29,7 +29,6 @@ export type ProjectInput = {
   kpiDescription?: string;
   kpiCurrent?: string;
   kpiExpected?: string;
-  roce?: number;
   roceGain?: number;
   roceGainDescription?: string;
   roceLoss?: number;

@@ -32,7 +32,6 @@ const PROJECT_FIELD_LABELS: Partial<Record<keyof ProjectDraft | "Id", string>> =
   kpiDescription: "Descrição do KPI",
   kpiCurrent: "KPI Atual",
   kpiExpected: "KPI Esperado",
-  roce: "ROCE",
   roceGain: "Ganho ROCE (BRL)",
   roceGainDescription: "Descrição do Ganho ROCE",
   roceLoss: "Perda ROCE (BRL)",
