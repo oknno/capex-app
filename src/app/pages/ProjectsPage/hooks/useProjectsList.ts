@@ -36,7 +36,6 @@ export function useProjectsList(
   const loadFirstPage = useCallback(async () => {
     setState("loading");
     setErrorMsg("");
-    setSelectedId(null);
 
     try {
       const res = await deps.getProjectsPage({
@@ -49,6 +48,11 @@ export function useProjectsList(
       });
 
       setItems(res.items);
+      setSelectedId((currentSelectedId) =>
+        currentSelectedId !== null && res.items.some((item) => item.Id === currentSelectedId)
+          ? currentSelectedId
+          : null
+      );
       setNextLink(res.nextLink);
       setState("idle");
     } catch (e: unknown) {
