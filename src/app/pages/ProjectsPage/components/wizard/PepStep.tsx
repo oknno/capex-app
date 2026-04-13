@@ -117,7 +117,7 @@ export function PepStep(props: {
         ) : (
           <div style={{ display: "grid", gap: uiTokens.spacing.md, padding: uiTokens.spacing.sm }}>
             {props.peps.map((pep) => (
-              <div key={pep.tempId} style={{ ...wizardLayoutStyles.cardSubtle, background: "#fff" }}>
+              <div key={pep.tempId} style={{ ...wizardLayoutStyles.cardSubtle, background: uiTokens.colors.surface }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: uiTokens.spacing.sm }}>
                   <div style={{ fontWeight: 600 }}>PEP</div>
                   <Button

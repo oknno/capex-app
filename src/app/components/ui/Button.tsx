@@ -6,8 +6,8 @@ type ButtonTone = "default" | "primary";
 export function Button(props: ButtonHTMLAttributes<HTMLButtonElement> & { tone?: ButtonTone; children: ReactNode; style?: CSSProperties }) {
   const tone = props.tone ?? "default";
   const palette = tone === "primary"
-    ? { bg: uiTokens.colors.accent, fg: "#fff", bd: uiTokens.colors.accent }
-    : { bg: uiTokens.colors.surface, fg: uiTokens.colors.textStrong, bd: "#d1d5db" };
+    ? { bg: uiTokens.colors.accent, fg: uiTokens.colors.textOnAccent, bd: uiTokens.colors.accent }
+    : { bg: uiTokens.colors.surface, fg: uiTokens.colors.textStrong, bd: uiTokens.colors.borderStrong };
 
   return (
     <button
@@ -17,7 +17,7 @@ export function Button(props: ButtonHTMLAttributes<HTMLButtonElement> & { tone?:
         border: `1px solid ${palette.bd}`,
         background: palette.bg,
         color: palette.fg,
-        padding: "8px 10px",
+        padding: `${uiTokens.spacing.sm}px ${uiTokens.spacing.md - uiTokens.spacing.xxs}px`,
         borderRadius: uiTokens.radius.sm,
         cursor: "pointer",
         fontSize: uiTokens.typography.sm,

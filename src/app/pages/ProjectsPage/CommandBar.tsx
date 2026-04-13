@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Button } from "../../components/ui/Button";
+import { fieldControlStyles } from "../../components/ui/fieldControlStyles";
 import { uiTokens } from "../../components/ui/tokens";
 import { UNIT_OPTIONS_BY_CENTER } from "./components/wizard/wizardOptions";
 
@@ -65,20 +66,20 @@ const styles = {
     border: `1px solid ${uiTokens.colors.border}`,
     borderRadius: uiTokens.radius.md,
     padding: uiTokens.spacing.md,
-    boxShadow: "0 10px 30px rgba(0,0,0,.10)",
+    boxShadow: `0 10px 30px ${uiTokens.colors.shadowSoft}`,
     zIndex: 9999,
     overflow: "hidden",
   } satisfies React.CSSProperties,
   popoverContent: {
     display: "grid",
-    gap: 10,
+    gap: uiTokens.spacing.sm + uiTokens.spacing.xxs,
     maxHeight: "60vh",
     overflowY: "auto",
     paddingRight: uiTokens.spacing.xs,
   } satisfies React.CSSProperties,
   fieldGroup: {
     display: "grid",
-    gap: 6,
+    gap: uiTokens.spacing.xs + uiTokens.spacing.xxs,
   } satisfies React.CSSProperties,
   fieldLabel: {
     fontSize: uiTokens.typography.xs,
@@ -87,22 +88,15 @@ const styles = {
   inputBase: {
     width: "100%",
     boxSizing: "border-box",
-    padding: "8px 10px",
-    borderRadius: uiTokens.radius.sm,
-    border: `1px solid #d1d5db`,
+    ...fieldControlStyles.input,
   } satisfies React.CSSProperties,
   select: {
-    width: "100%",
-    boxSizing: "border-box",
-    padding: "8px 10px",
-    borderRadius: uiTokens.radius.sm,
-    border: `1px solid #d1d5db`,
-    background: uiTokens.colors.surface,
+    ...fieldControlStyles.select,
   } satisfies React.CSSProperties,
   twoColumns: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
-    gap: 10,
+    gap: uiTokens.spacing.sm + uiTokens.spacing.xxs,
   } satisfies React.CSSProperties,
   footerActions: {
     display: "flex",
