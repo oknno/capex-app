@@ -8,7 +8,7 @@ import { sendProjectToApproval } from "../../../application/use-cases/sendToAppr
 import { moveProjectBackToDraft } from "../../../application/use-cases/backToDraft";
 import { deleteDraftProjectAndRelated } from "../../../application/use-cases/deleteProject";
 import { normalizeError } from "../../../application/errors/appError";
-import { canBack, canDelete, canEdit, canSend } from "../../../application/policies/projectActionPolicies";
+import { canBack, canDelete, canEdit, canSend, getCommandBarPolicies } from "../../../application/policies/projectActionPolicies";
 
 import { ProjectWizardModal } from "./ProjectWizardModal";
 import { Card } from "../../components/ui/Card";
@@ -191,6 +191,7 @@ export function ProjectsPage(props: {
   }
 
 
+  const commandPolicies = getCommandBarPolicies(list.selected);
   const editPolicy = canEdit(list.selected);
   const deletePolicy = canDelete(list.selected);
   const sendPolicy = canSend(list.selected);
@@ -214,6 +215,10 @@ export function ProjectsPage(props: {
         canDelete={deletePolicy.ok}
         canSend={sendPolicy.ok}
         canBack={backPolicy.ok}
+        editDisabledReason={editPolicy.reason}
+        deleteDisabledReason={deletePolicy.reason}
+        sendDisabledReason={sendPolicy.reason}
+        backDisabledReason={backPolicy.reason}
         filters={list.filters}
         onChangeFilters={(patch) => list.setFilters((prev) => ({ ...prev, ...patch }))}
         onApply={list.loadFirstPage}
@@ -223,7 +228,7 @@ export function ProjectsPage(props: {
         onView={() => list.selected && setWizard({ mode: "view", initial: list.selected })}
         onEdit={() => {
           if (!list.selected) return;
-          const check = canEdit(list.selected);
+          const check = commandPolicies.edit;
           if (!check.ok) {
             notify(check.reason ?? "Não foi possível editar o projeto.", "error");
             return;
