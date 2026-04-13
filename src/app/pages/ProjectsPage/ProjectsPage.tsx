@@ -8,12 +8,7 @@ import { sendProjectToApproval } from "../../../application/use-cases/sendToAppr
 import { moveProjectBackToDraft } from "../../../application/use-cases/backToDraft";
 import { deleteDraftProjectAndRelated } from "../../../application/use-cases/deleteProject";
 import { normalizeError } from "../../../application/errors/appError";
-import {
-  canBackToDraft,
-  canDeleteProject,
-  canEditProject,
-  canSendToApproval
-} from "../../../domain/projects/projectStatusPolicies";
+import { canBack, canDelete, canEdit, canSend } from "../../../application/policies/projectActionPolicies";
 
 import { ProjectWizardModal } from "./ProjectWizardModal";
 import { Card } from "../../components/ui/Card";
@@ -118,7 +113,7 @@ export function ProjectsPage(props: {
 
   async function onSendToApproval() {
     const selected = list.selected;
-    const check = canSendToApproval(selected);
+    const check = canSend(selected);
     if (!check.ok || !selected) {
       notify(check.reason ?? "Não foi possível enviar para aprovação.", "info");
       return;
@@ -144,7 +139,7 @@ export function ProjectsPage(props: {
 
   async function onBackStatus() {
     const selected = list.selected;
-    const check = canBackToDraft(selected);
+    const check = canBack(selected);
     if (!check.ok || !selected) {
       notify(check.reason ?? "Não foi possível voltar o status para rascunho.", "info");
       return;
@@ -170,7 +165,7 @@ export function ProjectsPage(props: {
 
   async function onDelete() {
     const selected = list.selected;
-    const check = canDeleteProject(selected);
+    const check = canDelete(selected);
     if (!check.ok || !selected) {
       notify(check.reason ?? "Não foi possível excluir o projeto.", "error");
       return;
@@ -195,6 +190,12 @@ export function ProjectsPage(props: {
     });
   }
 
+
+  const editPolicy = canEdit(list.selected);
+  const deletePolicy = canDelete(list.selected);
+  const sendPolicy = canSend(list.selected);
+  const backPolicy = canBack(list.selected);
+
   function onExport() {
     const hasExported = exportProjectsCsv(list.items);
     if (!hasExported) {
@@ -208,8 +209,11 @@ export function ProjectsPage(props: {
     <div style={styles.pageWrap}>
       <CommandBar
         selectedId={list.selectedId}
-        selectedStatus={list.selected?.status}
         totalLoaded={list.items.length}
+        canEdit={editPolicy.ok}
+        canDelete={deletePolicy.ok}
+        canSend={sendPolicy.ok}
+        canBack={backPolicy.ok}
         filters={list.filters}
         onChangeFilters={(patch) => list.setFilters((prev) => ({ ...prev, ...patch }))}
         onApply={list.loadFirstPage}
@@ -219,7 +223,7 @@ export function ProjectsPage(props: {
         onView={() => list.selected && setWizard({ mode: "view", initial: list.selected })}
         onEdit={() => {
           if (!list.selected) return;
-          const check = canEditProject(list.selected);
+          const check = canEdit(list.selected);
           if (!check.ok) {
             notify(check.reason ?? "Não foi possível editar o projeto.", "error");
             return;

@@ -1,0 +1,46 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+
+import { canBack, canDelete, canEdit, canSend } from "../../../src/application/policies/projectActionPolicies.ts";
+
+const scenarios = [
+  {
+    name: "Rascunho",
+    project: { status: "Rascunho" },
+    expected: { edit: true, delete: true, send: true, back: false },
+  },
+  {
+    name: "Em Aprovação",
+    project: { status: "Em Aprovação" },
+    expected: { edit: false, delete: false, send: false, back: true },
+  },
+  {
+    name: "Aprovado",
+    project: { status: "Aprovado" },
+    expected: { edit: false, delete: false, send: false, back: false },
+  },
+  {
+    name: "Reprovado",
+    project: { status: "Reprovado" },
+    expected: { edit: false, delete: false, send: false, back: true },
+  },
+  {
+    name: "vazio",
+    project: { status: "" },
+    expected: { edit: true, delete: true, send: false, back: false },
+  },
+];
+
+for (const scenario of scenarios) {
+  test(`canEdit/canDelete/canSend/canBack para status ${scenario.name}`, () => {
+    const editResult = canEdit(scenario.project);
+    const deleteResult = canDelete(scenario.project);
+    const sendResult = canSend(scenario.project);
+    const backResult = canBack(scenario.project);
+
+    assert.equal(editResult.ok, scenario.expected.edit);
+    assert.equal(deleteResult.ok, scenario.expected.delete);
+    assert.equal(sendResult.ok, scenario.expected.send);
+    assert.equal(backResult.ok, scenario.expected.back);
+  });
+}
