@@ -1,14 +1,14 @@
-import type { ProjectRow } from "../../services/sharepoint/projectsApi";
 import { deleteProject } from "../../services/sharepoint/projectsApi";
 import { getMilestonesByProject, deleteMilestone } from "../../services/sharepoint/milestonesApi";
 import { getActivitiesBatchByProject, deleteActivity } from "../../services/sharepoint/activitiesApi";
 import { getPepsBatchByProject, deletePep } from "../../services/sharepoint/pepsApi";
+import type { ProjectView } from "../contracts/project";
 
 function normalizeStatus(status?: string): string {
   return (status ?? "").trim().toLowerCase();
 }
 
-export function canDeleteProject(project: ProjectRow | null): { ok: boolean; reason?: string } {
+export function canDeleteProject(project: ProjectView | null): { ok: boolean; reason?: string } {
   if (!project) return { ok: false, reason: "Selecione um projeto." };
 
   const status = normalizeStatus(project.status);
@@ -17,7 +17,7 @@ export function canDeleteProject(project: ProjectRow | null): { ok: boolean; rea
   return { ok: false, reason: "Somente projetos em rascunho podem ser excluídos." };
 }
 
-export async function deleteDraftProjectAndRelated(project: ProjectRow | null): Promise<void> {
+export async function deleteDraftProjectAndRelated(project: ProjectView | null): Promise<void> {
   const check = canDeleteProject(project);
   if (!check.ok || !project) {
     throw new Error(check.reason ?? "Não foi possível excluir o projeto.");

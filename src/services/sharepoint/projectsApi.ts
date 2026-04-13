@@ -50,6 +50,7 @@ export type SortBy = "Title" | "Id" | "approvalYear";
 export type SortDir = "asc" | "desc";
 
 type SpRecord = Record<string, unknown>;
+type ProjectFieldKey = keyof ProjectDraft | "Id";
 type SpListResponse = {
   value?: unknown;
   d?: { results?: unknown; __next?: unknown };
@@ -104,6 +105,46 @@ const FALLBACK_UNSUPPORTED_FIELDS = new Set(["roce"]);
 const BLOCKED_PROJECT_PAYLOAD_KEYS = new Set(["Id"]);
 let projectsFieldNamesIndexPromise: Promise<Map<string, string> | null> | null = null;
 
+const SP_PROJECT_INTERNAL_NAMES: Record<ProjectFieldKey, string> = {
+  Id: "Id",
+  Title: "Title",
+  approvalYear: "approvalYear",
+  budgetBrl: "budgetBrl",
+  status: "status",
+  investmentLevel: "investmentLevel",
+  fundingSource: "fundingSource",
+  program: "program",
+  company: "company",
+  center: "center",
+  unit: "unit",
+  location: "location",
+  depreciationCostCenter: "depreciationCostCenter",
+  category: "category",
+  investmentType: "investmentType",
+  assetType: "assetType",
+  projectFunction: "projectFunction",
+  projectLeader: "projectLeader",
+  projectUser: "projectUser",
+  codigoSAP: "codigoSAP",
+  sourceProjectCode: "sourceProjectCode",
+  hasRoce: "hasRoce",
+  startDate: "startDate",
+  endDate: "endDate",
+  businessNeed: "businessNeed",
+  proposedSolution: "proposedSolution",
+  kpiType: "kpiType",
+  kpiName: "kpiName",
+  kpiDescription: "kpiDescription",
+  kpiCurrent: "kpiCurrent",
+  kpiExpected: "kpiExpected",
+  roce: "roce",
+  roceGain: "roceGain",
+  roceGainDescription: "roceGainDescription",
+  roceLoss: "roceLoss",
+  roceLossDescription: "roceLossDescription",
+  roceClassification: "roceClassification"
+};
+
 function asRecord(value: unknown): SpRecord {
   return value && typeof value === "object" ? (value as SpRecord) : {};
 }
@@ -116,30 +157,30 @@ function readItems(data: SpListResponse): SpRecord[] {
   return legacy ? legacy.map(asRecord) : [];
 }
 
-function readFieldValue(source: SpRecord, key: keyof ProjectDraft | "Id"): unknown {
-  if (key in source) return source[key];
+function readFieldValue(source: SpRecord, fieldName: string): unknown {
+  if (fieldName in source) return source[fieldName];
 
-  const lowerKey = String(key).toLowerCase();
+  const lowerKey = fieldName.toLowerCase();
   for (const [candidateKey, candidateValue] of Object.entries(source)) {
     if (candidateKey.toLowerCase() === lowerKey) return candidateValue;
   }
   return undefined;
 }
 
-function readString(source: SpRecord, key: keyof ProjectDraft | "Id"): string | undefined {
-  const value = readFieldValue(source, key);
+function readString(source: SpRecord, fieldName: string): string | undefined {
+  const value = readFieldValue(source, fieldName);
   return value == null ? undefined : String(value);
 }
 
-function readNumber(source: SpRecord, key: keyof ProjectDraft | "Id"): number | undefined {
-  const value = readFieldValue(source, key);
+function readNumber(source: SpRecord, fieldName: string): number | undefined {
+  const value = readFieldValue(source, fieldName);
   if (value == null) return undefined;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
-function readDateString(source: SpRecord, key: keyof ProjectDraft | "Id"): string | undefined {
-  const value = readString(source, key);
+function readDateString(source: SpRecord, fieldName: string): string | undefined {
+  const value = readString(source, fieldName);
   if (!value) return undefined;
   return value.includes("T") ? value.slice(0, 10) : value;
 }
@@ -157,6 +198,11 @@ function buildRawProjectPayload(source: ProjectUpdate): Record<string, unknown> 
     if (value !== undefined) payload[key] = value;
   });
   return payload;
+}
+
+function resolveInternalName(field: ProjectFieldKey, schemaFieldNameIndex?: Map<string, string> | null): string {
+  if (!schemaFieldNameIndex) return SP_PROJECT_INTERNAL_NAMES[field];
+  return schemaFieldNameIndex.get(field.toLowerCase()) ?? SP_PROJECT_INTERNAL_NAMES[field];
 }
 
 async function getProjectsFieldNameIndex(): Promise<Map<string, string> | null> {
@@ -182,7 +228,7 @@ async function getProjectsSelectClause(): Promise<string> {
 
   const available = PROJECT_FIELDS.map((field) => {
     if (PROJECT_READ_MANDATORY_FIELDS.has(field)) return field;
-    return schemaFieldNameIndex.get(field.toLowerCase());
+    return resolveInternalName(field, schemaFieldNameIndex);
   }).filter((field): field is string => Boolean(field));
 
   if (available.length === 0) return "Id,Title";
@@ -200,20 +246,16 @@ async function buildProjectPayload(source: ProjectUpdate): Promise<Record<string
     return payload;
   }
 
-  for (const key of Object.keys(payload)) {
-    const internalName = schemaFieldNameIndex.get(key.toLowerCase());
+  const mappedPayload: Record<string, unknown> = {};
+  for (const key of Object.keys(payload) as Array<keyof ProjectUpdate>) {
+    const internalName = resolveInternalName(key, schemaFieldNameIndex);
     if (!internalName) {
-      delete payload[key];
       continue;
     }
-
-    if (internalName !== key) {
-      payload[internalName] = payload[key];
-      delete payload[key];
-    }
+    mappedPayload[internalName] = payload[key];
   }
 
-  return payload;
+  return mappedPayload;
 }
 
 export async function getProjectsPage(args: {
@@ -225,9 +267,11 @@ export async function getProjectsPage(args: {
   orderBy?: SortBy;
   orderDir?: SortDir;
 }): Promise<{ items: ProjectRow[]; nextLink?: string }> {
+  const schemaFieldNameIndex = await getProjectsFieldNameIndex();
+
   if (args.nextLink) {
     const data = await spGetJson<SpListResponse>(args.nextLink);
-    return { items: readItems(data).map(mapProjectRow), nextLink: pickNextLink(data) };
+    return { items: readItems(data).map((item) => mapProjectRow(item, schemaFieldNameIndex)), nextLink: pickNextLink(data) };
   }
 
   const top = args.top ?? 20;
@@ -245,12 +289,13 @@ export async function getProjectsPage(args: {
     orderExpr,
     filters: filters.length ? filters.join(" and ") : undefined
   });
-  return { items: readItems(data).map(mapProjectRow), nextLink: pickNextLink(data) };
+  return { items: readItems(data).map((item) => mapProjectRow(item, schemaFieldNameIndex)), nextLink: pickNextLink(data) };
 }
 
 export async function getProjectById(id: number): Promise<ProjectRow> {
+  const schemaFieldNameIndex = await getProjectsFieldNameIndex();
   const data = await fetchProjectById(id);
-  return mapProjectRow(data);
+  return mapProjectRow(data, schemaFieldNameIndex);
 }
 
 export async function createProject(draft: ProjectDraft): Promise<number> {
@@ -305,45 +350,48 @@ function buildProjectByIdUrl(id: number, select: string): string {
   );
 }
 
-function mapProjectRow(x: SpRecord): ProjectRow {
+function mapProjectRow(x: SpRecord, schemaFieldNameIndex?: Map<string, string> | null): ProjectRow {
+  const readByField = <T extends ProjectFieldKey>(field: T): string =>
+    resolveInternalName(field, schemaFieldNameIndex);
+
   return {
-    Id: readNumber(x, "Id") ?? 0,
-    Title: readString(x, "Title") ?? "",
-    approvalYear: readNumber(x, "approvalYear"),
-    budgetBrl: readNumber(x, "budgetBrl"),
-    status: readString(x, "status"),
-    investmentLevel: readString(x, "investmentLevel"),
-    fundingSource: readString(x, "fundingSource"),
-    program: readString(x, "program"),
-    company: readString(x, "company"),
-    center: readString(x, "center"),
-    unit: readString(x, "unit"),
-    location: readString(x, "location"),
-    depreciationCostCenter: readString(x, "depreciationCostCenter"),
-    category: readString(x, "category"),
-    investmentType: readString(x, "investmentType"),
-    assetType: readString(x, "assetType"),
-    projectFunction: readString(x, "projectFunction"),
-    projectLeader: readString(x, "projectLeader"),
-    projectUser: readString(x, "projectUser"),
-    codigoSAP: readString(x, "codigoSAP"),
-    sourceProjectCode: readString(x, "sourceProjectCode"),
-    hasRoce: readString(x, "hasRoce"),
-    startDate: readDateString(x, "startDate"),
-    endDate: readDateString(x, "endDate"),
-    businessNeed: readString(x, "businessNeed"),
-    proposedSolution: readString(x, "proposedSolution"),
-    kpiType: readString(x, "kpiType"),
-    kpiName: readString(x, "kpiName"),
-    kpiDescription: readString(x, "kpiDescription"),
-    kpiCurrent: readString(x, "kpiCurrent"),
-    kpiExpected: readString(x, "kpiExpected"),
-    roce: readNumber(x, "roce"),
-    roceGain: readNumber(x, "roceGain"),
-    roceGainDescription: readString(x, "roceGainDescription"),
-    roceLoss: readNumber(x, "roceLoss"),
-    roceLossDescription: readString(x, "roceLossDescription"),
-    roceClassification: readString(x, "roceClassification")
+    Id: readNumber(x, readByField("Id")) ?? 0,
+    Title: readString(x, readByField("Title")) ?? "",
+    approvalYear: readNumber(x, readByField("approvalYear")),
+    budgetBrl: readNumber(x, readByField("budgetBrl")),
+    status: readString(x, readByField("status")),
+    investmentLevel: readString(x, readByField("investmentLevel")),
+    fundingSource: readString(x, readByField("fundingSource")),
+    program: readString(x, readByField("program")),
+    company: readString(x, readByField("company")),
+    center: readString(x, readByField("center")),
+    unit: readString(x, readByField("unit")),
+    location: readString(x, readByField("location")),
+    depreciationCostCenter: readString(x, readByField("depreciationCostCenter")),
+    category: readString(x, readByField("category")),
+    investmentType: readString(x, readByField("investmentType")),
+    assetType: readString(x, readByField("assetType")),
+    projectFunction: readString(x, readByField("projectFunction")),
+    projectLeader: readString(x, readByField("projectLeader")),
+    projectUser: readString(x, readByField("projectUser")),
+    codigoSAP: readString(x, readByField("codigoSAP")),
+    sourceProjectCode: readString(x, readByField("sourceProjectCode")),
+    hasRoce: readString(x, readByField("hasRoce")),
+    startDate: readDateString(x, readByField("startDate")),
+    endDate: readDateString(x, readByField("endDate")),
+    businessNeed: readString(x, readByField("businessNeed")),
+    proposedSolution: readString(x, readByField("proposedSolution")),
+    kpiType: readString(x, readByField("kpiType")),
+    kpiName: readString(x, readByField("kpiName")),
+    kpiDescription: readString(x, readByField("kpiDescription")),
+    kpiCurrent: readString(x, readByField("kpiCurrent")),
+    kpiExpected: readString(x, readByField("kpiExpected")),
+    roce: readNumber(x, readByField("roce")),
+    roceGain: readNumber(x, readByField("roceGain")),
+    roceGainDescription: readString(x, readByField("roceGainDescription")),
+    roceLoss: readNumber(x, readByField("roceLoss")),
+    roceLossDescription: readString(x, readByField("roceLossDescription")),
+    roceClassification: readString(x, readByField("roceClassification"))
   };
 }
 

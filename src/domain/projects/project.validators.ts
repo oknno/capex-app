@@ -1,8 +1,8 @@
-import type { ProjectDraft } from "../../services/sharepoint/projectsApi";
+import type { ProjectInput } from "../../application/contracts/project";
 import { requiresStructure, toIntOrUndefined } from "./project.calculations";
 
 export type WizardDraftState = {
-  project: ProjectDraft;
+  project: ProjectInput;
   milestones: MilestoneDraftLocal[];
   activities: ActivityDraftLocal[];
   peps: PepDraftLocal[];
@@ -32,7 +32,7 @@ function todayIsoDate() {
   return new Date().toISOString().slice(0, 10);
 }
 
-export function validateProjectBasics(p: ProjectDraft) {
+export function validateProjectBasics(p: ProjectInput) {
   if (!String(p.Title ?? "").trim()) throw new Error("Title é obrigatório.");
   if (String(p.Title ?? "").trim().length > 25) throw new Error("Nome do Projeto deve ter no máximo 25 caracteres.");
   if (String(p.projectFunction ?? "").trim().length > 35) throw new Error("Função do Projeto deve ter no máximo 35 caracteres.");

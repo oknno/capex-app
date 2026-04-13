@@ -1,14 +1,20 @@
 import { canSendToApproval, sendToApproval as sendToApprovalWorkflow } from "../../services/sharepoint/projectsWorkflow";
-import type { ProjectRow } from "../../services/sharepoint/projectsApi";
+import { projectViewToRow } from "../contracts/projectAdapters";
+import type { ProjectView } from "../contracts/project";
 
 export type SendToApprovalDeps = {
-  canSendToApproval: (project: ProjectRow | null) => { ok: boolean; reason?: string };
-  sendToApproval: (project: ProjectRow) => Promise<{ newStatus: string }>;
+  canSendToApproval: (project: ProjectView | null) => { ok: boolean; reason?: string };
+  sendToApproval: (project: ProjectView) => Promise<{ newStatus: string }>;
+};
+
+const defaultDeps: SendToApprovalDeps = {
+  canSendToApproval: (project) => canSendToApproval(project ? projectViewToRow(project) : null),
+  sendToApproval: (project) => sendToApprovalWorkflow(projectViewToRow(project))
 };
 
 export async function sendProjectToApproval(
-  project: ProjectRow | null,
-  deps: SendToApprovalDeps = { canSendToApproval, sendToApproval: sendToApprovalWorkflow }
+  project: ProjectView | null,
+  deps: SendToApprovalDeps = defaultDeps
 ): Promise<{ newStatus: string }> {
   const check = deps.canSendToApproval(project);
   if (!check.ok || !project) {
