@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { toIntOrUndefined } from "../../../../../domain/projects/project.calculations";
 import type { ActivityDraftLocal, MilestoneDraftLocal, PepDraftLocal } from "../../../../../domain/projects/project.validators";
 import { buildYearOptions, PEP_ELEMENT_OPTIONS } from "./wizardOptions";
-import { SectionTitle, wizardLayoutStyles } from "./WizardUi";
+import { SectionTitle } from "./WizardUi";
+import { wizardLayoutStyles } from "./wizardLayoutStyles";
 import { Button } from "../../../../components/ui/Button";
 import { Field } from "../../../../components/ui/Field";
 import { StateMessage } from "../../../../components/ui/StateMessage";
@@ -30,10 +31,13 @@ export function PepStep(props: {
 
   const yearOptions = buildYearOptions(5);
 
-  useEffect(() => {
-    if (!props.needStructure) return;
-    if (!selectedActivity && props.activities.length) setSelectedActivity(props.activities[0].tempId);
-  }, [props.needStructure, props.activities.length]);
+  const defaultActivityTempId = useMemo(() => {
+    if (!props.needStructure || !props.activities.length) return "";
+    return props.activities[0].tempId;
+  }, [props.needStructure, props.activities]);
+
+  const selectedActivityId = selectedActivity || defaultActivityTempId;
+
 
   function removePep(tempId: string) {
     props.onChange(props.peps.filter((pep) => pep.tempId !== tempId));
@@ -51,7 +55,7 @@ export function PepStep(props: {
         <div style={wizardLayoutStyles.journeyStack}>
           {props.needStructure && (
             <Field label="Atividade vinculada">
-              <select value={selectedActivity} onChange={(e) => setSelectedActivity(e.target.value)} disabled={props.readOnly || props.activities.length === 0} style={wizardLayoutStyles.input}>
+              <select value={selectedActivityId} onChange={(e) => setSelectedActivity(e.target.value)} disabled={props.readOnly || props.activities.length === 0} style={wizardLayoutStyles.input}>
                 <option value="">Selecione a atividade...</option>
                 {props.activities.map((a) => {
                   const ms = props.milestones.find((m) => m.tempId === a.milestoneTempId);
@@ -89,13 +93,13 @@ export function PepStep(props: {
           </div>
 
           <div>
-            <Button tone="primary" disabled={props.readOnly || !title.trim() || !year.trim() || !amount.trim() || (props.needStructure && !selectedActivity)} onClick={() => {
+            <Button tone="primary" disabled={props.readOnly || !title.trim() || !year.trim() || !amount.trim() || (props.needStructure && !selectedActivityId)} onClick={() => {
               const y = Number(year.trim());
               const amt = toIntOrUndefined(amount);
               if (!Number.isFinite(y)) return props.onValidationError("Ano inválido.");
               if (!amt || amt <= 0) return props.onValidationError("Valor do PEP inválido.");
 
-              props.onChange([...props.peps, { tempId: uid("pp"), Title: title.trim(), year: y, amountBrl: amt, activityTempId: props.needStructure ? selectedActivity : undefined }]);
+              props.onChange([...props.peps, { tempId: uid("pp"), Title: title.trim(), year: y, amountBrl: amt, activityTempId: props.needStructure ? selectedActivityId : undefined }]);
               setTitle("");
               setAmount("");
             }}>Adicionar PEP</Button>

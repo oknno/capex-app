@@ -92,8 +92,10 @@ export function ProjectsPage(props: {
     onRegisterRefresh?.(loadFirstPage);
   }, [loadFirstPage, onRegisterRefresh, skipInitialLoad]);
 
+  // Este efeito sincroniza seleção da lista com carregamento de detalhes remotos (SharePoint).
   useEffect(() => {
     if (!list.selectedId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedFull(null);
       setSelectedFullState("idle");
       return;
@@ -221,7 +223,7 @@ export function ProjectsPage(props: {
   }
 
   return (
-    <div style={styles.pageWrap as any}>
+    <div style={styles.pageWrap}>
       <CommandBar
         selectedId={list.selectedId}
         selectedStatus={list.selected?.status}
@@ -252,8 +254,8 @@ export function ProjectsPage(props: {
         onExport={onExport}
       />
 
-      <div style={styles.grid as any}>
-        <Card style={styles.listCard as any}>
+      <div style={styles.grid}>
+        <Card style={styles.listCard}>
           <ProjectsTableSection
             items={list.items}
             selectedId={list.selectedId}
@@ -261,15 +263,15 @@ export function ProjectsPage(props: {
             errorMsg={list.errorMsg}
             onSelect={list.setSelectedId}
           />
-          <div style={styles.footerRow as any}>
-            <div style={styles.helperText as any}>Itens carregados: <b>{list.items.length}</b></div>
+          <div style={styles.footerRow}>
+            <div style={styles.helperText}>Itens carregados: <b>{list.items.length}</b></div>
             <Button onClick={list.loadMore} disabled={!list.nextLink || list.state === "loading"}>
               {list.nextLink ? (list.state === "loading" ? "Carregando..." : "Carregar mais") : "Fim"}
             </Button>
           </div>
         </Card>
 
-        <Card style={styles.summaryCard as any}>
+        <Card style={styles.summaryCard}>
           <ProjectSummarySection
             selectedId={list.selectedId}
             selectedFull={selectedFull}

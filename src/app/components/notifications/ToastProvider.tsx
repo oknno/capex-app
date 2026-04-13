@@ -1,6 +1,6 @@
-import { createContext, useCallback, useMemo, useState } from "react";
-
-type ToastTone = "success" | "error" | "info";
+import { useCallback, useMemo, useState } from "react";
+import { ToastContext } from "./toastContext";
+import type { ToastTone } from "./toastContext";
 
 type ToastItem = {
   id: number;
@@ -8,11 +8,6 @@ type ToastItem = {
   tone: ToastTone;
 };
 
-type ToastApi = {
-  notify: (message: string, tone?: ToastTone) => void;
-};
-
-export const ToastContext = createContext<ToastApi | null>(null);
 
 export function ToastProvider(props: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
