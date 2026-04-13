@@ -18,7 +18,8 @@ import {
   UNIT_OPTIONS_BY_CENTER,
   todayIsoDate,
 } from "./wizardOptions";
-import { FieldDate, FieldNumber, FieldSelect, FieldText, SectionTitle, wizardLayoutStyles } from "./WizardUi";
+import { FieldDate, FieldNumber, FieldSelect, FieldText, SectionTitle } from "./WizardUi";
+import { wizardLayoutStyles } from "./wizardLayoutStyles";
 import { Field } from "../../../../components/ui/Field";
 
 function onlyIntegerOrEmpty(value: string) {

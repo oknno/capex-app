@@ -1,6 +1,8 @@
+import type { CSSProperties } from "react";
+
 import { uiTokens } from "../../../components/ui/tokens";
 
-export const projectsPageStyles = {
+export const projectsPageStyles: Record<string, CSSProperties> = {
   pageWrap: {
     background: uiTokens.colors.appBackground,
     height: "100%",
@@ -22,4 +24,4 @@ export const projectsPageStyles = {
   footerRow: { display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10 },
   helperText: { fontSize: uiTokens.typography.xs, color: uiTokens.colors.textMuted },
   summaryCard: { overflow: "auto", minHeight: 0 },
-} as const;
+};
