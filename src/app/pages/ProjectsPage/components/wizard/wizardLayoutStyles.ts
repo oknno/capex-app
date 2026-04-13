@@ -35,6 +35,6 @@ export const wizardLayoutStyles: Record<string, CSSProperties> = {
   boxHead: { padding: "10px 12px", fontSize: uiTokens.typography.xs, fontWeight: uiTokens.typography.labelWeight, background: uiTokens.colors.surfaceMuted, borderBottom: `1px solid ${uiTokens.colors.border}` },
   row: { padding: "10px 12px", borderBottom: `1px solid ${uiTokens.colors.borderMuted}` },
   empty: { padding: uiTokens.spacing.md, color: uiTokens.colors.textMuted },
-  input: { width: "100%", padding: "9px 10px", borderRadius: uiTokens.radius.sm, border: "1px solid #d1d5db" },
+  input: { width: "100%", padding: "9px 10px", borderRadius: uiTokens.radius.sm, border: `1px solid ${uiTokens.colors.borderStrong}` },
   textareaReadable: { width: "100%", minHeight: 80 }
 };

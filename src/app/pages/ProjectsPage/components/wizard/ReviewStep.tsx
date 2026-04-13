@@ -3,6 +3,7 @@ import type { CSSProperties, ReactNode } from "react";
 import type { WizardDraftState } from "../../../../../domain/projects/project.validators";
 import { projectFieldLabel } from "../../fieldLabels";
 import { SectionTitle } from "./WizardUi";
+import { uiTokens } from "../../../../components/ui/tokens";
 
 type SummaryValue = string | number | undefined;
 
@@ -18,8 +19,8 @@ function toDateLabel(value?: string) {
 function SummaryField(props: { label: string; value: SummaryValue; minWidth?: number }) {
   return (
     <div style={{ minWidth: props.minWidth ?? 180 }}>
-      <div style={{ fontSize: 14, fontWeight: 600, color: "#374151", marginBottom: 4 }}>{props.label}</div>
-      <div style={{ fontSize: 14, color: "#111827", lineHeight: 1.4, wordBreak: "break-word", whiteSpace: "pre-wrap" }}>{renderValue(props.value)}</div>
+      <div style={{ fontSize: 14, fontWeight: 600, color: uiTokens.colors.text, marginBottom: 4 }}>{props.label}</div>
+      <div style={{ fontSize: 14, color: uiTokens.colors.textStrong, lineHeight: 1.4, wordBreak: "break-word", whiteSpace: "pre-wrap" }}>{renderValue(props.value)}</div>
     </div>
   );
 }
@@ -30,17 +31,17 @@ function SummarySection(props: {
   children: ReactNode;
 }) {
   const style: CSSProperties = {
-    border: "1px solid #d1d5db",
+    border: `1px solid ${uiTokens.colors.borderStrong}`,
     borderRadius: 16,
     padding: 22,
     display: "grid",
     gap: 16,
-    background: "#f9fafb"
+    background: uiTokens.colors.surfaceMuted
   };
 
   return (
     <section style={style}>
-      <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#111827" }}>{props.title}</h3>
+      <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: uiTokens.colors.textStrong }}>{props.title}</h3>
       <div
         style={{
           display: "grid",
@@ -150,7 +151,7 @@ export function ReviewStep(props: {
         ) : (
           <div style={{ display: "grid", gap: 10 }}>
             {pepSummaryItems.map((item, index) => (
-              <div key={`${item.pepTitle}_${item.activity ?? "sem-atividade"}_${index}`} style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 12, background: "#fff" }}>
+              <div key={`${item.pepTitle}_${item.activity ?? "sem-atividade"}_${index}`} style={{ border: `1px solid ${uiTokens.colors.border}`, borderRadius: 12, padding: 12, background: uiTokens.colors.surface }}>
                 <div style={{ display: "grid", gridTemplateColumns: props.needStructure ? "repeat(3, minmax(0, 1fr))" : "repeat(3, minmax(0, 1fr))", gap: 12 }}>
                   {props.needStructure ? (
                     <>
@@ -185,12 +186,12 @@ export function ReviewStep(props: {
                 const width = (Math.max(end - start, 86400000) / total) * 100;
                 return (
                   <div key={`${item.milestone}_${item.title}_${item.startDate}_${item.endDate}`}>
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 12, color: "#4b5563", marginBottom: 4 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 12, color: uiTokens.colors.text, marginBottom: 4 }}>
                       <span>{item.milestone} • {item.title}</span>
                       <span>{toDateLabel(item.startDate)} - {toDateLabel(item.endDate)}</span>
                     </div>
-                    <div style={{ position: "relative", height: 14, borderRadius: 999, background: "#e5e7eb", overflow: "hidden" }}>
-                      <div style={{ position: "absolute", left: `${left}%`, width: `${Math.min(width, 100 - left)}%`, top: 0, bottom: 0, background: "#0f172a", borderRadius: 999 }} />
+                    <div style={{ position: "relative", height: 14, borderRadius: 999, background: uiTokens.colors.border, overflow: "hidden" }}>
+                      <div style={{ position: "absolute", left: `${left}%`, width: `${Math.min(width, 100 - left)}%`, top: 0, bottom: 0, background: uiTokens.colors.accentAlt, borderRadius: 999 }} />
                     </div>
                   </div>
                 );
@@ -201,7 +202,7 @@ export function ReviewStep(props: {
       )}
 
       {props.projectId && (
-        <div style={{ fontSize: 12, color: "#6b7280" }}>
+        <div style={{ fontSize: 12, color: uiTokens.colors.textMuted }}>
           ID do projeto no SharePoint: <b>{props.projectId}</b>
         </div>
       )}

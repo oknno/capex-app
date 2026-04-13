@@ -21,6 +21,7 @@ import {
 import { FieldDate, FieldNumber, FieldSelect, FieldText, SectionTitle } from "./WizardUi";
 import { wizardLayoutStyles } from "./wizardLayoutStyles";
 import { Field } from "../../../../components/ui/Field";
+import { uiTokens } from "../../../../components/ui/tokens";
 
 function onlyIntegerOrEmpty(value: string) {
   if (value === "") return "";
@@ -39,9 +40,9 @@ function toDateInputValue(value?: string) {
 
 function descriptionQualityLabel(text?: string) {
   const size = String(text ?? "").trim().length;
-  if (size < 100) return { label: "Descrição curta/ruim", tone: "#b91c1c" };
-  if (size < 200) return { label: "Boa descrição", tone: "#92400e" };
-  return { label: "Ótima descrição", tone: "#166534" };
+  if (size < 100) return { label: "Descrição curta/ruim", tone: uiTokens.colors.danger };
+  if (size < 200) return { label: "Boa descrição", tone: uiTokens.stateTones.warning.fg };
+  return { label: "Ótima descrição", tone: uiTokens.stateTones.success.fg };
 }
 
 export function ProjectStep(props: { draft: ProjectDraft; readOnly: boolean; onChange: (patch: Partial<ProjectDraft>) => void }) {

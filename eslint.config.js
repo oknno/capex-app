@@ -27,4 +27,21 @@ export default defineConfig([
       '@typescript-eslint/consistent-type-imports': 'error',
     },
   },
+  {
+    files: ['src/app/pages/ProjectsPage/**/*.{ts,tsx}', 'src/app/components/ui/**/*.{ts,tsx}'],
+    ignores: ['src/app/components/ui/tokens.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "Literal[value=/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/]",
+          message: 'Use uiTokens.colors em vez de hex hardcoded.',
+        },
+        {
+          selector: "Literal[value=/^rgba?\\(/]",
+          message: 'Use uiTokens.colors para overlays/sombras em vez de rgba hardcoded.',
+        },
+      ],
+    },
+  },
 ])

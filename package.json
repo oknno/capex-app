@@ -7,10 +7,11 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "lint:ui-hardcodes": "node scripts/check-ui-hardcodes.mjs",
     "preview": "vite preview",
     "typecheck": "tsc -b --pretty false",
     "lint:strict": "eslint src/services/sharepoint --max-warnings=0",
-    "check": "npm run lint:strict && npm run typecheck",
+    "check": "npm run lint:strict && npm run lint:ui-hardcodes && npm run typecheck",
     "test": "node --test --experimental-test-module-mocks tests/**/*.test.mjs"
   },
   "dependencies": {

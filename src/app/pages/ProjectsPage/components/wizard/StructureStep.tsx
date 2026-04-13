@@ -197,7 +197,7 @@ export function StructureStep(props: {
               const isAddingActivity = isAddingActivityByMilestone[milestone.tempId] ?? false;
 
               return (
-                <div key={milestone.tempId} style={{ ...wizardLayoutStyles.card, background: "#f9fafb" }}>
+                <div key={milestone.tempId} style={{ ...wizardLayoutStyles.card, background: uiTokens.colors.surfaceMuted }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: uiTokens.spacing.sm }}>
                     <div style={{ flex: 1 }}>
                       <Field label="Nome do Marco">
@@ -216,7 +216,7 @@ export function StructureStep(props: {
                   </div>
 
                   {milestoneActivities.map((activity) => (
-                    <div key={activity.tempId} style={{ ...wizardLayoutStyles.cardSubtle, background: "#fff" }}>
+                    <div key={activity.tempId} style={{ ...wizardLayoutStyles.cardSubtle, background: uiTokens.colors.surface }}>
                       <div style={{ fontWeight: 600, marginBottom: uiTokens.spacing.sm }}>Atividade</div>
 
                       <div style={wizardLayoutStyles.journeyPairGrid}>
@@ -298,7 +298,7 @@ export function StructureStep(props: {
                   ))}
 
                   {isAddingActivity ? (
-                    <div style={{ ...wizardLayoutStyles.cardSubtle, background: "#fff" }}>
+                    <div style={{ ...wizardLayoutStyles.cardSubtle, background: uiTokens.colors.surface }}>
                       <div style={{ fontWeight: 600, marginBottom: 2 }}>Atividade</div>
 
                       <div style={wizardLayoutStyles.journeyPairGrid}>
@@ -365,7 +365,7 @@ export function StructureStep(props: {
         )}
 
         {isAddingMilestone ? (
-          <div style={{ ...wizardLayoutStyles.cardSubtle, background: "#fff", marginTop: uiTokens.spacing.md }}>
+          <div style={{ ...wizardLayoutStyles.cardSubtle, background: uiTokens.colors.surface, marginTop: uiTokens.spacing.md }}>
             <Field label="Nome do Marco">
               <input value={newMilestoneTitle} onChange={(e) => setNewMilestoneTitle(e.target.value)} style={wizardLayoutStyles.input} placeholder="Ex.: ETAPA 1" />
             </Field>
@@ -390,7 +390,7 @@ export function StructureStep(props: {
           </Button>
         )}
 
-        <div style={{ ...wizardLayoutStyles.cardSubtle, background: "#fff", marginTop: uiTokens.spacing.md }}>
+        <div style={{ ...wizardLayoutStyles.cardSubtle, background: uiTokens.colors.surface, marginTop: uiTokens.spacing.md }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: uiTokens.colors.textStrong, marginBottom: uiTokens.spacing.sm }}>Pré-visualização do cronograma (Gantt)</div>
           {ganttItems.length === 0 || !ganttBounds ? (
             <StateMessage state="empty" message="Preencha início e término das atividades para visualizar o cronograma." />
@@ -412,8 +412,8 @@ export function StructureStep(props: {
                       <span>{item.milestoneTitle} • {item.activityTitle}</span>
                       <span>{toDateLabel(item.startDate)} - {toDateLabel(item.endDate)}</span>
                     </div>
-                    <div style={{ position: "relative", height: 14, borderRadius: 999, background: "#e5e7eb", overflow: "hidden" }}>
-                      <div style={{ position: "absolute", left: `${left}%`, width: `${Math.min(width, 100 - left)}%`, top: 0, bottom: 0, borderRadius: 999, background: "#0f172a" }} />
+                    <div style={{ position: "relative", height: 14, borderRadius: 999, background: uiTokens.colors.border, overflow: "hidden" }}>
+                      <div style={{ position: "absolute", left: `${left}%`, width: `${Math.min(width, 100 - left)}%`, top: 0, bottom: 0, borderRadius: 999, background: uiTokens.colors.accentAlt }} />
                     </div>
                   </div>
                 );
