@@ -137,7 +137,6 @@ export function ReviewStep(props: {
 
       <SummarySection title="6. ROCE" columns={3}>
         <SummaryField label="Tem ROCE" value={project.hasRoce} />
-        <SummaryField label="ROCE" value={project.roce} />
         <SummaryField label="Ganho ROCE (R$)" value={project.roceGain?.toLocaleString("pt-BR")} />
         <SummaryField label="Descrição do ganho" value={project.roceGainDescription} />
         <SummaryField label="Perda ROCE (R$)" value={project.roceLoss?.toLocaleString("pt-BR")} />

@@ -90,7 +90,6 @@ export function ProjectWizardModal(props: {
       investmentLevel: calculateInvestmentLevel(budget),
       status: "Rascunho",
       ...(p.hasRoce === "SIM" ? {} : {
-        roce: undefined,
         roceGain: undefined,
         roceGainDescription: undefined,
         roceLoss: undefined,

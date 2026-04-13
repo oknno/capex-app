@@ -34,7 +34,6 @@ export type ProjectRow = {
   kpiDescription?: string;
   kpiCurrent?: string;
   kpiExpected?: string;
-  roce?: number;
   roceGain?: number;
   roceGainDescription?: string;
   roceLoss?: number;
@@ -91,7 +90,6 @@ const PROJECT_FIELDS: Array<keyof ProjectRow> = [
   "kpiDescription",
   "kpiCurrent",
   "kpiExpected",
-  "roce",
   "roceGain",
   "roceGainDescription",
   "roceLoss",
@@ -101,7 +99,6 @@ const PROJECT_FIELDS: Array<keyof ProjectRow> = [
 
 const PROJECT_DEFAULT_SELECT = PROJECT_FIELDS.join(",");
 const PROJECT_READ_MANDATORY_FIELDS = new Set(["Id", "Title"]);
-const FALLBACK_UNSUPPORTED_FIELDS = new Set(["roce"]);
 const BLOCKED_PROJECT_PAYLOAD_KEYS = new Set(["Id"]);
 let projectsFieldNamesIndexPromise: Promise<Map<string, string> | null> | null = null;
 
@@ -137,7 +134,6 @@ const SP_PROJECT_INTERNAL_NAMES: Record<ProjectFieldKey, string> = {
   kpiDescription: "kpiDescription",
   kpiCurrent: "kpiCurrent",
   kpiExpected: "kpiExpected",
-  roce: "roce",
   roceGain: "roceGain",
   roceGainDescription: "roceGainDescription",
   roceLoss: "roceLoss",
@@ -240,9 +236,6 @@ async function buildProjectPayload(source: ProjectUpdate): Promise<Record<string
   const schemaFieldNameIndex = await getProjectsFieldNameIndex();
 
   if (!schemaFieldNameIndex) {
-    for (const unsupportedField of FALLBACK_UNSUPPORTED_FIELDS) {
-      delete payload[unsupportedField];
-    }
     return payload;
   }
 
@@ -386,7 +379,6 @@ function mapProjectRow(x: SpRecord, schemaFieldNameIndex?: Map<string, string> |
     kpiDescription: readString(x, readByField("kpiDescription")),
     kpiCurrent: readString(x, readByField("kpiCurrent")),
     kpiExpected: readString(x, readByField("kpiExpected")),
-    roce: readNumber(x, readByField("roce")),
     roceGain: readNumber(x, readByField("roceGain")),
     roceGainDescription: readString(x, readByField("roceGainDescription")),
     roceLoss: readNumber(x, readByField("roceLoss")),
