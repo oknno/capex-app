@@ -1,4 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
+import { Button } from "../../components/ui/Button";
+import { uiTokens } from "../../components/ui/tokens";
 import { UNIT_OPTIONS_BY_CENTER } from "./components/wizard/wizardOptions";
 
 type SortBy = "Title" | "Id" | "approvalYear";
@@ -13,6 +15,102 @@ const UNIT_OPTIONS = Array.from(
       .filter(Boolean)
   )
 ).sort((a, b) => a.localeCompare(b, "pt-BR"));
+
+const styles = {
+  commandBar: {
+    position: "sticky",
+    top: 0,
+    zIndex: 50,
+    background: uiTokens.colors.surface,
+    borderBottom: `1px solid ${uiTokens.colors.border}`,
+    padding: `${uiTokens.spacing.sm + 2}px ${uiTokens.spacing.md}px`,
+    display: "flex",
+    alignItems: "center",
+    gap: uiTokens.spacing.sm,
+    justifyContent: "space-between",
+  } satisfies React.CSSProperties,
+  titleWrap: {
+    display: "flex",
+    alignItems: "center",
+    gap: uiTokens.spacing.sm,
+    minWidth: 0,
+  } satisfies React.CSSProperties,
+  title: {
+    fontWeight: uiTokens.typography.titleWeight,
+    color: uiTokens.colors.textStrong,
+  } satisfies React.CSSProperties,
+  actionsWrap: {
+    display: "flex",
+    gap: uiTokens.spacing.sm,
+    alignItems: "center",
+    flexWrap: "wrap",
+    justifyContent: "flex-end",
+  } satisfies React.CSSProperties,
+  divider: {
+    width: 1,
+    height: 26,
+    background: uiTokens.colors.border,
+    margin: `0 ${uiTokens.spacing.xs}px`,
+  } satisfies React.CSSProperties,
+  filterRoot: {
+    position: "relative",
+  } satisfies React.CSSProperties,
+  popover: {
+    position: "absolute",
+    right: 0,
+    top: "calc(100% + 8px)",
+    width: 420,
+    maxWidth: "90vw",
+    background: uiTokens.colors.surface,
+    border: `1px solid ${uiTokens.colors.border}`,
+    borderRadius: uiTokens.radius.md,
+    padding: uiTokens.spacing.md,
+    boxShadow: "0 10px 30px rgba(0,0,0,.10)",
+    zIndex: 9999,
+    overflow: "hidden",
+  } satisfies React.CSSProperties,
+  popoverContent: {
+    display: "grid",
+    gap: 10,
+    maxHeight: "60vh",
+    overflowY: "auto",
+    paddingRight: uiTokens.spacing.xs,
+  } satisfies React.CSSProperties,
+  fieldGroup: {
+    display: "grid",
+    gap: 6,
+  } satisfies React.CSSProperties,
+  fieldLabel: {
+    fontSize: uiTokens.typography.xs,
+    color: uiTokens.colors.textMuted,
+  } satisfies React.CSSProperties,
+  inputBase: {
+    width: "100%",
+    boxSizing: "border-box",
+    padding: "8px 10px",
+    borderRadius: uiTokens.radius.sm,
+    border: `1px solid #d1d5db`,
+  } satisfies React.CSSProperties,
+  select: {
+    width: "100%",
+    boxSizing: "border-box",
+    padding: "8px 10px",
+    borderRadius: uiTokens.radius.sm,
+    border: `1px solid #d1d5db`,
+    background: uiTokens.colors.surface,
+  } satisfies React.CSSProperties,
+  twoColumns: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: 10,
+  } satisfies React.CSSProperties,
+  footerActions: {
+    display: "flex",
+    gap: uiTokens.spacing.sm,
+    justifyContent: "flex-end",
+    marginTop: uiTokens.spacing.xs,
+  } satisfies React.CSSProperties,
+};
 
 export type ProjectsFilters = {
   searchTitle: string;
@@ -53,39 +151,26 @@ export function CommandBar(props: {
   const disableBackStatus = hasSelection && normalizedStatus === "aprovado";
 
   return (
-    <div
-      style={{
-        position: "sticky",
-        top: 0,
-        zIndex: 50,
-        background: "#ffffff",
-        borderBottom: "1px solid #e5e7eb",
-        padding: "10px 12px",
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        justifyContent: "space-between"
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-        <div style={{ fontWeight: 800, color: "#111827" }}>Termo de Abertura de Projeto - TAP 2.0</div>
+    <div style={styles.commandBar}>
+      <div style={styles.titleWrap}>
+        <div style={styles.title}>Termo de Abertura de Projeto - TAP 2.0</div>
       </div>
 
-      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
-        <button className="btn" onClick={props.onRefresh}>Atualizar</button>
-        <button className="btn primary" onClick={props.onNew}>Novo</button>
+      <div style={styles.actionsWrap}>
+        <Button onClick={props.onRefresh}>Atualizar</Button>
+        <Button tone="primary" onClick={props.onNew}>Novo</Button>
 
-        <button className="btn" disabled={!hasSelection} onClick={props.onView}>Visualizar</button>
-        <button className="btn" disabled={!canEdit} onClick={props.onEdit}>Editar</button>
-        <button className="btn" disabled={!hasSelection} onClick={props.onDuplicate}>Duplicar</button>
-        <button className="btn" disabled={!canDelete} onClick={props.onDelete}>Excluir</button>
+        <Button disabled={!hasSelection} onClick={props.onView}>Visualizar</Button>
+        <Button disabled={!canEdit} onClick={props.onEdit}>Editar</Button>
+        <Button disabled={!hasSelection} onClick={props.onDuplicate}>Duplicar</Button>
+        <Button disabled={!canDelete} onClick={props.onDelete}>Excluir</Button>
 
-        <span style={{ width: 1, height: 26, background: "#e5e7eb", margin: "0 4px" }} />
+        <span style={styles.divider} />
 
-        <button className="btn" onClick={props.onSendToApproval}>Enviar p/ Aprovação</button>
-        <button className="btn" disabled={disableBackStatus} onClick={props.onBackStatus}>Voltar Status</button>
+        <Button onClick={props.onSendToApproval}>Enviar p/ Aprovação</Button>
+        <Button disabled={disableBackStatus} onClick={props.onBackStatus}>Voltar Status</Button>
 
-        <span style={{ width: 1, height: 26, background: "#e5e7eb", margin: "0 4px" }} />
+        <span style={styles.divider} />
 
         <FilterMenu
           value={props.filters}
@@ -94,7 +179,7 @@ export function CommandBar(props: {
           onClear={props.onClear}
         />
 
-        <button className="btn" onClick={props.onExport}>Exportar</button>
+        <Button onClick={props.onExport}>Exportar</Button>
       </div>
     </div>
   );
@@ -125,46 +210,6 @@ function FilterMenu(props: {
     return () => document.removeEventListener("mousedown", onDocMouseDown);
   }, [open]);
 
-  const popoverStyle: React.CSSProperties = {
-    position: "absolute",
-    right: 0,
-    top: "calc(100% + 8px)",
-    width: 420,
-    maxWidth: "90vw",
-    background: "#fff",
-    border: "1px solid #e5e7eb",
-    borderRadius: 12,
-    padding: 12,
-    boxShadow: "0 10px 30px rgba(0,0,0,.10)",
-    zIndex: 9999,
-    overflow: "hidden"
-  };
-
-  const contentStyle: React.CSSProperties = {
-    display: "grid",
-    gap: 10,
-    maxHeight: "60vh",
-    overflowY: "auto",
-    paddingRight: 4
-  };
-
-  const inputStyle: React.CSSProperties = {
-    width: "100%",
-    boxSizing: "border-box",
-    padding: "8px 10px",
-    borderRadius: 10,
-    border: "1px solid #d1d5db"
-  };
-
-  const selectStyle: React.CSSProperties = {
-    width: "100%",
-    boxSizing: "border-box",
-    padding: "8px 10px",
-    borderRadius: 10,
-    border: "1px solid #d1d5db",
-    background: "#fff"
-  };
-
   function applyAndClose() {
     props.onApply();
     setOpen(false);
@@ -176,9 +221,8 @@ function FilterMenu(props: {
   }
 
   return (
-    <div ref={rootRef} style={{ position: "relative" }}>
-      <button
-        className="btn"
+    <div ref={rootRef} style={styles.filterRoot}>
+      <Button
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-controls={popupId}
@@ -186,27 +230,27 @@ function FilterMenu(props: {
         type="button"
       >
         Filtro ▾
-      </button>
+      </Button>
 
       {open && (
-        <div id={popupId} role="dialog" aria-label="Filtro de projetos" style={popoverStyle}>
-          <div style={contentStyle}>
-            <div style={{ display: "grid", gap: 6 }}>
-              <label style={{ fontSize: 12, color: "#6b7280" }}>Nome do projeto (contém)</label>
+        <div id={popupId} role="dialog" aria-label="Filtro de projetos" style={styles.popover}>
+          <div style={styles.popoverContent}>
+            <div style={styles.fieldGroup}>
+              <label style={styles.fieldLabel}>Nome do projeto (contém)</label>
               <input
                 value={value.searchTitle}
                 onChange={(e) => props.onChange({ searchTitle: e.target.value })}
                 placeholder="Ex: Máquina..."
-                style={inputStyle}
+                style={styles.inputBase}
               />
             </div>
 
-            <div style={{ display: "grid", gap: 6 }}>
-              <label style={{ fontSize: 12, color: "#6b7280" }}>Status</label>
+            <div style={styles.fieldGroup}>
+              <label style={styles.fieldLabel}>Status</label>
               <select
                 value={value.status}
                 onChange={(e) => props.onChange({ status: e.target.value })}
-                style={selectStyle}
+                style={styles.select}
               >
                 <option value="">Todos</option>
                 {STATUS_OPTIONS.map((status) => (
@@ -215,12 +259,12 @@ function FilterMenu(props: {
               </select>
             </div>
 
-            <div style={{ display: "grid", gap: 6 }}>
-              <label style={{ fontSize: 12, color: "#6b7280" }}>Unidade</label>
+            <div style={styles.fieldGroup}>
+              <label style={styles.fieldLabel}>Unidade</label>
               <select
                 value={value.unit}
                 onChange={(e) => props.onChange({ unit: e.target.value })}
-                style={selectStyle}
+                style={styles.select}
               >
                 <option value="">Todas</option>
                 {UNIT_OPTIONS.map((unit) => (
@@ -229,13 +273,13 @@ function FilterMenu(props: {
               </select>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              <div style={{ display: "grid", gap: 6 }}>
-                <label style={{ fontSize: 12, color: "#6b7280" }}>Ordenar por</label>
+            <div style={styles.twoColumns}>
+              <div style={styles.fieldGroup}>
+                <label style={styles.fieldLabel}>Ordenar por</label>
                 <select
                   value={value.sortBy}
                   onChange={(e) => props.onChange({ sortBy: e.target.value as SortBy })}
-                  style={selectStyle}
+                  style={styles.select}
                 >
                   <option value="Title">Nome (Title)</option>
                   <option value="Id">ID</option>
@@ -243,12 +287,12 @@ function FilterMenu(props: {
                 </select>
               </div>
 
-              <div style={{ display: "grid", gap: 6 }}>
-                <label style={{ fontSize: 12, color: "#6b7280" }}>Direção</label>
+              <div style={styles.fieldGroup}>
+                <label style={styles.fieldLabel}>Direção</label>
                 <select
                   value={value.sortDir}
                   onChange={(e) => props.onChange({ sortDir: e.target.value as SortDir })}
-                  style={selectStyle}
+                  style={styles.select}
                 >
                   <option value="asc">Crescente (A→Z / menor→maior)</option>
                   <option value="desc">Decrescente (Z→A / maior→menor)</option>
@@ -256,9 +300,9 @@ function FilterMenu(props: {
               </div>
             </div>
 
-            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 4 }}>
-              <button className="btn" type="button" onClick={clearAndClose}>Limpar</button>
-              <button className="btn primary" type="button" onClick={applyAndClose}>Aplicar</button>
+            <div style={styles.footerActions}>
+              <Button type="button" onClick={clearAndClose}>Limpar</Button>
+              <Button tone="primary" type="button" onClick={applyAndClose}>Aplicar</Button>
             </div>
           </div>
         </div>
