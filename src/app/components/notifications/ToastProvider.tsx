@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ToastContext } from "./toastContext";
 import type { ToastTone } from "./toastContext";
 
@@ -11,11 +11,24 @@ type ToastItem = {
 
 export function ToastProvider(props: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const timeoutIdsRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
+
+  useEffect(() => {
+    const timeoutIds = timeoutIdsRef.current;
+    return () => {
+      timeoutIds.forEach((timeoutId) => clearTimeout(timeoutId));
+      timeoutIds.clear();
+    };
+  }, []);
 
   const notify = useCallback((message: string, tone: ToastTone = "info") => {
     const id = Date.now() + Math.floor(Math.random() * 1000);
     setToasts((prev) => [...prev, { id, message, tone }]);
-    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3200);
+    const timeoutId = setTimeout(() => {
+      timeoutIdsRef.current.delete(timeoutId);
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 3200);
+    timeoutIdsRef.current.add(timeoutId);
   }, []);
 
   const value = useMemo(() => ({ notify }), [notify]);
@@ -46,4 +59,3 @@ export function ToastProvider(props: { children: React.ReactNode }) {
     </ToastContext.Provider>
   );
 }
-
