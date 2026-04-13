@@ -46,6 +46,7 @@ export function ProjectsPage(props: {
   const [selectedFullState, setSelectedFullState] = useState<"idle" | "loading" | "error">("idle");
   const [confirmState, setConfirmState] = useState<{ title: string; message: string; onConfirm: () => Promise<void> | void; tone?: "danger" | "neutral"; confirmingText?: string } | null>(null);
   const [confirmingAction, setConfirmingAction] = useState(false);
+  const selectedForActions = selectedFull ?? list.selected;
 
 
   useEffect(() => {
@@ -111,8 +112,20 @@ export function ProjectsPage(props: {
     setConfirmState(config);
   }
 
+  async function refreshSelectedDetails(projectId: number) {
+    setSelectedFullState("loading");
+    try {
+      setSelectedFull(await getProjectById(projectId));
+      setSelectedFullState("idle");
+    } catch (e) {
+      console.error(e);
+      setSelectedFull(null);
+      setSelectedFullState("error");
+    }
+  }
+
   async function onSendToApproval() {
-    const selected = list.selected;
+    const selected = selectedForActions;
     const check = canSend(selected);
     if (!check.ok || !selected) {
       notify(check.reason ?? "Não foi possível enviar para aprovação.", "info");
@@ -128,6 +141,7 @@ export function ProjectsPage(props: {
           await sendProjectToApproval(selected);
           await list.loadFirstPage();
           list.setSelectedId(selected.Id);
+          await refreshSelectedDetails(selected.Id);
           notify("Projeto enviado para aprovação.", "success");
         } catch (e) {
           const appError = normalizeError(e, "Erro ao enviar para aprovação.");
@@ -138,7 +152,7 @@ export function ProjectsPage(props: {
   }
 
   async function onBackStatus() {
-    const selected = list.selected;
+    const selected = selectedForActions;
     const check = canBack(selected);
     if (!check.ok || !selected) {
       notify(check.reason ?? "Não foi possível voltar o status para rascunho.", "info");
@@ -154,6 +168,7 @@ export function ProjectsPage(props: {
           await moveProjectBackToDraft(selected);
           await list.loadFirstPage();
           list.setSelectedId(selected.Id);
+          await refreshSelectedDetails(selected.Id);
           notify("Projeto retornou para rascunho.", "success");
         } catch (e) {
           const appError = normalizeError(e, "Erro ao voltar para rascunho.");
@@ -191,11 +206,11 @@ export function ProjectsPage(props: {
   }
 
 
-  const commandPolicies = getCommandBarPolicies(list.selected);
-  const editPolicy = canEdit(list.selected);
-  const deletePolicy = canDelete(list.selected);
-  const sendPolicy = canSend(list.selected);
-  const backPolicy = canBack(list.selected);
+  const commandPolicies = getCommandBarPolicies(selectedForActions);
+  const editPolicy = canEdit(selectedForActions);
+  const deletePolicy = canDelete(selectedForActions);
+  const sendPolicy = canSend(selectedForActions);
+  const backPolicy = canBack(selectedForActions);
 
   function onExport() {
     const hasExported = exportProjectsCsv(list.items);
