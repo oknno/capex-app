@@ -3,6 +3,7 @@ import type { CSSProperties, ReactNode } from "react";
 import type { ProjectRow } from "../../../../services/sharepoint/projectsApi";
 import { StateMessage } from "../../../components/ui/StateMessage";
 import { uiTokens } from "../../../components/ui/tokens";
+import { projectFieldLabel } from "../fieldLabels";
 
 const styles: Record<string, CSSProperties> = {
   tableWrap: { border: `1px solid ${uiTokens.colors.border}`, borderRadius: uiTokens.radius.md, overflow: "hidden", display: "flex", flexDirection: "column", flex: 1, minHeight: 0 },
@@ -26,7 +27,7 @@ export function ProjectsTableSection(props: {
       <div style={styles.tableWrap}>
         <div style={styles.headerRow}>
           <CellHeader>ID</CellHeader>
-          <CellHeader>Title</CellHeader>
+          <CellHeader>{projectFieldLabel("Title")}</CellHeader>
           <CellHeader>Unidade</CellHeader>
           <CellHeader>Status</CellHeader>
         </div>
