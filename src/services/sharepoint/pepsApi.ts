@@ -1,5 +1,6 @@
 import { spGetJson, spPostJson, spPatchJson, getDigest } from "./spHttp";
 import { spConfig } from "./spConfig";
+import { escapeODataFilterLiterals } from "./odataFilter";
 
 export type PepRow = {
   Id: number;
@@ -78,7 +79,7 @@ async function fetchPepsPaged(filter: string, pageSize: number, maxPages: number
   const baseUrl = `${siteUrl}/_api/web/lists/getbytitle('${encodeURIComponent(listTitle)}')/items`;
   let nextUrl =
     `${baseUrl}?$select=Id,Title,amountBrl,year,projectsIdId,activitiesIdId` +
-    `&$filter=${encodeURIComponent(filter)}` +
+    `&$filter=${escapeODataFilterLiterals(filter)}` +
     `&$orderby=Id desc` +
     `&$top=${pageSize}`;
 
