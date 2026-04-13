@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 
 import type { WizardDraftState } from "../../../../../domain/projects/project.validators";
+import { projectFieldLabel } from "../../fieldLabels";
 import { SectionTitle } from "./WizardUi";
 
 type SummaryValue = string | number | undefined;
@@ -93,13 +94,13 @@ export function ReviewStep(props: {
       <SectionTitle title="Resumo para validação" subtitle="Conferência final das informações preenchidas nas etapas 1 e 2." />
 
       <SummarySection title="1. Sobre o Projeto" columns={3}>
-        <SummaryField label="Nome" value={project.Title} />
+        <SummaryField label={projectFieldLabel("Title")} value={project.Title} />
         <SummaryField label="Orçamento (R$)" value={project.budgetBrl?.toLocaleString("pt-BR")} />
-        <SummaryField label="Nível de investimento" value={project.investmentLevel} />
-        <SummaryField label="Ano" value={project.approvalYear} />
-        <SummaryField label="Início" value={toDateLabel(project.startDate)} />
-        <SummaryField label="Término" value={toDateLabel(project.endDate)} />
-        <SummaryField label="Função" value={project.projectFunction} />
+        <SummaryField label={projectFieldLabel("investmentLevel")} value={project.investmentLevel} />
+        <SummaryField label={projectFieldLabel("approvalYear")} value={project.approvalYear} />
+        <SummaryField label={projectFieldLabel("startDate")} value={toDateLabel(project.startDate)} />
+        <SummaryField label={projectFieldLabel("endDate")} value={toDateLabel(project.endDate)} />
+        <SummaryField label={projectFieldLabel("projectFunction")} value={project.projectFunction} />
       </SummarySection>
 
       <SummarySection title="2. Origem e Programa" columns={3}>
@@ -202,7 +203,7 @@ export function ReviewStep(props: {
 
       {props.projectId && (
         <div style={{ fontSize: 12, color: "#6b7280" }}>
-          ProjectId atual no SharePoint: <b>{props.projectId}</b>
+          ID do projeto no SharePoint: <b>{props.projectId}</b>
         </div>
       )}
     </div>

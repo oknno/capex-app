@@ -3,6 +3,7 @@ import { Field } from "../../../components/ui/Field";
 import { StateMessage } from "../../../components/ui/StateMessage";
 import { uiTokens } from "../../../components/ui/tokens";
 import type { ProjectRow } from "../../../../services/sharepoint/projectsApi";
+import { projectFieldLabel } from "../fieldLabels";
 
 export function ProjectSummarySection(props: {
   selectedId: number | null;
@@ -27,21 +28,21 @@ export function ProjectSummarySection(props: {
           </div>
 
           <div style={styles.sapCodeText}>
-            codigoSAP: {getSapCodeDisplay(props.selectedFull)}
+            {projectFieldLabel("codigoSAP")}: {getSapCodeDisplay(props.selectedFull)}
           </div>
 
           <div style={styles.fieldGrid}>
-            <Field label="Orçamento (BRL)" layout="inline">{fmtMoney(props.selectedFull.budgetBrl)}</Field>
-            <Field label="Responsável" layout="inline">{String(props.selectedFull.projectLeader ?? "-")}</Field>
+            <Field label={projectFieldLabel("budgetBrl")} layout="inline">{fmtMoney(props.selectedFull.budgetBrl)}</Field>
+            <Field label={projectFieldLabel("projectLeader")} layout="inline">{String(props.selectedFull.projectLeader ?? "-")}</Field>
             <Field label="Início / Fim" layout="inline">{`${fmtDate(props.selectedFull.startDate)}  →  ${fmtDate(props.selectedFull.endDate)}`}</Field>
-            <Field label="Unidade" layout="inline">{String(props.selectedFull.unit ?? "-")}</Field>
-            <Field label="Origem" layout="inline">{String(props.selectedFull.fundingSource ?? "-")}</Field>
+            <Field label={projectFieldLabel("unit")} layout="inline">{String(props.selectedFull.unit ?? "-")}</Field>
+            <Field label={projectFieldLabel("fundingSource")} layout="inline">{String(props.selectedFull.fundingSource ?? "-")}</Field>
             <Field label="Programa" layout="inline">{String(props.selectedFull.program ?? "-")}</Field>
           </div>
 
           <div style={styles.longTextWrap}>
-            <LongTextBlock title="Business Need" text={truncateText(props.selectedFull.businessNeed ?? "-", 380)} />
-            <LongTextBlock title="Proposed Solution" text={truncateText(props.selectedFull.proposedSolution ?? "-", 380)} />
+            <LongTextBlock title={projectFieldLabel("businessNeed")} text={truncateText(props.selectedFull.businessNeed ?? "-", 380)} />
+            <LongTextBlock title={projectFieldLabel("proposedSolution")} text={truncateText(props.selectedFull.proposedSolution ?? "-", 380)} />
           </div>
 
         </div>
