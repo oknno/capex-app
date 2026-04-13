@@ -1,14 +1,14 @@
-import type { ProjectDraft } from "./projectsApi";
-import { updateProject, deleteProject } from "./projectsApi";
-import { createMilestone, deleteMilestone, getMilestonesByProject, updateMilestone } from "./milestonesApi";
-import { createActivity, deleteActivity, getActivitiesBatchByProject, updateActivity } from "./activitiesApi";
-import { createPep, deletePep, getPepsBatchByProject, updatePep } from "./pepsApi";
+import type { ProjectDraft } from "./projectsApi.ts";
+import { updateProject, deleteProject } from "./projectsApi.ts";
+import { createMilestone, deleteMilestone, getMilestonesByProject, updateMilestone } from "./milestonesApi.ts";
+import { createActivity, deleteActivity, getActivitiesBatchByProject, updateActivity } from "./activitiesApi.ts";
+import { createPep, deletePep, getPepsBatchByProject, updatePep } from "./pepsApi.ts";
 
 import type {
   ActivityDraftLocal,
   MilestoneDraftLocal,
   PepDraftLocal
-} from "../../domain/projects/project.validators";
+} from "../../domain/projects/project.validators.ts";
 
 export type CommitJournal = {
   createdProjectId?: number;
@@ -106,9 +106,43 @@ type CommitProjectStructureArgs = {
   activities: ActivityDraftLocal[];
   peps: PepDraftLocal[];
   createProject: (draft: ProjectDraft) => Promise<number>;
+  apis?: Partial<{
+    updateProject: typeof updateProject;
+    deleteProject: typeof deleteProject;
+    createMilestone: typeof createMilestone;
+    deleteMilestone: typeof deleteMilestone;
+    getMilestonesByProject: typeof getMilestonesByProject;
+    updateMilestone: typeof updateMilestone;
+    createActivity: typeof createActivity;
+    deleteActivity: typeof deleteActivity;
+    getActivitiesBatchByProject: typeof getActivitiesBatchByProject;
+    updateActivity: typeof updateActivity;
+    createPep: typeof createPep;
+    deletePep: typeof deletePep;
+    getPepsBatchByProject: typeof getPepsBatchByProject;
+    updatePep: typeof updatePep;
+  }>;
 };
 
 export async function commitProjectStructure(args: CommitProjectStructureArgs): Promise<{ projectId: number; journal: CommitJournal }> {
+  const deps = {
+    updateProject,
+    deleteProject,
+    createMilestone,
+    deleteMilestone,
+    getMilestonesByProject,
+    updateMilestone,
+    createActivity,
+    deleteActivity,
+    getActivitiesBatchByProject,
+    updateActivity,
+    createPep,
+    deletePep,
+    getPepsBatchByProject,
+    updatePep,
+    ...args.apis
+  };
+
   const journal: CommitJournal = {
     milestoneIds: [],
     activityIds: [],
@@ -140,7 +174,7 @@ export async function commitProjectStructure(args: CommitProjectStructureArgs): 
     for (const pepId of pepIds) {
       try {
         setStep({ phase: "rollback", action: "delete", entity: "pep", stage: "rollback-created-peps", id: pepId });
-        await deletePep(pepId);
+        await deps.deletePep(pepId);
         trackDiagnostic({ phase: "rollback", action: "delete", entity: "pep", id: pepId, status: "success", stage: "rollback-created-peps" });
       } catch (error: unknown) {
         rollbackIssues.push({ entity: "pep", id: pepId, reason: toErrorMessage(error) });
@@ -159,7 +193,7 @@ export async function commitProjectStructure(args: CommitProjectStructureArgs): 
     for (const activityId of activityIds) {
       try {
         setStep({ phase: "rollback", action: "delete", entity: "activity", stage: "rollback-created-activities", id: activityId });
-        await deleteActivity(activityId);
+        await deps.deleteActivity(activityId);
         trackDiagnostic({ phase: "rollback", action: "delete", entity: "activity", id: activityId, status: "success", stage: "rollback-created-activities" });
       } catch (error: unknown) {
         rollbackIssues.push({ entity: "activity", id: activityId, reason: toErrorMessage(error) });
@@ -178,7 +212,7 @@ export async function commitProjectStructure(args: CommitProjectStructureArgs): 
     for (const milestoneId of milestoneIds) {
       try {
         setStep({ phase: "rollback", action: "delete", entity: "milestone", stage: "rollback-created-milestones", id: milestoneId });
-        await deleteMilestone(milestoneId);
+        await deps.deleteMilestone(milestoneId);
         trackDiagnostic({ phase: "rollback", action: "delete", entity: "milestone", id: milestoneId, status: "success", stage: "rollback-created-milestones" });
       } catch (error: unknown) {
         rollbackIssues.push({ entity: "milestone", id: milestoneId, reason: toErrorMessage(error) });
@@ -197,7 +231,7 @@ export async function commitProjectStructure(args: CommitProjectStructureArgs): 
     if (journal.createdProjectId) {
       try {
         setStep({ phase: "rollback", action: "delete", entity: "project", stage: "rollback-created-project", id: journal.createdProjectId });
-        await deleteProject(journal.createdProjectId);
+        await deps.deleteProject(journal.createdProjectId);
         trackDiagnostic({ phase: "rollback", action: "delete", entity: "project", id: journal.createdProjectId, status: "success", stage: "rollback-created-project" });
       } catch (error: unknown) {
         rollbackIssues.push({ entity: "project", id: journal.createdProjectId, reason: toErrorMessage(error) });
@@ -239,14 +273,14 @@ export async function commitProjectStructure(args: CommitProjectStructureArgs): 
       journal.createdProjectId = id;
     } else {
       setStep({ phase: "commit", action: "update", entity: "project", stage: "update-project", id });
-      await updateProject(id, { ...args.normalizedProject, status: "Rascunho" });
+      await deps.updateProject(id, { ...args.normalizedProject, status: "Rascunho" });
       trackDiagnostic({ phase: "commit", action: "update", entity: "project", id, status: "success", stage: "update-project" });
     }
 
     const [existingMilestones, existingActivities, existingPeps] = await Promise.all([
-      getMilestonesByProject(id),
-      getActivitiesBatchByProject(id, { pageSize: 500, maxPages: 20 }),
-      getPepsBatchByProject(id, { pageSize: 500, maxPages: 20 })
+      deps.getMilestonesByProject(id),
+      deps.getActivitiesBatchByProject(id, { pageSize: 500, maxPages: 20 }),
+      deps.getPepsBatchByProject(id, { pageSize: 500, maxPages: 20 })
     ]);
 
     if (!args.needStructure) {
@@ -275,12 +309,12 @@ export async function commitProjectStructure(args: CommitProjectStructureArgs): 
         if (existingPepId) {
           desiredPepIds.add(existingPepId);
           setStep({ phase: "commit", action: "update", entity: "pep", stage: "upsert-peps-without-structure", id: existingPepId });
-          await updatePep(existingPepId, payload);
+          await deps.updatePep(existingPepId, payload);
           trackDiagnostic({ phase: "commit", action: "update", entity: "pep", id: existingPepId, status: "success", stage: "upsert-peps-without-structure" });
           continue;
         }
 
-        const createdPepId = await createPep(payload);
+        const createdPepId = await deps.createPep(payload);
         journal.pepIds.push(createdPepId);
         desiredPepIds.add(createdPepId);
       }
@@ -288,7 +322,7 @@ export async function commitProjectStructure(args: CommitProjectStructureArgs): 
       for (const existingPep of existingPeps) {
         if (!desiredPepIds.has(existingPep.Id)) {
           setStep({ phase: "commit", action: "delete", entity: "pep", stage: "cleanup-peps-without-structure", id: existingPep.Id });
-          await deletePep(existingPep.Id);
+          await deps.deletePep(existingPep.Id);
           trackDiagnostic({ phase: "commit", action: "delete", entity: "pep", id: existingPep.Id, status: "success", stage: "cleanup-peps-without-structure" });
         }
       }
@@ -296,13 +330,13 @@ export async function commitProjectStructure(args: CommitProjectStructureArgs): 
       if (args.purgeStructureWhenNotNeeded) {
         for (const existingActivity of existingActivities) {
           setStep({ phase: "commit", action: "delete", entity: "activity", stage: "purge-activities-without-structure", id: existingActivity.Id });
-          await deleteActivity(existingActivity.Id);
+          await deps.deleteActivity(existingActivity.Id);
           trackDiagnostic({ phase: "commit", action: "delete", entity: "activity", id: existingActivity.Id, status: "success", stage: "purge-activities-without-structure" });
         }
 
         for (const existingMilestone of existingMilestones) {
           setStep({ phase: "commit", action: "delete", entity: "milestone", stage: "purge-milestones-without-structure", id: existingMilestone.Id });
-          await deleteMilestone(existingMilestone.Id);
+          await deps.deleteMilestone(existingMilestone.Id);
           trackDiagnostic({ phase: "commit", action: "delete", entity: "milestone", id: existingMilestone.Id, status: "success", stage: "purge-milestones-without-structure" });
         }
       }
@@ -320,7 +354,7 @@ export async function commitProjectStructure(args: CommitProjectStructureArgs): 
         const existingMilestone = existingMilestones.find((item) => item.Id === existingMilestoneId);
         if (!existingMilestone || normalizeText(existingMilestone.Title).toUpperCase() !== title) {
           setStep({ phase: "commit", action: "update", entity: "milestone", stage: "upsert-milestones", id: existingMilestoneId });
-          await updateMilestone(existingMilestoneId, {
+          await deps.updateMilestone(existingMilestoneId, {
             Title: title,
             projectsIdId: id
           });
@@ -328,7 +362,7 @@ export async function commitProjectStructure(args: CommitProjectStructureArgs): 
         }
         milestoneIdMap.set(milestone.tempId, existingMilestoneId);
       } else {
-        const createdMilestoneId = await createMilestone({
+        const createdMilestoneId = await deps.createMilestone({
           Title: title,
           projectsIdId: id
         });
@@ -358,11 +392,11 @@ export async function commitProjectStructure(args: CommitProjectStructureArgs): 
       if (existingActivityId) {
         desiredActivityIds.add(existingActivityId);
         setStep({ phase: "commit", action: "update", entity: "activity", stage: "upsert-activities", id: existingActivityId });
-        await updateActivity(existingActivityId, payload);
+        await deps.updateActivity(existingActivityId, payload);
         trackDiagnostic({ phase: "commit", action: "update", entity: "activity", id: existingActivityId, status: "success", stage: "upsert-activities" });
         activityIdMap.set(activity.tempId, existingActivityId);
       } else {
-        const createdActivityId = await createActivity(payload);
+        const createdActivityId = await deps.createActivity(payload);
         journal.activityIds.push(createdActivityId);
         desiredActivityIds.add(createdActivityId);
         activityIdMap.set(activity.tempId, createdActivityId);
@@ -387,10 +421,10 @@ export async function commitProjectStructure(args: CommitProjectStructureArgs): 
       if (existingPepId) {
         desiredPepIds.add(existingPepId);
         setStep({ phase: "commit", action: "update", entity: "pep", stage: "upsert-peps", id: existingPepId });
-        await updatePep(existingPepId, payload);
+        await deps.updatePep(existingPepId, payload);
         trackDiagnostic({ phase: "commit", action: "update", entity: "pep", id: existingPepId, status: "success", stage: "upsert-peps" });
       } else {
-        const createdPepId = await createPep(payload);
+        const createdPepId = await deps.createPep(payload);
         journal.pepIds.push(createdPepId);
         desiredPepIds.add(createdPepId);
       }
@@ -399,7 +433,7 @@ export async function commitProjectStructure(args: CommitProjectStructureArgs): 
     for (const existingPep of existingPeps) {
       if (!desiredPepIds.has(existingPep.Id)) {
         setStep({ phase: "commit", action: "delete", entity: "pep", stage: "cleanup-peps", id: existingPep.Id });
-        await deletePep(existingPep.Id);
+        await deps.deletePep(existingPep.Id);
         trackDiagnostic({ phase: "commit", action: "delete", entity: "pep", id: existingPep.Id, status: "success", stage: "cleanup-peps" });
       }
     }
@@ -407,7 +441,7 @@ export async function commitProjectStructure(args: CommitProjectStructureArgs): 
     for (const existingActivity of existingActivities) {
       if (!desiredActivityIds.has(existingActivity.Id)) {
         setStep({ phase: "commit", action: "delete", entity: "activity", stage: "cleanup-activities", id: existingActivity.Id });
-        await deleteActivity(existingActivity.Id);
+        await deps.deleteActivity(existingActivity.Id);
         trackDiagnostic({ phase: "commit", action: "delete", entity: "activity", id: existingActivity.Id, status: "success", stage: "cleanup-activities" });
       }
     }
@@ -415,7 +449,7 @@ export async function commitProjectStructure(args: CommitProjectStructureArgs): 
     for (const existingMilestone of existingMilestones) {
       if (!desiredMilestoneIds.has(existingMilestone.Id)) {
         setStep({ phase: "commit", action: "delete", entity: "milestone", stage: "cleanup-milestones", id: existingMilestone.Id });
-        await deleteMilestone(existingMilestone.Id);
+        await deps.deleteMilestone(existingMilestone.Id);
         trackDiagnostic({ phase: "commit", action: "delete", entity: "milestone", id: existingMilestone.Id, status: "success", stage: "cleanup-milestones" });
       }
     }
