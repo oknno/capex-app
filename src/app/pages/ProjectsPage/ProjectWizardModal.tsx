@@ -26,6 +26,8 @@ import { Button } from "../../components/ui/Button";
 import { StateMessage } from "../../components/ui/StateMessage";
 import { uiTokens } from "../../components/ui/tokens";
 
+const wizardValidationTimeRef = {};
+
 type PendingItem = { id: string; section: Exclude<StepKey, "review">; message: string };
 
 export function ProjectWizardModal(props: {
@@ -151,7 +153,7 @@ export function ProjectWizardModal(props: {
     const pendings: PendingItem[] = [];
 
     try {
-      validateProjectBasics(normalizeProjectForCommit(state.project));
+      validateProjectBasics(normalizeProjectForCommit(state.project), wizardValidationTimeRef);
     } catch (error: unknown) {
       pendings.push({
         id: "project-validation",
@@ -190,7 +192,7 @@ export function ProjectWizardModal(props: {
 
 
   function validateCurrentStep(currentStep: StepKey) {
-    if (currentStep === "project") validateProjectBasics(normalizeProjectForCommit(state.project));
+    if (currentStep === "project") validateProjectBasics(normalizeProjectForCommit(state.project), wizardValidationTimeRef);
     if (currentStep === "execution") validateStructure(draftState);
   }
 

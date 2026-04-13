@@ -6,6 +6,8 @@ import type { WizardDraftState } from "../../../../domain/projects/project.valid
 import { validateProjectBasics, validateStructure } from "../../../../domain/projects/project.validators";
 import { normalizeError } from "../../../../application/errors/appError";
 
+const wizardValidationTimeRef = {};
+
 type UseWizardCommitDeps = {
   commitProjectStructure: typeof commitProjectStructure;
 };
@@ -39,7 +41,7 @@ export function useWizardCommit(params: {
     setCommitting(true);
     try {
       const normalizedProject = params.normalizeProjectForCommit(params.state.project);
-      validateProjectBasics(normalizedProject);
+      validateProjectBasics(normalizedProject, wizardValidationTimeRef);
       validateStructure({ ...params.state, project: normalizedProject });
 
       const shouldConfirmStructureRemoval =
