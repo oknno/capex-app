@@ -15,6 +15,7 @@ export type CommitJournal = {
   milestoneIds: number[];
   activityIds: number[];
   pepIds: number[];
+  diagnostics: CommitDiagnosticEntry[];
 };
 
 export type RollbackIssue = {
@@ -23,23 +24,61 @@ export type RollbackIssue = {
   reason: string;
 };
 
+type CommitEntity = "project" | "milestone" | "activity" | "pep";
+type CommitAction = "update" | "delete";
+type CommitPhase = "commit" | "rollback";
+
+export type CommitDiagnosticEntry = {
+  phase: CommitPhase;
+  action: CommitAction;
+  entity: CommitEntity;
+  id: number;
+  status: "success" | "failed";
+  reason?: string;
+  stage: string;
+};
+
+export type CommitStepDetails = {
+  phase: CommitPhase;
+  action: "create" | CommitAction;
+  entity: CommitEntity;
+  stage: string;
+  id?: number;
+};
+
+export type RollbackSummary = {
+  attempts: number;
+  failed: number;
+  succeeded: number;
+  failedByEntity: Partial<Record<CommitEntity, number>>;
+};
+
 export type RollbackResult = {
   status: "complete" | "partial";
   attempts: number;
   failures: RollbackIssue[];
+  summary: RollbackSummary;
 };
 
 export class CommitProjectStructureError extends Error {
   readonly journal: CommitJournal;
   readonly rollback: RollbackResult;
   readonly causeError: unknown;
+  readonly failedStep?: CommitStepDetails;
+  readonly details?: {
+    rollbackPartialSummary?: RollbackSummary;
+  };
 
-  constructor(message: string, args: { journal: CommitJournal; rollback: RollbackResult; cause: unknown }) {
+  constructor(message: string, args: { journal: CommitJournal; rollback: RollbackResult; cause: unknown; failedStep?: CommitStepDetails }) {
     super(message);
     this.name = "CommitProjectStructureError";
     this.journal = args.journal;
     this.rollback = args.rollback;
     this.causeError = args.cause;
+    this.failedStep = args.failedStep;
+    this.details = args.rollback.status === "partial"
+      ? { rollbackPartialSummary: args.rollback.summary }
+      : undefined;
   }
 }
 
@@ -73,14 +112,25 @@ export async function commitProjectStructure(args: CommitProjectStructureArgs): 
   const journal: CommitJournal = {
     milestoneIds: [],
     activityIds: [],
-    pepIds: []
+    pepIds: [],
+    diagnostics: []
   };
 
   const rollbackIssues: RollbackIssue[] = [];
   const milestoneIdMap = new Map<string, number>();
   const activityIdMap = new Map<string, number>();
+  let failedStep: CommitStepDetails | undefined;
+  let activeStep: CommitStepDetails | undefined;
 
   let id = args.projectId;
+
+  const setStep = (step: CommitStepDetails): void => {
+    activeStep = step;
+  };
+
+  const trackDiagnostic = (entry: CommitDiagnosticEntry): void => {
+    journal.diagnostics.push(entry);
+  };
 
   const rollback = async () => {
     const pepIds = [...journal.pepIds].reverse();
@@ -89,50 +139,108 @@ export async function commitProjectStructure(args: CommitProjectStructureArgs): 
 
     for (const pepId of pepIds) {
       try {
+        setStep({ phase: "rollback", action: "delete", entity: "pep", stage: "rollback-created-peps", id: pepId });
         await deletePep(pepId);
+        trackDiagnostic({ phase: "rollback", action: "delete", entity: "pep", id: pepId, status: "success", stage: "rollback-created-peps" });
       } catch (error: unknown) {
         rollbackIssues.push({ entity: "pep", id: pepId, reason: toErrorMessage(error) });
+        trackDiagnostic({
+          phase: "rollback",
+          action: "delete",
+          entity: "pep",
+          id: pepId,
+          status: "failed",
+          reason: toErrorMessage(error),
+          stage: "rollback-created-peps"
+        });
       }
     }
 
     for (const activityId of activityIds) {
       try {
+        setStep({ phase: "rollback", action: "delete", entity: "activity", stage: "rollback-created-activities", id: activityId });
         await deleteActivity(activityId);
+        trackDiagnostic({ phase: "rollback", action: "delete", entity: "activity", id: activityId, status: "success", stage: "rollback-created-activities" });
       } catch (error: unknown) {
         rollbackIssues.push({ entity: "activity", id: activityId, reason: toErrorMessage(error) });
+        trackDiagnostic({
+          phase: "rollback",
+          action: "delete",
+          entity: "activity",
+          id: activityId,
+          status: "failed",
+          reason: toErrorMessage(error),
+          stage: "rollback-created-activities"
+        });
       }
     }
 
     for (const milestoneId of milestoneIds) {
       try {
+        setStep({ phase: "rollback", action: "delete", entity: "milestone", stage: "rollback-created-milestones", id: milestoneId });
         await deleteMilestone(milestoneId);
+        trackDiagnostic({ phase: "rollback", action: "delete", entity: "milestone", id: milestoneId, status: "success", stage: "rollback-created-milestones" });
       } catch (error: unknown) {
         rollbackIssues.push({ entity: "milestone", id: milestoneId, reason: toErrorMessage(error) });
+        trackDiagnostic({
+          phase: "rollback",
+          action: "delete",
+          entity: "milestone",
+          id: milestoneId,
+          status: "failed",
+          reason: toErrorMessage(error),
+          stage: "rollback-created-milestones"
+        });
       }
     }
 
     if (journal.createdProjectId) {
       try {
+        setStep({ phase: "rollback", action: "delete", entity: "project", stage: "rollback-created-project", id: journal.createdProjectId });
         await deleteProject(journal.createdProjectId);
+        trackDiagnostic({ phase: "rollback", action: "delete", entity: "project", id: journal.createdProjectId, status: "success", stage: "rollback-created-project" });
       } catch (error: unknown) {
         rollbackIssues.push({ entity: "project", id: journal.createdProjectId, reason: toErrorMessage(error) });
+        trackDiagnostic({
+          phase: "rollback",
+          action: "delete",
+          entity: "project",
+          id: journal.createdProjectId,
+          status: "failed",
+          reason: toErrorMessage(error),
+          stage: "rollback-created-project"
+        });
       }
     }
 
     const attempts = pepIds.length + activityIds.length + milestoneIds.length + (journal.createdProjectId ? 1 : 0);
+    const failedByEntity = rollbackIssues.reduce<Partial<Record<CommitEntity, number>>>((acc, issue) => {
+      acc[issue.entity] = (acc[issue.entity] ?? 0) + 1;
+      return acc;
+    }, {});
+
     return {
       status: rollbackIssues.length === 0 ? "complete" : "partial",
       attempts,
-      failures: rollbackIssues
+      failures: rollbackIssues,
+      summary: {
+        attempts,
+        failed: rollbackIssues.length,
+        succeeded: attempts - rollbackIssues.length,
+        failedByEntity
+      }
     } as RollbackResult;
   };
 
   try {
     if (!id) {
+      setStep({ phase: "commit", action: "create", entity: "project", stage: "create-project" });
       id = await args.createProject({ ...args.normalizedProject, status: "Rascunho" });
       journal.createdProjectId = id;
     } else {
+      setStep({ phase: "commit", action: "update", entity: "project", stage: "update-project", id });
       await updateProject(id, { ...args.normalizedProject, status: "Rascunho" });
+      trackDiagnostic({ phase: "commit", action: "update", entity: "project", id, status: "success", stage: "update-project" });
     }
 
     const [existingMilestones, existingActivities, existingPeps] = await Promise.all([
@@ -166,7 +274,9 @@ export async function commitProjectStructure(args: CommitProjectStructureArgs): 
 
         if (existingPepId) {
           desiredPepIds.add(existingPepId);
+          setStep({ phase: "commit", action: "update", entity: "pep", stage: "upsert-peps-without-structure", id: existingPepId });
           await updatePep(existingPepId, payload);
+          trackDiagnostic({ phase: "commit", action: "update", entity: "pep", id: existingPepId, status: "success", stage: "upsert-peps-without-structure" });
           continue;
         }
 
@@ -177,17 +287,23 @@ export async function commitProjectStructure(args: CommitProjectStructureArgs): 
 
       for (const existingPep of existingPeps) {
         if (!desiredPepIds.has(existingPep.Id)) {
+          setStep({ phase: "commit", action: "delete", entity: "pep", stage: "cleanup-peps-without-structure", id: existingPep.Id });
           await deletePep(existingPep.Id);
+          trackDiagnostic({ phase: "commit", action: "delete", entity: "pep", id: existingPep.Id, status: "success", stage: "cleanup-peps-without-structure" });
         }
       }
 
       if (args.purgeStructureWhenNotNeeded) {
         for (const existingActivity of existingActivities) {
+          setStep({ phase: "commit", action: "delete", entity: "activity", stage: "purge-activities-without-structure", id: existingActivity.Id });
           await deleteActivity(existingActivity.Id);
+          trackDiagnostic({ phase: "commit", action: "delete", entity: "activity", id: existingActivity.Id, status: "success", stage: "purge-activities-without-structure" });
         }
 
         for (const existingMilestone of existingMilestones) {
+          setStep({ phase: "commit", action: "delete", entity: "milestone", stage: "purge-milestones-without-structure", id: existingMilestone.Id });
           await deleteMilestone(existingMilestone.Id);
+          trackDiagnostic({ phase: "commit", action: "delete", entity: "milestone", id: existingMilestone.Id, status: "success", stage: "purge-milestones-without-structure" });
         }
       }
 
@@ -203,10 +319,12 @@ export async function commitProjectStructure(args: CommitProjectStructureArgs): 
         desiredMilestoneIds.add(existingMilestoneId);
         const existingMilestone = existingMilestones.find((item) => item.Id === existingMilestoneId);
         if (!existingMilestone || normalizeText(existingMilestone.Title).toUpperCase() !== title) {
+          setStep({ phase: "commit", action: "update", entity: "milestone", stage: "upsert-milestones", id: existingMilestoneId });
           await updateMilestone(existingMilestoneId, {
             Title: title,
             projectsIdId: id
           });
+          trackDiagnostic({ phase: "commit", action: "update", entity: "milestone", id: existingMilestoneId, status: "success", stage: "upsert-milestones" });
         }
         milestoneIdMap.set(milestone.tempId, existingMilestoneId);
       } else {
@@ -239,7 +357,9 @@ export async function commitProjectStructure(args: CommitProjectStructureArgs): 
 
       if (existingActivityId) {
         desiredActivityIds.add(existingActivityId);
+        setStep({ phase: "commit", action: "update", entity: "activity", stage: "upsert-activities", id: existingActivityId });
         await updateActivity(existingActivityId, payload);
+        trackDiagnostic({ phase: "commit", action: "update", entity: "activity", id: existingActivityId, status: "success", stage: "upsert-activities" });
         activityIdMap.set(activity.tempId, existingActivityId);
       } else {
         const createdActivityId = await createActivity(payload);
@@ -266,7 +386,9 @@ export async function commitProjectStructure(args: CommitProjectStructureArgs): 
 
       if (existingPepId) {
         desiredPepIds.add(existingPepId);
+        setStep({ phase: "commit", action: "update", entity: "pep", stage: "upsert-peps", id: existingPepId });
         await updatePep(existingPepId, payload);
+        trackDiagnostic({ phase: "commit", action: "update", entity: "pep", id: existingPepId, status: "success", stage: "upsert-peps" });
       } else {
         const createdPepId = await createPep(payload);
         journal.pepIds.push(createdPepId);
@@ -276,29 +398,48 @@ export async function commitProjectStructure(args: CommitProjectStructureArgs): 
 
     for (const existingPep of existingPeps) {
       if (!desiredPepIds.has(existingPep.Id)) {
+        setStep({ phase: "commit", action: "delete", entity: "pep", stage: "cleanup-peps", id: existingPep.Id });
         await deletePep(existingPep.Id);
+        trackDiagnostic({ phase: "commit", action: "delete", entity: "pep", id: existingPep.Id, status: "success", stage: "cleanup-peps" });
       }
     }
 
     for (const existingActivity of existingActivities) {
       if (!desiredActivityIds.has(existingActivity.Id)) {
+        setStep({ phase: "commit", action: "delete", entity: "activity", stage: "cleanup-activities", id: existingActivity.Id });
         await deleteActivity(existingActivity.Id);
+        trackDiagnostic({ phase: "commit", action: "delete", entity: "activity", id: existingActivity.Id, status: "success", stage: "cleanup-activities" });
       }
     }
 
     for (const existingMilestone of existingMilestones) {
       if (!desiredMilestoneIds.has(existingMilestone.Id)) {
+        setStep({ phase: "commit", action: "delete", entity: "milestone", stage: "cleanup-milestones", id: existingMilestone.Id });
         await deleteMilestone(existingMilestone.Id);
+        trackDiagnostic({ phase: "commit", action: "delete", entity: "milestone", id: existingMilestone.Id, status: "success", stage: "cleanup-milestones" });
       }
     }
 
     return { projectId: id, journal };
   } catch (error) {
+    failedStep = activeStep;
+    if (activeStep?.action !== "create" && activeStep?.id) {
+      trackDiagnostic({
+        phase: activeStep.phase,
+        action: activeStep.action,
+        entity: activeStep.entity,
+        id: activeStep.id,
+        status: "failed",
+        reason: toErrorMessage(error),
+        stage: activeStep.stage
+      });
+    }
     const rollbackResult = await rollback();
     throw new CommitProjectStructureError("Erro ao persistir estrutura do projeto.", {
       journal,
       rollback: rollbackResult,
-      cause: error
+      cause: error,
+      failedStep
     });
   }
 }
