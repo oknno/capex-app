@@ -46,7 +46,7 @@ export function ProjectsPage(props: {
   const [selectedFullState, setSelectedFullState] = useState<"idle" | "loading" | "error">("idle");
   const [confirmState, setConfirmState] = useState<{ title: string; message: string; onConfirm: () => Promise<void> | void; tone?: "danger" | "neutral"; confirmingText?: string } | null>(null);
   const [confirmingAction, setConfirmingAction] = useState(false);
-  const selectedForActions = selectedFull ?? list.selected;
+  const selectedForPolicies = selectedFull ?? list.selected;
 
 
   useEffect(() => {
@@ -125,7 +125,7 @@ export function ProjectsPage(props: {
   }
 
   async function onSendToApproval() {
-    const selected = selectedForActions;
+    const selected = selectedForPolicies;
     const check = canSend(selected);
     if (!check.ok || !selected) {
       notify(check.reason ?? "Não foi possível enviar para aprovação.", "info");
@@ -152,7 +152,7 @@ export function ProjectsPage(props: {
   }
 
   async function onBackStatus() {
-    const selected = selectedForActions;
+    const selected = selectedForPolicies;
     const check = canBack(selected);
     if (!check.ok || !selected) {
       notify(check.reason ?? "Não foi possível voltar o status para rascunho.", "info");
@@ -179,7 +179,7 @@ export function ProjectsPage(props: {
   }
 
   async function onDelete() {
-    const selected = list.selected;
+    const selected = selectedForPolicies;
     const check = canDelete(selected);
     if (!check.ok || !selected) {
       notify(check.reason ?? "Não foi possível excluir o projeto.", "error");
@@ -206,11 +206,11 @@ export function ProjectsPage(props: {
   }
 
 
-  const commandPolicies = getCommandBarPolicies(selectedForActions);
-  const editPolicy = canEdit(selectedForActions);
-  const deletePolicy = canDelete(selectedForActions);
-  const sendPolicy = canSend(selectedForActions);
-  const backPolicy = canBack(selectedForActions);
+  const commandPolicies = getCommandBarPolicies(selectedForPolicies);
+  const editPolicy = canEdit(selectedForPolicies);
+  const deletePolicy = canDelete(selectedForPolicies);
+  const sendPolicy = canSend(selectedForPolicies);
+  const backPolicy = canBack(selectedForPolicies);
 
   function onExport() {
     const hasExported = exportProjectsCsv(list.items);
