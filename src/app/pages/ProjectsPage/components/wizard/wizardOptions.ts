@@ -94,7 +94,81 @@ export const ROCE_CLASS_OPTIONS: SelectOption[] = [
   { value: "AMBOS", label: "AMBOS" }
 ];
 
-export const PEP_ELEMENT_OPTIONS: SelectOption[] = Array.from({ length: 18 }, (_, i) => ({ value: `PEP_${i + 1}`, label: `Elemento PEP ${i + 1}` }));
+const PEP_ELEMENT_OPTIONS_DEFAULT: SelectOption[] = [
+  { value: "DESP.ENGENHARIA / DETALHAMENTO PROJETO", label: "DESP.ENGENHARIA / DETALHAMENTO PROJETO" },
+  { value: "AQUISIÇÃO DE EQUIPAMENTOS NACIONAIS", label: "AQUISIÇÃO DE EQUIPAMENTOS NACIONAIS" },
+  { value: "AQUISIÇÃO DE EQUIPAMENTOS IMPORTADOS", label: "AQUISIÇÃO DE EQUIPAMENTOS IMPORTADOS" },
+  { value: "AQUISIÇÃO DE VEÍCULOS", label: "AQUISIÇÃO DE VEÍCULOS" },
+  { value: "DESPESAS COM OBRAS CIVIS", label: "DESPESAS COM OBRAS CIVIS" },
+  { value: "DESP.MONTAGEM EQUIPTOS/ESTRUTURAS/OUTRAS", label: "DESP.MONTAGEM EQUIPTOS/ESTRUTURAS/OUTRAS" },
+  { value: "AQ.DE COMPONENTES/MAT.INSTAL./FERRAMENTA", label: "AQ.DE COMPONENTES/MAT.INSTAL./FERRAMENTA" },
+  { value: "DESPESAS COM MEIO AMBIENTE", label: "DESPESAS COM MEIO AMBIENTE" },
+  { value: "DESPESAS COM SEGURANÇA", label: "DESPESAS COM SEGURANÇA" },
+  { value: "DESPESAS COM SEGUROS", label: "DESPESAS COM SEGUROS" },
+  { value: "DESP.CONSULTORIA INTERNA (AMS)-TEC.INFOR", label: "DESP.CONSULTORIA INTERNA (AMS)-TEC.INFOR" },
+  { value: "DESP.CONSULTORIA EXTERNA - TEC.INFOR", label: "DESP.CONSULTORIA EXTERNA - TEC.INFOR" },
+  { value: "AQUISIÇÃO DE HARDWARE (NOTEBOOKS, ETC)", label: "AQUISIÇÃO DE HARDWARE (NOTEBOOKS, ETC)" },
+  { value: "AQUISIÇÃO DE SOFTWARE", label: "AQUISIÇÃO DE SOFTWARE" },
+  { value: "AQUISIÇÃO DE IMÓVEIS", label: "AQUISIÇÃO DE IMÓVEIS" },
+  { value: "DESP.GERENCIAMENTO E COORDENAÇÃO", label: "DESP.GERENCIAMENTO E COORDENAÇÃO" },
+  { value: "CONTINGÊNCIAS", label: "CONTINGÊNCIAS" },
+  { value: "CILINDROS E DISCOS DE LAMINAÇÃO", label: "CILINDROS E DISCOS DE LAMINAÇÃO" }
+];
+
+const PEP_ELEMENT_OPTIONS_BF00: SelectOption[] = [
+  { value: "VIGA", label: "VIGA" },
+  { value: "TUBO DE ATIÇO", label: "TUBO DE ATIÇO" },
+  { value: "TELHADO", label: "TELHADO" },
+  { value: "PORTAS", label: "PORTAS" },
+  { value: "PISO E MURETA DE APOIO", label: "PISO E MURETA DE APOIO" },
+  { value: "PISO", label: "PISO" },
+  { value: "PILAR", label: "PILAR" },
+  { value: "PAREDE DEFLETORA", label: "PAREDE DEFLETORA" },
+  { value: "PAREDE", label: "PAREDE" },
+  { value: "LAYOUT CÉLULA DE QUEIMA", label: "LAYOUT CÉLULA DE QUEIMA" },
+  { value: "FUNDAÇÃO", label: "FUNDAÇÃO" },
+  { value: "ELÉTRICA/AUTOMAÇÃO", label: "ELÉTRICA/AUTOMAÇÃO" },
+  { value: "ELÉTRICA E INSTRUMENTAÇÃO", label: "ELÉTRICA E INSTRUMENTAÇÃO" },
+  { value: "DUTOS PASSAGEM GASES", label: "DUTOS PASSAGEM GASES" },
+  { value: "DUTO METÁLICO", label: "DUTO METÁLICO" },
+  { value: "CÚPULA", label: "CÚPULA" },
+  { value: "CHAMINÉ METÁLICA", label: "CHAMINÉ METÁLICA" },
+  { value: "CHAMINÉ CAPELA", label: "CHAMINÉ CAPELA" },
+  { value: "CENTRAL DE ALCATRÃO", label: "CENTRAL DE ALCATRÃO" },
+  { value: "CÉLULA DE QUEIMA", label: "CÉLULA DE QUEIMA" },
+  { value: "CÂMARAS", label: "CÂMARAS" },
+  { value: "CAIXAS DEFLETORAS", label: "CAIXAS DEFLETORAS" },
+  { value: "CAIXA DE COLETA DE ALCATRÃO", label: "CAIXA DE COLETA DE ALCATRÃO" },
+  { value: "INSTALAÇÕES INDUSTRIAIS", label: "INSTALAÇÕES INDUSTRIAIS" },
+  { value: "INSTALAÇÕES PREDIAIS", label: "INSTALAÇÕES PREDIAIS" },
+  { value: "COMPUTADORES E PERIFÉRICOS", label: "COMPUTADORES E PERIFÉRICOS" },
+  { value: "SOFTWARES", label: "SOFTWARES" },
+  { value: "CERTIFICAÇÕES E LICENÇAS", label: "CERTIFICAÇÕES E LICENÇAS" },
+  { value: "INFRAESTRUTURA UPC'S", label: "INFRAESTRUTURA UPC'S" },
+  { value: "MÓDULOS MOVIMENTAÇÃO", label: "MÓDULOS MOVIMENTAÇÃO" },
+  { value: "MÓDULOS MECANIZAÇÃO", label: "MÓDULOS MECANIZAÇÃO" },
+  { value: "CONSTRUÇÃO DE VIVEIROS", label: "CONSTRUÇÃO DE VIVEIROS" },
+  { value: "MELHORIAS INDUSTRIAIS", label: "MELHORIAS INDUSTRIAIS" },
+  { value: "MELHORIAS AMBIENTAIS", label: "MELHORIAS AMBIENTAIS" },
+  { value: "TECNOLOGIA DA INFORMAÇÃO", label: "TECNOLOGIA DA INFORMAÇÃO" },
+  { value: "MÁQUINAS E EQUIPAMENTOS", label: "MÁQUINAS E EQUIPAMENTOS" },
+  { value: "FERRAMENTAS", label: "FERRAMENTAS" },
+  { value: "IMPLEMENTOS AGRÍCOLAS", label: "IMPLEMENTOS AGRÍCOLAS" },
+  { value: "MÓVEIS E UTENSÍLIOS", label: "MÓVEIS E UTENSÍLIOS" },
+  { value: "VEÍCULOS LEVES", label: "VEÍCULOS LEVES" },
+  { value: "VEÍCULOS PESADOS", label: "VEÍCULOS PESADOS" }
+];
+
+export function getPepElementOptions(company?: string): SelectOption[] {
+  return company === "BF00" ? PEP_ELEMENT_OPTIONS_BF00 : PEP_ELEMENT_OPTIONS_DEFAULT;
+}
+
+export function ensurePepElementOption(options: SelectOption[], value?: string): SelectOption[] {
+  const current = String(value ?? "").trim();
+  if (!current) return options;
+  if (options.some((option) => option.value === current)) return options;
+  return [...options, { value: current, label: current }];
+}
 
 export const INVESTMENT_LEVEL_OPTIONS: Array<SelectOption & { minUsd: number; maxUsd?: number }> = [
   { value: "N1", label: "N1 - Board of Directors", minUsd: 150_000_000 },

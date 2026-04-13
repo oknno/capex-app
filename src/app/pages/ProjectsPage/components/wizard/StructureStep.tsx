@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 
 import { toIntOrUndefined } from "../../../../../domain/projects/project.calculations";
 import type { ActivityDraftLocal, MilestoneDraftLocal } from "../../../../../domain/projects/project.validators";
-import { PEP_ELEMENT_OPTIONS } from "./wizardOptions";
+import { ensurePepElementOption, getPepElementOptions } from "./wizardOptions";
 import { SectionTitle } from "./WizardUi";
 import { wizardLayoutStyles } from "./wizardLayoutStyles";
 import { Button } from "../../../../components/ui/Button";
@@ -45,6 +45,7 @@ export function StructureStep(props: {
   projectEndDate?: string;
   milestones: MilestoneDraftLocal[];
   activities: ActivityDraftLocal[];
+  company?: string;
   onChange: (patch: Partial<{ milestones: MilestoneDraftLocal[]; activities: ActivityDraftLocal[] }>) => void;
   onValidationError: (message: string) => void;
 }) {
@@ -86,6 +87,8 @@ export function StructureStep(props: {
     if (!ganttBounds) return null;
     return `${new Date(ganttBounds.min).toLocaleDateString("pt-BR")} - ${new Date(ganttBounds.max).toLocaleDateString("pt-BR")}`;
   }, [ganttBounds]);
+
+  const pepOptions = useMemo(() => getPepElementOptions(props.company), [props.company]);
 
   function getForm(milestoneTempId: string): ActivityFormState {
     return formsByMilestone[milestoneTempId] ?? emptyActivityForm();
@@ -266,7 +269,7 @@ export function StructureStep(props: {
                       <Field label="Elemento PEP">
                         <select value={activity.pepElement ?? ""} onChange={(e) => updateActivity(activity.tempId, { pepElement: e.target.value || undefined })} style={wizardLayoutStyles.input}>
                           <option value="">Selecione o elemento PEP</option>
-                          {PEP_ELEMENT_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                          {ensurePepElementOption(pepOptions, activity.pepElement).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                         </select>
                       </Field>
 
@@ -327,7 +330,7 @@ export function StructureStep(props: {
                       <Field label="Elemento PEP">
                         <select value={form.acPepElement} onChange={(e) => setFormField(milestone.tempId, { acPepElement: e.target.value })} style={wizardLayoutStyles.input}>
                           <option value="">Selecione o elemento PEP</option>
-                          {PEP_ELEMENT_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                          {ensurePepElementOption(pepOptions, form.acPepElement).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                         </select>
                       </Field>
 
