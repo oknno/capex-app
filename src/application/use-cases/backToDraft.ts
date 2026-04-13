@@ -1,6 +1,7 @@
-import { canBackToDraft, backToDraft as backToDraftWorkflow } from "../../services/sharepoint/projectsWorkflow";
+import { backToDraft as backToDraftWorkflow } from "../../services/sharepoint/projectsWorkflow";
 import { projectViewToRow } from "../contracts/projectAdapters";
 import type { ProjectView } from "../contracts/project";
+import { canBackToDraft } from "../../domain/projects/projectStatusPolicies";
 
 export type BackToDraftDeps = {
   canBackToDraft: (project: ProjectView | null) => { ok: boolean; reason?: string };

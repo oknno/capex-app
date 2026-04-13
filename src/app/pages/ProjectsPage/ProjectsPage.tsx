@@ -6,8 +6,14 @@ import { createProject } from "../../../application/use-cases/createProject";
 import { editProject } from "../../../application/use-cases/editProject";
 import { sendProjectToApproval } from "../../../application/use-cases/sendToApproval";
 import { moveProjectBackToDraft } from "../../../application/use-cases/backToDraft";
-import { canDeleteProject, deleteDraftProjectAndRelated } from "../../../application/use-cases/deleteProject";
+import { deleteDraftProjectAndRelated } from "../../../application/use-cases/deleteProject";
 import { normalizeError } from "../../../application/errors/appError";
+import {
+  canBackToDraft,
+  canDeleteProject,
+  canEditProject,
+  canSendToApproval
+} from "../../../domain/projects/projectStatusPolicies";
 
 import { ProjectWizardModal } from "./ProjectWizardModal";
 import { Card } from "../../components/ui/Card";
@@ -151,8 +157,9 @@ export function ProjectsPage(props: {
 
   async function onSendToApproval() {
     const selected = list.selected;
-    if (!selected) {
-      notify("Selecione um projeto para enviar para aprovação.", "info");
+    const check = canSendToApproval(selected);
+    if (!check.ok || !selected) {
+      notify(check.reason ?? "Não foi possível enviar para aprovação.", "info");
       return;
     }
 
@@ -176,8 +183,9 @@ export function ProjectsPage(props: {
 
   async function onBackStatus() {
     const selected = list.selected;
-    if (!selected) {
-      notify("Selecione um projeto para voltar o status para rascunho.", "info");
+    const check = canBackToDraft(selected);
+    if (!check.ok || !selected) {
+      notify(check.reason ?? "Não foi possível voltar o status para rascunho.", "info");
       return;
     }
 
@@ -250,9 +258,9 @@ export function ProjectsPage(props: {
         onView={() => list.selected && setWizard({ mode: "view", initial: list.selected })}
         onEdit={() => {
           if (!list.selected) return;
-          const normalizedStatus = (list.selected.status ?? "").trim().toLowerCase();
-          if (normalizedStatus && normalizedStatus !== "rascunho") {
-            notify("Não é possível editar. O projeto não está em rascunho.", "error");
+          const check = canEditProject(list.selected);
+          if (!check.ok) {
+            notify(check.reason ?? "Não foi possível editar o projeto.", "error");
             return;
           }
           setWizard({ mode: "edit", initial: list.selected });

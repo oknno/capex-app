@@ -3,19 +3,9 @@ import { getMilestonesByProject, deleteMilestone } from "../../services/sharepoi
 import { getActivitiesBatchByProject, deleteActivity } from "../../services/sharepoint/activitiesApi";
 import { getPepsBatchByProject, deletePep } from "../../services/sharepoint/pepsApi";
 import type { ProjectView } from "../contracts/project";
+import { canDeleteProject } from "../../domain/projects/projectStatusPolicies";
 
-function normalizeStatus(status?: string): string {
-  return (status ?? "").trim().toLowerCase();
-}
-
-export function canDeleteProject(project: ProjectView | null): { ok: boolean; reason?: string } {
-  if (!project) return { ok: false, reason: "Selecione um projeto." };
-
-  const status = normalizeStatus(project.status);
-  if (!status || status === "rascunho") return { ok: true };
-
-  return { ok: false, reason: "Somente projetos em rascunho podem ser excluídos." };
-}
+export { canDeleteProject };
 
 export async function deleteDraftProjectAndRelated(project: ProjectView | null): Promise<void> {
   const check = canDeleteProject(project);
