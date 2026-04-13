@@ -6,20 +6,6 @@ import type { WizardDraftState } from "../../../../domain/projects/project.valid
 import { validateProjectBasics, validateStructure } from "../../../../domain/projects/project.validators";
 import { normalizeError } from "../../../../application/errors/appError";
 
-function formatCommitError(error: CommitProjectStructureError): string {
-  const rollbackDetails =
-    error.rollback.failures.length === 0
-      ? "Nenhuma falha durante rollback."
-      : error.rollback.failures.map((failure) => `- ${failure.entity} #${failure.id}: ${failure.reason}`).join("\n");
-
-  return [
-    `${error.message}`,
-    `Falha principal: ${error.causeError instanceof Error ? error.causeError.message : "Erro desconhecido"}`,
-    `Rollback: ${error.rollback.status} (${error.rollback.failures.length}/${error.rollback.attempts} falhas).`,
-    rollbackDetails,
-  ].join("\n");
-}
-
 type UseWizardCommitDeps = {
   commitProjectStructure: typeof commitProjectStructure;
 };
@@ -117,10 +103,11 @@ export function useWizardCommit(params: {
       params.onClose();
     } catch (error: unknown) {
       if (error instanceof CommitProjectStructureError) {
-        params.notify(formatCommitError(error), "error");
+        console.error(error);
+        params.notify("Não foi possível salvar o rascunho. Tente novamente.", "error");
       } else {
         const appError = normalizeError(error, "Não foi possível concluir o commit.");
-        params.notify(appError.technicalDetails ? `${appError.userMessage} (${appError.technicalDetails})` : appError.userMessage, "error");
+        params.notify(appError.userMessage, "error");
       }
     } finally {
       commitInFlightRef.current = false;

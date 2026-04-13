@@ -82,7 +82,8 @@ export function ProjectsPage(props: {
   const [wizard, setWizard] = useState<{ mode: "create" | "edit" | "view" | "duplicate"; initial?: ProjectRow } | null>(null);
   const [selectedFull, setSelectedFull] = useState<ProjectRow | null>(null);
   const [selectedFullState, setSelectedFullState] = useState<"idle" | "loading" | "error">("idle");
-  const [confirmState, setConfirmState] = useState<{ title: string; message: string; onConfirm: () => void; tone?: "danger" | "neutral" } | null>(null);
+  const [confirmState, setConfirmState] = useState<{ title: string; message: string; onConfirm: () => Promise<void> | void; tone?: "danger" | "neutral"; confirmingText?: string } | null>(null);
+  const [confirmingAction, setConfirmingAction] = useState(false);
 
 
   useEffect(() => {
@@ -116,23 +117,35 @@ export function ProjectsPage(props: {
   }, [list.selectedId]);
 
   async function onCreate(draft: ProjectDraft): Promise<number> {
-    const id = await createProject(draft);
-    await list.loadFirstPage();
-    list.setSelectedId(id);
-    notify("Projeto criado com sucesso.", "success");
-    return id;
+    try {
+      const id = await createProject(draft);
+      await list.loadFirstPage();
+      list.setSelectedId(id);
+      notify("Projeto criado com sucesso.", "success");
+      return id;
+    } catch (e) {
+      const appError = normalizeError(e, "Não foi possível criar o projeto. Tente novamente.");
+      notify(appError.userMessage, "error");
+      throw e;
+    }
   }
 
   async function onEdit(draft: ProjectDraft): Promise<number> {
     if (!list.selected) throw new Error("Selecione um projeto.");
-    await editProject(list.selected.Id, draft);
-    await list.loadFirstPage();
-    list.setSelectedId(list.selected.Id);
-    notify("Projeto atualizado com sucesso.", "success");
-    return list.selected.Id;
+    try {
+      await editProject(list.selected.Id, draft);
+      await list.loadFirstPage();
+      list.setSelectedId(list.selected.Id);
+      notify("Alterações salvas.", "success");
+      return list.selected.Id;
+    } catch (e) {
+      const appError = normalizeError(e, "Não foi possível salvar as alterações. Tente novamente.");
+      notify(appError.userMessage, "error");
+      throw e;
+    }
   }
 
-  function requestConfirm(config: { title: string; message: string; onConfirm: () => void; tone?: "danger" | "neutral" }) {
+  function requestConfirm(config: { title: string; message: string; onConfirm: () => Promise<void> | void; tone?: "danger" | "neutral"; confirmingText?: string }) {
     setConfirmState(config);
   }
 
@@ -146,8 +159,8 @@ export function ProjectsPage(props: {
     requestConfirm({
       title: "Enviar para aprovação",
       message: `Enviar o projeto #${selected.Id} para Aprovação?`,
+      confirmingText: "Enviando...",
       onConfirm: async () => {
-        setConfirmState(null);
         try {
           await sendProjectToApproval(selected);
           await list.loadFirstPage();
@@ -155,7 +168,7 @@ export function ProjectsPage(props: {
           notify("Projeto enviado para aprovação.", "success");
         } catch (e) {
           const appError = normalizeError(e, "Erro ao enviar para aprovação.");
-          notify(appError.technicalDetails ? `${appError.userMessage} (${appError.technicalDetails})` : appError.userMessage, "error");
+          notify(appError.userMessage, "error");
         }
       }
     });
@@ -171,8 +184,8 @@ export function ProjectsPage(props: {
     requestConfirm({
       title: "Voltar para rascunho",
       message: `Voltar o status do projeto #${selected.Id} para Rascunho?`,
+      confirmingText: "Atualizando...",
       onConfirm: async () => {
-        setConfirmState(null);
         try {
           await moveProjectBackToDraft(selected);
           await list.loadFirstPage();
@@ -180,7 +193,7 @@ export function ProjectsPage(props: {
           notify("Projeto retornou para rascunho.", "success");
         } catch (e) {
           const appError = normalizeError(e, "Erro ao voltar para rascunho.");
-          notify(appError.technicalDetails ? `${appError.userMessage} (${appError.technicalDetails})` : appError.userMessage, "error");
+          notify(appError.userMessage, "error");
         }
       }
     });
@@ -190,7 +203,7 @@ export function ProjectsPage(props: {
     const selected = list.selected;
     const check = canDeleteProject(selected);
     if (!check.ok || !selected) {
-      notify(check.reason ?? "Não foi possível excluir o projeto.", "info");
+      notify(check.reason ?? "Não foi possível excluir o projeto.", "error");
       return;
     }
 
@@ -198,8 +211,8 @@ export function ProjectsPage(props: {
       title: "Excluir projeto",
       message: `Deseja realmente excluir o projeto #${selected.Id}? Esta ação também excluirá marcos, atividades e PEPs relacionados.`,
       tone: "danger",
+      confirmingText: "Excluindo...",
       onConfirm: async () => {
-        setConfirmState(null);
         try {
           await deleteDraftProjectAndRelated(selected);
           list.setSelectedId(null);
@@ -207,7 +220,7 @@ export function ProjectsPage(props: {
           notify("Projeto e estrutura relacionada excluídos com sucesso.", "success");
         } catch (e) {
           const appError = normalizeError(e, "Erro ao excluir projeto.");
-          notify(appError.technicalDetails ? `${appError.userMessage} (${appError.technicalDetails})` : appError.userMessage, "error");
+          notify(appError.userMessage, "error");
         }
       }
     });
@@ -239,7 +252,7 @@ export function ProjectsPage(props: {
           if (!list.selected) return;
           const normalizedStatus = (list.selected.status ?? "").trim().toLowerCase();
           if (normalizedStatus && normalizedStatus !== "rascunho") {
-            notify("Apenas projetos em rascunho podem ser editados.", "info");
+            notify("Não é possível editar. O projeto não está em rascunho.", "error");
             return;
           }
           setWizard({ mode: "edit", initial: list.selected });
@@ -295,7 +308,16 @@ export function ProjectsPage(props: {
         message={confirmState?.message ?? ""}
         tone={confirmState?.tone}
         onClose={() => setConfirmState(null)}
-        onConfirm={() => confirmState?.onConfirm()}
+        confirming={confirmingAction}
+        confirmingText={confirmState?.confirmingText}
+        onConfirm={() => {
+          if (!confirmState) return;
+          setConfirmingAction(true);
+          void Promise.resolve(confirmState.onConfirm()).finally(() => {
+            setConfirmingAction(false);
+            setConfirmState(null);
+          });
+        }}
       />
     </div>
   );

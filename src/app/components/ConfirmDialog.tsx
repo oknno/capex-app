@@ -3,14 +3,17 @@ export function ConfirmDialog(props: {
   title: string;
   message: string;
   confirmText?: string;
+  confirmingText?: string;
   cancelText?: string;
   tone?: "danger" | "neutral";
+  confirming?: boolean;
   onConfirm: () => void;
   onClose: () => void;
 }) {
   if (!props.open) return null;
 
   const tone = props.tone ?? "neutral";
+  const confirming = Boolean(props.confirming);
 
   return (
     <div
@@ -24,7 +27,7 @@ export function ConfirmDialog(props: {
         padding: 16,
         zIndex: 9999
       }}
-      onMouseDown={props.onClose}
+      onMouseDown={confirming ? undefined : props.onClose}
     >
       <div
         style={{
@@ -54,15 +57,16 @@ export function ConfirmDialog(props: {
             gap: 8
           }}
         >
-          <button className="btn" onClick={props.onClose}>
+          <button className="btn" onClick={props.onClose} disabled={confirming}>
             {props.cancelText ?? "Cancelar"}
           </button>
 
           <button
             className={`btn ${tone === "danger" ? "danger" : "primary"}`}
             onClick={props.onConfirm}
+            disabled={confirming}
           >
-            {props.confirmText ?? "Confirmar"}
+            {confirming ? props.confirmingText ?? "Processando..." : props.confirmText ?? "Confirmar"}
           </button>
         </div>
       </div>
