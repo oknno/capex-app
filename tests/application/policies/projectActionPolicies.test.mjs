@@ -1,7 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { canBack, canDelete, canEdit, canSend } from "../../../src/application/policies/projectActionPolicies.ts";
+import {
+  canBack,
+  canDelete,
+  canEdit,
+  canSend,
+  getCommandBarPolicies,
+  PROJECT_STATUSES,
+} from "../../../src/application/policies/projectActionPolicies.ts";
 
 const scenarios = [
   {
@@ -25,11 +32,20 @@ const scenarios = [
     expected: { edit: false, delete: false, send: false, back: true },
   },
   {
-    name: "vazio",
+    name: "sem status",
     project: { status: "" },
     expected: { edit: true, delete: true, send: false, back: false },
   },
+  {
+    name: "status desconhecido",
+    project: { status: "Cancelado" },
+    expected: { edit: false, delete: false, send: false, back: false },
+  },
 ];
+
+test("lista de status de projeto conhecidos pela command bar", () => {
+  assert.deepEqual([...PROJECT_STATUSES], ["Rascunho", "Em Aprovação", "Aprovado", "Reprovado"]);
+});
 
 for (const scenario of scenarios) {
   test(`canEdit/canDelete/canSend/canBack para status ${scenario.name}`, () => {
@@ -44,3 +60,21 @@ for (const scenario of scenarios) {
     assert.equal(backResult.ok, scenario.expected.back);
   });
 }
+
+test("fallback seguro sem projeto selecionado", () => {
+  const policies = getCommandBarPolicies(null);
+  assert.equal(policies.view.ok, false);
+  assert.equal(policies.edit.ok, false);
+  assert.equal(policies.delete.ok, false);
+  assert.equal(policies.sendToApproval.ok, false);
+  assert.equal(policies.backToDraft.ok, false);
+  assert.equal(policies.edit.reason, "Selecione um projeto.");
+});
+
+test("troca rápida de seleção recalcula ações", () => {
+  const draftPolicies = getCommandBarPolicies({ status: "Rascunho" });
+  const approvedPolicies = getCommandBarPolicies({ status: "Aprovado" });
+
+  assert.equal(draftPolicies.sendToApproval.ok, true);
+  assert.equal(approvedPolicies.sendToApproval.ok, false);
+});

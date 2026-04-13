@@ -1,17 +1,74 @@
-import {
-  canBackToDraft,
-  canDeleteProject,
-  canEditProject,
-  canSendToApproval,
-} from "../../domain/projects/projectStatusPolicies.ts";
-
-type ProjectWithStatus = {
+export type ProjectWithStatus = {
   status?: string | null;
 };
 
-type PolicyResult = {
-  ok: boolean;
-  reason?: string;
+export type CommandBarAction = "view" | "edit" | "duplicate" | "delete" | "sendToApproval" | "backToDraft";
+
+type StatusBucket = "missing" | "draft" | "inApproval" | "approved" | "rejected" | "unknown";
+
+export const PROJECT_STATUSES = ["Rascunho", "Em Aprovação", "Aprovado", "Reprovado"] as const;
+
+type ActionRule = {
+  enabled: boolean;
+  hidden?: boolean;
+  reasonWhenDisabled?: string;
+};
+
+const statusActionMatrix: Record<StatusBucket, Record<CommandBarAction, ActionRule>> = {
+  missing: {
+    view: { enabled: true },
+    edit: { enabled: true },
+    duplicate: { enabled: true },
+    delete: { enabled: true },
+    sendToApproval: {
+      enabled: false,
+      reasonWhenDisabled: "Projeto sem status. Apenas projetos em rascunho podem ser enviados para aprovação.",
+    },
+    backToDraft: { enabled: false, reasonWhenDisabled: "Status vazio." },
+  },
+  draft: {
+    view: { enabled: true },
+    edit: { enabled: true },
+    duplicate: { enabled: true },
+    delete: { enabled: true },
+    sendToApproval: { enabled: true },
+    backToDraft: { enabled: false, reasonWhenDisabled: "Projeto já está em rascunho." },
+  },
+  inApproval: {
+    view: { enabled: true },
+    edit: { enabled: false, reasonWhenDisabled: "Não é possível editar. O projeto não está em rascunho." },
+    duplicate: { enabled: true },
+    delete: { enabled: false, reasonWhenDisabled: "Somente projetos em rascunho podem ser excluídos." },
+    sendToApproval: { enabled: false, reasonWhenDisabled: "Projeto já está em aprovação." },
+    backToDraft: { enabled: true },
+  },
+  approved: {
+    view: { enabled: true },
+    edit: { enabled: false, reasonWhenDisabled: "Não é possível editar. O projeto não está em rascunho." },
+    duplicate: { enabled: true },
+    delete: { enabled: false, reasonWhenDisabled: "Somente projetos em rascunho podem ser excluídos." },
+    sendToApproval: { enabled: false, reasonWhenDisabled: "Projeto já está aprovado." },
+    backToDraft: { enabled: false, reasonWhenDisabled: "Projeto aprovado não deve voltar para rascunho." },
+  },
+  rejected: {
+    view: { enabled: true },
+    edit: { enabled: false, reasonWhenDisabled: "Não é possível editar. O projeto não está em rascunho." },
+    duplicate: { enabled: true },
+    delete: { enabled: false, reasonWhenDisabled: "Somente projetos em rascunho podem ser excluídos." },
+    sendToApproval: {
+      enabled: false,
+      reasonWhenDisabled: "Projeto reprovado não pode ser reenviado automaticamente. Volte para rascunho antes de enviar.",
+    },
+    backToDraft: { enabled: true },
+  },
+  unknown: {
+    view: { enabled: true },
+    edit: { enabled: false, reasonWhenDisabled: "Status desconhecido. Edição bloqueada por segurança." },
+    duplicate: { enabled: true },
+    delete: { enabled: false, reasonWhenDisabled: "Status desconhecido. Exclusão bloqueada por segurança." },
+    sendToApproval: { enabled: false, reasonWhenDisabled: "Status desconhecido. Envio bloqueado por segurança." },
+    backToDraft: { enabled: false, reasonWhenDisabled: "Status desconhecido. Alteração bloqueada por segurança." },
+  },
 };
 
 export const projectActionMessages = {
@@ -21,23 +78,66 @@ export const projectActionMessages = {
   backDenied: "Não foi possível voltar o status para rascunho.",
 };
 
-function withFallback(result: PolicyResult, fallbackMessage: string): PolicyResult {
-  if (result.ok) return result;
-  return { ok: false, reason: result.reason ?? fallbackMessage };
+function normalizeStatus(status?: string | null): string {
+  return (status ?? "").trim().toLowerCase();
 }
 
-export function canEdit(project: ProjectWithStatus | null): PolicyResult {
-  return withFallback(canEditProject(project), projectActionMessages.editDenied);
+function resolveStatusBucket(status?: string | null): StatusBucket {
+  const normalized = normalizeStatus(status);
+  if (!normalized) return "missing";
+  if (normalized === "rascunho") return "draft";
+  if (normalized === "em aprovação" || normalized === "em aprovacao") return "inApproval";
+  if (normalized === "aprovado") return "approved";
+  if (normalized === "reprovado") return "rejected";
+  return "unknown";
 }
 
-export function canDelete(project: ProjectWithStatus | null): PolicyResult {
-  return withFallback(canDeleteProject(project), projectActionMessages.deleteDenied);
+export type ActionPolicy = {
+  ok: boolean;
+  hidden: boolean;
+  reason?: string;
+};
+
+function resolveActionPolicy(project: ProjectWithStatus | null, action: CommandBarAction): ActionPolicy {
+  if (!project) return { ok: false, hidden: false, reason: "Selecione um projeto." };
+
+  const bucket = resolveStatusBucket(project.status);
+  const rule = statusActionMatrix[bucket][action];
+  return {
+    ok: rule.enabled,
+    hidden: Boolean(rule.hidden),
+    reason: rule.enabled ? undefined : rule.reasonWhenDisabled,
+  };
 }
 
-export function canSend(project: ProjectWithStatus | null): PolicyResult {
-  return withFallback(canSendToApproval(project), projectActionMessages.sendDenied);
+function withFallback(policy: ActionPolicy, fallbackMessage: string): ActionPolicy {
+  if (policy.ok) return policy;
+  return { ...policy, reason: policy.reason ?? fallbackMessage };
 }
 
-export function canBack(project: ProjectWithStatus | null): PolicyResult {
-  return withFallback(canBackToDraft(project), projectActionMessages.backDenied);
+export function getCommandBarPolicies(project: ProjectWithStatus | null): Record<CommandBarAction, ActionPolicy> {
+  return {
+    view: resolveActionPolicy(project, "view"),
+    edit: resolveActionPolicy(project, "edit"),
+    duplicate: resolveActionPolicy(project, "duplicate"),
+    delete: resolveActionPolicy(project, "delete"),
+    sendToApproval: resolveActionPolicy(project, "sendToApproval"),
+    backToDraft: resolveActionPolicy(project, "backToDraft"),
+  };
+}
+
+export function canEdit(project: ProjectWithStatus | null): ActionPolicy {
+  return withFallback(resolveActionPolicy(project, "edit"), projectActionMessages.editDenied);
+}
+
+export function canDelete(project: ProjectWithStatus | null): ActionPolicy {
+  return withFallback(resolveActionPolicy(project, "delete"), projectActionMessages.deleteDenied);
+}
+
+export function canSend(project: ProjectWithStatus | null): ActionPolicy {
+  return withFallback(resolveActionPolicy(project, "sendToApproval"), projectActionMessages.sendDenied);
+}
+
+export function canBack(project: ProjectWithStatus | null): ActionPolicy {
+  return withFallback(resolveActionPolicy(project, "backToDraft"), projectActionMessages.backDenied);
 }

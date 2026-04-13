@@ -3,11 +3,12 @@ import { Button } from "../../components/ui/Button";
 import { fieldControlStyles } from "../../components/ui/fieldControlStyles";
 import { uiTokens } from "../../components/ui/tokens";
 import { UNIT_OPTIONS_BY_CENTER } from "./components/wizard/wizardOptions";
+import { PROJECT_STATUSES } from "../../../application/policies/projectActionPolicies";
 
 type SortBy = "Title" | "Id" | "approvalYear";
 type SortDir = "asc" | "desc";
 
-const STATUS_OPTIONS = ["Rascunho", "Em Aprovação", "Aprovado", "Reprovado"];
+const STATUS_OPTIONS = [...PROJECT_STATUSES];
 const UNIT_OPTIONS = Array.from(
   new Set(
     Object.values(UNIT_OPTIONS_BY_CENTER)
@@ -122,6 +123,10 @@ export function CommandBar(props: {
   canDelete: boolean;
   canSend: boolean;
   canBack: boolean;
+  editDisabledReason?: string;
+  deleteDisabledReason?: string;
+  sendDisabledReason?: string;
+  backDisabledReason?: string;
 
   filters: ProjectsFilters;
   onChangeFilters: (patch: Partial<ProjectsFilters>) => void;
@@ -154,15 +159,15 @@ export function CommandBar(props: {
         <Button onClick={props.onRefresh}>Atualizar</Button>
         <Button tone="primary" onClick={props.onNew}>Novo</Button>
 
-        <Button disabled={!hasSelection} onClick={props.onView}>Visualizar</Button>
-        <Button disabled={!props.canEdit} onClick={props.onEdit}>Editar</Button>
-        <Button disabled={!hasSelection} onClick={props.onDuplicate}>Duplicar</Button>
-        <Button disabled={!props.canDelete} onClick={props.onDelete}>Excluir</Button>
+        <Button disabled={!hasSelection} title={!hasSelection ? "Selecione um projeto." : undefined} onClick={props.onView}>Visualizar</Button>
+        <Button disabled={!props.canEdit} title={!props.canEdit ? props.editDisabledReason : undefined} onClick={props.onEdit}>Editar</Button>
+        <Button disabled={!hasSelection} title={!hasSelection ? "Selecione um projeto." : undefined} onClick={props.onDuplicate}>Duplicar</Button>
+        <Button disabled={!props.canDelete} title={!props.canDelete ? props.deleteDisabledReason : undefined} onClick={props.onDelete}>Excluir</Button>
 
         <span style={styles.divider} />
 
-        <Button disabled={!props.canSend} onClick={props.onSendToApproval}>Enviar p/ Aprovação</Button>
-        <Button disabled={!props.canBack} onClick={props.onBackStatus}>Voltar Status</Button>
+        <Button disabled={!props.canSend} title={!props.canSend ? props.sendDisabledReason : undefined} onClick={props.onSendToApproval}>Enviar p/ Aprovação</Button>
+        <Button disabled={!props.canBack} title={!props.canBack ? props.backDisabledReason : undefined} onClick={props.onBackStatus}>Voltar Status</Button>
 
         <span style={styles.divider} />
 
