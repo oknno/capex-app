@@ -22,17 +22,25 @@ export type ActivityDraftLocal = {
 };
 export type PepDraftLocal = { tempId: string; Title: string; year: number; amountBrl: number; activityTempId?: string };
 
-function isValidYearRange(year?: number) {
+export type ValidationTimeReference = {
+  todayIso?: string;
+  todayIsoProvider?: () => string;
+  nowProvider?: () => Date;
+};
+
+function isValidYearRange(year?: number, timeRef?: ValidationTimeReference) {
   if (!year) return false;
-  const current = new Date().getFullYear();
+  const current = (timeRef?.nowProvider?.() ?? new Date()).getFullYear();
   return Number(year) >= current && Number(year) <= current + 5;
 }
 
-function todayIsoDate() {
+function resolveTodayIsoDate(timeRef?: ValidationTimeReference) {
+  if (timeRef?.todayIso) return timeRef.todayIso;
+  if (timeRef?.todayIsoProvider) return timeRef.todayIsoProvider();
   return new Date().toISOString().slice(0, 10);
 }
 
-export function validateProjectBasics(p: ProjectInput) {
+export function validateProjectBasics(p: ProjectInput, timeRef?: ValidationTimeReference) {
   if (!String(p.Title ?? "").trim()) throw new Error("Title é obrigatório.");
   if (String(p.Title ?? "").trim().length > 25) throw new Error("Nome do Projeto deve ter no máximo 25 caracteres.");
   if (String(p.projectFunction ?? "").trim().length > 35) throw new Error("Função do Projeto deve ter no máximo 35 caracteres.");
@@ -44,10 +52,10 @@ export function validateProjectBasics(p: ProjectInput) {
   const b = toIntOrUndefined(p.budgetBrl);
   if (b === undefined || b <= 0) throw new Error("budgetBrl deve ser um inteiro > 0.");
 
-  if (!isValidYearRange(p.approvalYear)) throw new Error("Ano de Aprovação deve estar entre o ano atual e +5 anos.");
+  if (!isValidYearRange(p.approvalYear, timeRef)) throw new Error("Ano de Aprovação deve estar entre o ano atual e +5 anos.");
 
   if (!p.startDate) throw new Error("Data de Início é obrigatória.");
-  const today = todayIsoDate();
+  const today = resolveTodayIsoDate(timeRef);
   if (p.startDate < today) throw new Error("Data de Início deve ser maior ou igual a hoje.");
   if (p.endDate && p.endDate < p.startDate) throw new Error("Data de Término não pode ser menor que a Data de Início.");
 }
