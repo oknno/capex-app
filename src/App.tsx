@@ -14,7 +14,7 @@ type BootstrapData = {
   nextLink?: string;
 };
 
-const MIN_BOOT_DURATION_MS = 3000;
+const DEFAULT_MIN_BOOT_DURATION_MS_NON_PROD = 3000;
 const LOADING_TITLES = ["Carregando projetos", "Carregando atividades", "Carregando KPIs"];
 const LOADING_TITLE_INTERVAL_MS = 1000;
 
@@ -26,11 +26,24 @@ const INITIAL_FILTERS = {
   sortDir: "desc" as const
 };
 
+function getMinBootDurationMs() {
+  const rawValue = import.meta.env.VITE_MIN_BOOT_DURATION_MS;
+  const parsedValue = Number(rawValue);
+  const fallback = import.meta.env.PROD ? 0 : DEFAULT_MIN_BOOT_DURATION_MS_NON_PROD;
+
+  if (!Number.isFinite(parsedValue) || parsedValue < 0) {
+    return fallback;
+  }
+
+  return parsedValue;
+}
+
 export default function App() {
   const [bootState, setBootState] = useState<BootState>("loading");
   const [bootstrapData, setBootstrapData] = useState<BootstrapData>({ items: [] });
   const [bootError, setBootError] = useState("");
   const [loadingTitleIndex, setLoadingTitleIndex] = useState(0);
+  const minBootDurationMs = getMinBootDurationMs();
 
   useEffect(() => {
     if (bootState !== "loading") return;
@@ -63,7 +76,7 @@ export default function App() {
           orderDir: INITIAL_FILTERS.sortDir
         });
 
-        const remainingDelay = Math.max(0, MIN_BOOT_DURATION_MS - (Date.now() - bootStartedAt));
+        const remainingDelay = Math.max(0, minBootDurationMs - (Date.now() - bootStartedAt));
         if (remainingDelay > 0) {
           await new Promise((resolve) => window.setTimeout(resolve, remainingDelay));
         }
@@ -74,7 +87,7 @@ export default function App() {
       } catch (error) {
         console.error(error);
 
-        const remainingDelay = Math.max(0, MIN_BOOT_DURATION_MS - (Date.now() - bootStartedAt));
+        const remainingDelay = Math.max(0, minBootDurationMs - (Date.now() - bootStartedAt));
         if (remainingDelay > 0) {
           await new Promise((resolve) => window.setTimeout(resolve, remainingDelay));
         }
@@ -89,7 +102,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [minBootDurationMs]);
 
   const mainContent = useMemo(() => {
     if (bootState === "loading") {
