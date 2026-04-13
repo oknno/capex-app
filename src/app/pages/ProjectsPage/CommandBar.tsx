@@ -122,8 +122,12 @@ export type ProjectsFilters = {
 
 export function CommandBar(props: {
   selectedId: number | null;
-  selectedStatus?: string;
   totalLoaded: number;
+
+  canEdit: boolean;
+  canDelete: boolean;
+  canSend: boolean;
+  canBack: boolean;
 
   filters: ProjectsFilters;
   onChangeFilters: (patch: Partial<ProjectsFilters>) => void;
@@ -145,10 +149,6 @@ export function CommandBar(props: {
   onExport: () => void;
 }) {
   const hasSelection = props.selectedId != null;
-  const normalizedStatus = (props.selectedStatus ?? "").trim().toLowerCase();
-  const canEdit = hasSelection && (!normalizedStatus || normalizedStatus === "rascunho");
-  const canDelete = hasSelection && (!normalizedStatus || normalizedStatus === "rascunho");
-  const disableBackStatus = hasSelection && normalizedStatus === "aprovado";
 
   return (
     <div style={styles.commandBar}>
@@ -161,14 +161,14 @@ export function CommandBar(props: {
         <Button tone="primary" onClick={props.onNew}>Novo</Button>
 
         <Button disabled={!hasSelection} onClick={props.onView}>Visualizar</Button>
-        <Button disabled={!canEdit} onClick={props.onEdit}>Editar</Button>
+        <Button disabled={!props.canEdit} onClick={props.onEdit}>Editar</Button>
         <Button disabled={!hasSelection} onClick={props.onDuplicate}>Duplicar</Button>
-        <Button disabled={!canDelete} onClick={props.onDelete}>Excluir</Button>
+        <Button disabled={!props.canDelete} onClick={props.onDelete}>Excluir</Button>
 
         <span style={styles.divider} />
 
-        <Button onClick={props.onSendToApproval}>Enviar p/ Aprovação</Button>
-        <Button disabled={disableBackStatus} onClick={props.onBackStatus}>Voltar Status</Button>
+        <Button disabled={!props.canSend} onClick={props.onSendToApproval}>Enviar p/ Aprovação</Button>
+        <Button disabled={!props.canBack} onClick={props.onBackStatus}>Voltar Status</Button>
 
         <span style={styles.divider} />
 
