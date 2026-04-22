@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 
 import { toIntOrUndefined } from "../../../../../domain/projects/project.calculations";
 import type { ActivityDraftLocal, MilestoneDraftLocal, PepDraftLocal } from "../../../../../domain/projects/project.validators";
@@ -25,24 +25,36 @@ export function PepStep(props: {
   onChange: (next: PepDraftLocal[]) => void;
   onValidationError: (message: string) => void;
 }) {
-  const [title, setTitle] = useState("");
-  const [year, setYear] = useState(String(props.defaultYear));
-  const [amount, setAmount] = useState("");
-  const [selectedActivity, setSelectedActivity] = useState("");
-
   const yearOptions = buildYearOptions(5);
   const pepOptions = useMemo(() => getPepElementOptions(props.company), [props.company]);
-  const pepOptionsForCreation = useMemo(() => ensurePepElementOption(pepOptions, title), [pepOptions, title]);
+  const canRemovePep = props.peps.length > 1;
 
-  const defaultActivityTempId = useMemo(() => {
-    if (!props.needStructure || !props.activities.length) return "";
-    return props.activities[0].tempId;
-  }, [props.needStructure, props.activities]);
+  useEffect(() => {
+    if (props.readOnly || props.peps.length > 0) return;
+    props.onChange([
+      {
+        tempId: uid("pp"),
+        Title: "",
+        year: props.defaultYear,
+        amountBrl: 0
+      }
+    ]);
+  }, [props.defaultYear, props.onChange, props.peps.length, props.readOnly]);
 
-  const selectedActivityId = selectedActivity || defaultActivityTempId;
-
+  function addPep() {
+    props.onChange([
+      ...props.peps,
+      {
+        tempId: uid("pp"),
+        Title: "",
+        year: props.defaultYear,
+        amountBrl: 0
+      }
+    ]);
+  }
 
   function removePep(tempId: string) {
+    if (!canRemovePep) return;
     props.onChange(props.peps.filter((pep) => pep.tempId !== tempId));
   }
 
@@ -53,62 +65,6 @@ export function PepStep(props: {
   return (
     <div style={{ padding: 14, display: "grid", gap: 12 }}>
       <SectionTitle title={props.needStructure ? "Elemento PEP (rateio das atividades)" : "5. Elemento PEP (projeto abaixo de 1M)"} subtitle={props.needStructure ? "Projeto ≥ 1M: vincule cada PEP a uma atividade." : "Projeto < 1M: preencha apenas elemento, ano e valor do PEP."} />
-
-      <div style={wizardLayoutStyles.cardSubtle}>
-        <div style={wizardLayoutStyles.journeyStack}>
-          {props.needStructure && (
-            <Field label="Atividade vinculada">
-              <select value={selectedActivityId} onChange={(e) => setSelectedActivity(e.target.value)} disabled={props.readOnly || props.activities.length === 0} style={wizardLayoutStyles.input}>
-                <option value="">Selecione a atividade...</option>
-                {props.activities.map((a) => {
-                  const ms = props.milestones.find((m) => m.tempId === a.milestoneTempId);
-                  return <option key={a.tempId} value={a.tempId}>{a.Title} — {ms?.Title ?? ""}</option>;
-                })}
-              </select>
-            </Field>
-          )}
-
-          <Field label="Elemento PEP">
-            <select value={title} onChange={(e) => setTitle(e.target.value)} style={wizardLayoutStyles.input}>
-              <option value="">Selecione o elemento...</option>
-              {pepOptionsForCreation.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-            </select>
-          </Field>
-
-          <div style={wizardLayoutStyles.journeyPairGrid}>
-            <Field label="Ano do PEP">
-              <select value={year} onChange={(e) => setYear(e.target.value)} style={wizardLayoutStyles.input}>
-                <option value="">Selecione...</option>
-                {yearOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-              </select>
-            </Field>
-
-            <Field label="Valor do PEP (R$)">
-              <input
-                value={amount}
-                onChange={(e) => {
-                  if (e.target.value === "" || /^\d+$/.test(e.target.value)) setAmount(e.target.value);
-                }}
-                placeholder="Somente números inteiros"
-                style={wizardLayoutStyles.input}
-              />
-            </Field>
-          </div>
-
-          <div>
-            <Button tone="primary" disabled={props.readOnly || !title.trim() || !year.trim() || !amount.trim() || (props.needStructure && !selectedActivityId)} onClick={() => {
-              const y = Number(year.trim());
-              const amt = toIntOrUndefined(amount);
-              if (!Number.isFinite(y)) return props.onValidationError("Ano inválido.");
-              if (!amt || amt <= 0) return props.onValidationError("Valor do PEP inválido.");
-
-              props.onChange([...props.peps, { tempId: uid("pp"), Title: title.trim(), year: y, amountBrl: amt, activityTempId: props.needStructure ? selectedActivityId : undefined }]);
-              setTitle("");
-              setAmount("");
-            }}>Adicionar PEP</Button>
-          </div>
-        </div>
-      </div>
 
       <div style={wizardLayoutStyles.box}>
         <div style={wizardLayoutStyles.boxHead}>Elementos PEP ({props.peps.length})</div>
@@ -122,7 +78,7 @@ export function PepStep(props: {
                   <div style={{ fontWeight: 600 }}>PEP</div>
                   <Button
                     type="button"
-                    disabled={props.readOnly}
+                    disabled={props.readOnly || !canRemovePep}
                     onClick={() => removePep(pep.tempId)}
                     style={{ padding: "6px 10px" }}
                     aria-label="Remover PEP"
@@ -181,6 +137,9 @@ export function PepStep(props: {
             ))}
           </div>
         )}
+        <div style={{ padding: uiTokens.spacing.sm }}>
+          <Button tone="primary" disabled={props.readOnly} onClick={addPep}>Adicionar PEP</Button>
+        </div>
       </div>
     </div>
   );
