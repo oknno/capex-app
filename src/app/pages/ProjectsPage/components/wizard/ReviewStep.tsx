@@ -90,6 +90,95 @@ function SummarySection(props: {
   );
 }
 
+function PepSummaryCard(props: {
+  needStructure: boolean;
+  pepTitle: string;
+  year: number;
+  activity?: string;
+  milestone?: string;
+  amountBrl: number;
+}) {
+  const primaryText = props.needStructure ? (props.milestone ?? "—") : props.pepTitle;
+  const secondaryText = props.needStructure ? (props.activity ?? props.pepTitle) : String(props.year);
+
+  return (
+    <article
+      style={{
+        border: `1px solid ${uiTokens.colors.border}`,
+        borderRadius: 12,
+        padding: 12,
+        background: uiTokens.colors.surface
+      }}
+    >
+      <div
+        style={{
+          display: "grid",
+          gap: 12,
+          gridTemplateColumns: props.needStructure
+            ? "minmax(0, 1.05fr) minmax(0, 1.35fr) minmax(150px, 0.7fr)"
+            : "minmax(0, 1.5fr) minmax(84px, 0.5fr) minmax(150px, 0.7fr)",
+          alignItems: "start"
+        }}
+      >
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: uiTokens.colors.text, marginBottom: 4 }}>
+            {props.needStructure ? "Marco" : "Elemento PEP"}
+          </div>
+          <div
+            title={primaryText}
+            style={{
+              fontSize: 14,
+              color: uiTokens.colors.textStrong,
+              lineHeight: 1.4,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap"
+            }}
+          >
+            {primaryText}
+          </div>
+        </div>
+
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: uiTokens.colors.text, marginBottom: 4 }}>
+            {props.needStructure ? "Atividade" : "Ano"}
+          </div>
+          <div
+            title={secondaryText}
+            style={{
+              fontSize: 14,
+              color: uiTokens.colors.textStrong,
+              lineHeight: 1.4,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap"
+            }}
+          >
+            {secondaryText}
+          </div>
+        </div>
+
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: uiTokens.colors.text, marginBottom: 4, textAlign: "right" }}>
+            Valor (R$)
+          </div>
+          <div
+            style={{
+              fontSize: 14,
+              color: uiTokens.colors.textStrong,
+              lineHeight: 1.4,
+              textAlign: "right",
+              whiteSpace: "nowrap"
+            }}
+          >
+            {props.amountBrl.toLocaleString("pt-BR")}
+          </div>
+        </div>
+      </div>
+    </article>
+  );
+}
+
 export function ReviewStep(props: {
   projectId: number | null;
   state: WizardDraftState;
@@ -197,22 +286,15 @@ export function ReviewStep(props: {
         ) : (
           <div style={{ display: "grid", gap: 10 }}>
             {pepSummaryItems.map((item, index) => (
-              <div key={`${item.pepTitle}_${item.activity ?? "sem-atividade"}_${index}`} style={{ border: `1px solid ${uiTokens.colors.border}`, borderRadius: 12, padding: 12, background: uiTokens.colors.surface }}>
-                <div style={{ display: "grid", gridTemplateColumns: props.needStructure ? "repeat(3, minmax(0, 1fr))" : "repeat(3, minmax(0, 1fr))", gap: 12 }}>
-                  {props.needStructure ? (
-                    <>
-                      <SummaryField label="Marco" value={item.milestone ?? "—"} minWidth={0} />
-                      <SummaryField label="Atividade" value={item.activity ?? item.pepTitle} minWidth={0} />
-                    </>
-                  ) : (
-                    <>
-                      <SummaryField label="Elemento PEP" value={item.pepTitle} minWidth={0} />
-                      <SummaryField label="Ano" value={item.year} minWidth={0} />
-                    </>
-                  )}
-                  <SummaryField label="Valor (R$)" value={item.amountBrl.toLocaleString("pt-BR")} minWidth={0} />
-                </div>
-              </div>
+              <PepSummaryCard
+                key={`${item.pepTitle}_${item.activity ?? "sem-atividade"}_${index}`}
+                needStructure={props.needStructure}
+                pepTitle={item.pepTitle}
+                year={item.year}
+                activity={item.activity}
+                milestone={item.milestone}
+                amountBrl={item.amountBrl}
+              />
             ))}
           </div>
         )}
