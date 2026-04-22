@@ -108,6 +108,6 @@ const styles = {
   sapCodeText: { fontSize: 14, color: uiTokens.colors.text, fontWeight: 600 },
   fieldGrid: { borderTop: `1px solid ${uiTokens.colors.borderMuted}`, paddingTop: 10, display: "grid", gap: 8 },
   longTextWrap: { borderTop: `1px solid ${uiTokens.colors.borderMuted}`, paddingTop: 10, display: "grid", gap: 10 },
-  longText: { fontSize: 13, color: uiTokens.colors.text, whiteSpace: "pre-wrap" },
+  longText: { fontSize: 13, color: uiTokens.colors.text, whiteSpace: "pre-wrap", overflowWrap: "anywhere", wordBreak: "break-word" },
   sectionTitle: { fontWeight: 800, marginBottom: 6 },
 } as const;
