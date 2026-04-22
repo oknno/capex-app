@@ -11,14 +11,48 @@ function renderValue(value: SummaryValue) {
   return value === undefined || value === "" ? "—" : String(value);
 }
 
+function getSummaryFieldSpan(value: SummaryValue, forceSpan?: 1 | 2 | 3): 1 | 2 | 3 {
+  if (forceSpan) {
+    return forceSpan;
+  }
+
+  const renderedValue = renderValue(value);
+  const hasLineBreak = renderedValue.includes("\n");
+  const normalizedLength = renderedValue.trim().length;
+
+  if (hasLineBreak || normalizedLength > 110) {
+    return 3;
+  }
+
+  if (normalizedLength > 55) {
+    return 2;
+  }
+
+  return 1;
+}
+
 function toDateLabel(value?: string) {
   if (!value) return "—";
   return new Date(`${value}T00:00:00`).toLocaleDateString("pt-BR");
 }
 
-function SummaryField(props: { label: string; value: SummaryValue; minWidth?: number }) {
+function SummaryField(props: {
+  label: string;
+  value: SummaryValue;
+  minWidth?: number;
+  colSpan?: 1 | 2 | 3;
+  forceSpan?: 1 | 2 | 3;
+}) {
+  const colSpan = props.colSpan ?? getSummaryFieldSpan(props.value, props.forceSpan);
+
   return (
-    <div style={{ minWidth: props.minWidth ?? 180 }}>
+    <div
+      className="summary-field"
+      style={{
+        minWidth: props.minWidth ?? 180,
+        gridColumn: `span ${colSpan}`
+      }}
+    >
       <div style={{ fontSize: 14, fontWeight: 600, color: uiTokens.colors.text, marginBottom: 4 }}>{props.label}</div>
       <div style={{ fontSize: 14, color: uiTokens.colors.textStrong, lineHeight: 1.4, wordBreak: "break-word", whiteSpace: "pre-wrap" }}>{renderValue(props.value)}</div>
     </div>
@@ -43,6 +77,7 @@ function SummarySection(props: {
     <section style={style}>
       <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: uiTokens.colors.textStrong }}>{props.title}</h3>
       <div
+        className="summary-section-grid"
         style={{
           display: "grid",
           gap: 14,
@@ -92,6 +127,17 @@ export function ReviewStep(props: {
 
   return (
     <div style={{ padding: 14, display: "grid", gap: 16 }}>
+      <style>{`
+        @media (max-width: 900px) {
+          .summary-section-grid {
+            grid-template-columns: minmax(0, 1fr) !important;
+          }
+
+          .summary-field {
+            grid-column: span 1 !important;
+          }
+        }
+      `}</style>
       <SectionTitle title="Resumo para validação" subtitle="Conferência final das informações preenchidas nas etapas 1 e 2." />
 
       <SummarySection title="1. Sobre o Projeto" columns={3}>
