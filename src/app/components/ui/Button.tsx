@@ -10,7 +10,7 @@ export function Button(props: ButtonHTMLAttributes<HTMLButtonElement> & { tone?:
     ? { bg: uiTokens.colors.accent, fg: uiTokens.colors.textOnAccent, bd: uiTokens.colors.accent }
     : { bg: uiTokens.colors.surface, fg: uiTokens.colors.textStrong, bd: uiTokens.colors.borderStrong };
   const disabledPalette = {
-    bg: uiTokens.colors.surfaceAlt,
+    bg: uiTokens.colors.surfaceMuted,
     fg: uiTokens.colors.textMuted,
     bd: uiTokens.colors.border,
   };
