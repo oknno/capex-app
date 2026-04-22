@@ -198,21 +198,23 @@ export function StructureStep(props: {
 
               return (
                 <div key={milestone.tempId} style={{ ...wizardLayoutStyles.card, background: uiTokens.colors.surfaceMuted }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: uiTokens.spacing.sm }}>
-                    <div style={{ flex: 1 }}>
-                      <Field label="Nome do Marco">
-                        <input value={milestone.Title} onChange={(e) => updateMilestoneTitle(milestone.tempId, e.target.value)} style={wizardLayoutStyles.input} />
-                      </Field>
-                      <div style={{ fontSize: uiTokens.typography.xs, color: uiTokens.colors.textMuted }}>Atividades ({milestoneActivities.length})</div>
+                  <div style={{ display: "grid", gap: uiTokens.spacing.xs }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: uiTokens.spacing.sm, flexWrap: "wrap" }}>
+                      <div style={{ flex: 1, minWidth: 260 }}>
+                        <Field label="Nome do Marco">
+                          <input value={milestone.Title} onChange={(e) => updateMilestoneTitle(milestone.tempId, e.target.value)} style={wizardLayoutStyles.input} />
+                        </Field>
+                      </div>
+                      <Button
+                        disabled={props.readOnly}
+                        onClick={() => removeMilestone(milestone.tempId)}
+                        aria-label="Remover marco"
+                        title="Remover marco"
+                      >
+                        Remover marco
+                      </Button>
                     </div>
-                    <Button
-                      disabled={props.readOnly}
-                      onClick={() => removeMilestone(milestone.tempId)}
-                      aria-label="Remover marco"
-                      title="Remover marco"
-                    >
-                      Remover marco
-                    </Button>
+                    <div style={{ fontSize: uiTokens.typography.xs, color: uiTokens.colors.textMuted }}>Atividades ({milestoneActivities.length})</div>
                   </div>
 
                   {milestoneActivities.map((activity) => (
