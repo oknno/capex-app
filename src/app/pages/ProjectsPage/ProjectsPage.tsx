@@ -22,6 +22,7 @@ import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { useToast } from "../../components/notifications/useToast";
 import { Button } from "../../components/ui/Button";
 import { exportProjectsCsv } from "./utils/exportProjectsCsv";
+import { exportProjectView } from "./utils/exportProjectView";
 
 export function ProjectsPage(props: {
   onWantsRefreshHeader?: () => void;
@@ -222,22 +223,19 @@ export function ProjectsPage(props: {
   }
 
   function onExportProject() {
-    if (!list.selected) {
-      notify("Selecione um projeto.", "info");
+    const selected = selectedFull ?? selectedForPolicies;
+    if (!selected) {
+      notify("Selecione um projeto para exportar o resumo.", "info");
       return;
     }
 
-    const payload = JSON.stringify(list.selected, null, 2);
-    const blob = new Blob([payload], { type: "application/json;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `projeto-${list.selected.Id}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    notify(`Projeto #${list.selected.Id} exportado.`, "success");
+    try {
+      exportProjectView(selected);
+      notify(`Resumo do projeto #${selected.Id} pronto para impressão/PDF.`, "success");
+    } catch (e) {
+      console.error(e);
+      notify("Não foi possível abrir a visualização de impressão do projeto.", "error");
+    }
   }
 
   return (

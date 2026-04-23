@@ -4,6 +4,7 @@ import { StateMessage } from "../../../components/ui/StateMessage";
 import { uiTokens } from "../../../components/ui/tokens";
 import type { ProjectRow } from "../../../../services/sharepoint/projectsApi";
 import { projectFieldLabel } from "../fieldLabels";
+import { fmtDate, fmtMoney, getSapCodeDisplay, resolveStatusTone, truncateText } from "../utils/projectSummaryFormatters";
 
 export function ProjectSummarySection(props: {
   selectedId: number | null;
@@ -61,43 +62,8 @@ function LongTextBlock(props: { title: string; text: string }) {
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const s = status.trim().toLowerCase();
-  let tone: "neutral" | "info" | "success" | "danger" | "warning" = "neutral";
-
-  if (s.includes("em aprova")) tone = "info";
-  else if (s.includes("aprovado")) tone = "success";
-  else if (s.includes("reprov")) tone = "danger";
-  else if (s.includes("rascun")) tone = "neutral";
-  else tone = "warning";
-
-  return <Badge text={status} tone={tone} />;
+  return <Badge text={status} tone={resolveStatusTone(status)} />;
 }
-
-function getSapCodeDisplay(project: ProjectRow): string {
-  const status = String(project.status ?? "").trim().toLowerCase();
-  if (!status.includes("aprovado")) return "Pendente";
-
-  const sapCode = String(project.codigoSAP ?? "").trim();
-  return sapCode || "Pendente";
-}
-
-
-function fmtMoney(v?: number) {
-  if (v == null || !Number.isFinite(Number(v))) return "-";
-  return Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
-
-function fmtDate(v?: string) {
-  if (!v) return "-";
-  const d = new Date(v);
-  return Number.isNaN(d.getTime()) ? "-" : d.toLocaleDateString("pt-BR");
-}
-
-function truncateText(s: string, max: number) {
-  const t = String(s ?? "");
-  return t.length <= max ? t : `${t.slice(0, max)}…`;
-}
-
 
 const styles = {
   summaryHeader: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
