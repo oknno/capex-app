@@ -59,3 +59,22 @@ test("rejectProject exige admin e status Em Aprovação", async () => {
   assert.deepEqual(result, { newStatus: "Reprovado" });
   assert.deepEqual(lastUpdate, { id: 9, payload: { status: "Reprovado" } });
 });
+
+test("sendToApproval permite reenviar projeto Reprovado e muda para Em Aprovação", async () => {
+  mock.reset();
+  let lastUpdate = null;
+
+  mock.module("../../../src/services/sharepoint/projectsApi.ts", {
+    namedExports: {
+      updateProject: async (id, payload) => {
+        lastUpdate = { id, payload };
+      }
+    }
+  });
+
+  const { sendToApproval } = await import("../../../src/services/sharepoint/projectsWorkflow.ts?resend-case");
+  const result = await sendToApproval({ Id: 7, Title: "Projeto 7", status: "Reprovado" });
+
+  assert.deepEqual(result, { newStatus: "Em Aprovação" });
+  assert.deepEqual(lastUpdate, { id: 7, payload: { status: "Em Aprovação" } });
+});

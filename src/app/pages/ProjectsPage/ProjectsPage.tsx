@@ -60,6 +60,14 @@ export function ProjectsPage(props: {
   const [confirmingAction, setConfirmingAction] = useState(false);
   const selectedForPolicies = selectedFull ?? list.selected;
 
+  function hasUnitPermission(project: ProjectRow | null): boolean {
+    if (!project) return false;
+    if (isAdmin) return true;
+    const projectUnit = (project.unit ?? "").trim();
+    if (!projectUnit) return false;
+    return allowedUnits.includes(projectUnit);
+  }
+
 
   useEffect(() => {
     if (!skipInitialLoad) {
@@ -111,6 +119,10 @@ export function ProjectsPage(props: {
 
   async function onEdit(draft: ProjectDraft): Promise<number> {
     if (!list.selected) throw new Error("Selecione um projeto.");
+    if (!hasUnitPermission(list.selected)) {
+      notify("Você não possui permissão para editar este projeto na unidade selecionada.", "error");
+      throw new Error("Sem permissão para editar projeto nesta unidade.");
+    }
     try {
       await editProject(list.selected.Id, draft);
       await list.loadFirstPage();
@@ -151,6 +163,10 @@ export function ProjectsPage(props: {
   async function onSendToApproval() {
     const selected = selectedForPolicies;
     const check = canSend(selected);
+    if (selected && !hasUnitPermission(selected)) {
+      notify("Você não possui permissão para reenviar este projeto na unidade selecionada.", "error");
+      return;
+    }
     if (!check.ok || !selected) {
       notify(check.reason ?? "Não foi possível enviar para aprovação.", "info");
       return;
@@ -301,6 +317,7 @@ export function ProjectsPage(props: {
 
 
   const commandPolicies = getCommandBarPolicies(selectedForPolicies);
+  const hasPermissionOnSelected = hasUnitPermission(selectedForPolicies);
   const editPolicy = canEdit(selectedForPolicies);
   const deletePolicy = canDelete(selectedForPolicies);
   const sendPolicy = canSend(selectedForPolicies);
@@ -352,15 +369,15 @@ export function ProjectsPage(props: {
       <CommandBar
         selectedId={list.selectedId}
         totalLoaded={list.items.length}
-        canEdit={editPolicy.ok}
+        canEdit={hasPermissionOnSelected && editPolicy.ok}
         canDelete={deletePolicy.ok}
-        canSend={sendPolicy.ok}
+        canSend={hasPermissionOnSelected && sendPolicy.ok}
         canBack={backPolicy.ok}
         canApprove={isAdmin && approvePolicy.ok}
         canReject={isAdmin && rejectPolicy.ok}
-        editDisabledReason={editPolicy.reason}
+        editDisabledReason={!hasPermissionOnSelected ? "Sem permissão para editar projeto nesta unidade." : editPolicy.reason}
         deleteDisabledReason={deletePolicy.reason}
-        sendDisabledReason={sendPolicy.reason}
+        sendDisabledReason={!hasPermissionOnSelected ? "Sem permissão para reenviar projeto nesta unidade." : sendPolicy.reason}
         backDisabledReason={backPolicy.reason}
         approveDisabledReason={!isAdmin ? "Apenas administradores podem aprovar projetos." : approvePolicy.reason}
         rejectDisabledReason={!isAdmin ? "Apenas administradores podem reprovar projetos." : rejectPolicy.reason}
@@ -374,11 +391,15 @@ export function ProjectsPage(props: {
         createDisabledReason={!hasAccess ? "Sem permissão para criar projeto." : undefined}
         availableUnits={isAdmin ? undefined : allowedUnits}
         onView={() => list.selected && setWizard({ mode: "view", initial: list.selected })}
-        onEdit={() => {
-          if (!list.selected) return;
-          const check = commandPolicies.edit;
-          if (!check.ok) {
-            notify(check.reason ?? "Não foi possível editar o projeto.", "error");
+      onEdit={() => {
+        if (!list.selected) return;
+        if (!hasUnitPermission(list.selected)) {
+          notify("Você não possui permissão para editar este projeto na unidade selecionada.", "error");
+          return;
+        }
+        const check = commandPolicies.edit;
+        if (!check.ok) {
+          notify(check.reason ?? "Não foi possível editar o projeto.", "error");
             return;
           }
           setWizard({ mode: "edit", initial: list.selected });

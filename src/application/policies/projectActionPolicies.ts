@@ -68,13 +68,10 @@ const statusActionMatrix: Record<StatusBucket, Record<CommandBarAction, ActionRu
   },
   rejected: {
     view: { enabled: true },
-    edit: { enabled: false, reasonWhenDisabled: "Não é possível editar. O projeto não está em rascunho." },
+    edit: { enabled: true },
     duplicate: { enabled: true },
     delete: { enabled: false, reasonWhenDisabled: "Somente projetos em rascunho podem ser excluídos." },
-    sendToApproval: {
-      enabled: false,
-      reasonWhenDisabled: "Projeto reprovado não pode ser reenviado automaticamente. Volte para rascunho antes de enviar.",
-    },
+    sendToApproval: { enabled: true },
     backToDraft: { enabled: true },
     approve: { enabled: false, reasonWhenDisabled: "Projeto reprovado não pode ser aprovado diretamente." },
     reject: { enabled: false, reasonWhenDisabled: "Projeto já está reprovado." },
