@@ -96,10 +96,10 @@ function buildProjectSummaryHtml(project: ProjectRow): string {
 
 export function exportProjectView(project: ProjectRow): void {
   const html = buildProjectSummaryHtml(project);
-  const printWindow = window.open("", "_blank", "noopener,noreferrer,width=1024,height=768");
+  const printWindow = window.open("", "_blank", "width=1024,height=768");
 
   if (!printWindow) {
-    throw new Error("Não foi possível abrir a janela de impressão.");
+    throw new Error("Não foi possível abrir a janela de impressão. Verifique se o bloqueador de pop-up está ativo.");
   }
 
   printWindow.document.open();
