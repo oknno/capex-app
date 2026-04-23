@@ -10,9 +10,9 @@ export function canEditProject(project: ProjectWithStatus | null): { ok: boolean
   if (!project) return { ok: false, reason: "Selecione um projeto." };
 
   const status = normalizeStatus(project.status);
-  if (!status || status === "rascunho") return { ok: true };
+  if (!status || status === "rascunho" || status === "reprovado") return { ok: true };
 
-  return { ok: false, reason: "Não é possível editar. O projeto não está em rascunho." };
+  return { ok: false, reason: "Não é possível editar. O projeto não está em rascunho ou reprovado." };
 }
 
 export function canDeleteProject(project: ProjectWithStatus | null): { ok: boolean; reason?: string } {
@@ -28,7 +28,7 @@ export function canSendToApproval(project: ProjectWithStatus | null): { ok: bool
   if (!project) return { ok: false, reason: "Selecione um projeto." };
 
   const status = normalizeStatus(project.status);
-  if (status === "rascunho") return { ok: true };
+  if (status === "rascunho" || status === "reprovado") return { ok: true };
 
   if (!status) {
     return {
@@ -43,13 +43,6 @@ export function canSendToApproval(project: ProjectWithStatus | null): { ok: bool
 
   if (status === "aprovado") {
     return { ok: false, reason: "Projeto já está aprovado." };
-  }
-
-  if (status === "reprovado") {
-    return {
-      ok: false,
-      reason: "Projeto reprovado não pode ser reenviado automaticamente. Volte para rascunho antes de enviar."
-    };
   }
 
   return { ok: false, reason: `Status atual (“${project.status ?? ""}”) não permite envio automático.` };

@@ -31,7 +31,7 @@ const scenarios = [
   {
     name: "Reprovado",
     project: { status: "Reprovado" },
-    expected: { edit: false, delete: false, send: false, back: true, approve: false, reject: false },
+    expected: { edit: true, delete: false, send: true, back: true, approve: false, reject: false },
   },
   {
     name: "sem status",
