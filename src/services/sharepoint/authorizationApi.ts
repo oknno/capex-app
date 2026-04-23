@@ -1,5 +1,5 @@
-import { spConfig } from "./spConfig";
-import { spGetJson } from "./spHttp";
+import { spConfig } from "./spConfig.ts";
+import { spGetJson } from "./spHttp.ts";
 
 type SpRecord = Record<string, unknown>;
 
@@ -59,6 +59,24 @@ function readMemberIds(members: unknown): Set<number> {
   );
 }
 
+function buildPrincipalIds(userId: number | undefined, groups: CurrentUserGroup[]): Set<number> {
+  const principalIds = new Set<number>();
+  if (userId != null) principalIds.add(userId);
+  groups.forEach((group) => {
+    const groupId = readNumber(group.Id);
+    if (groupId != null) principalIds.add(groupId);
+  });
+  return principalIds;
+}
+
+function isMemberOfAdminUnit(unitGroups: UnitGroupItem[], principalIds: Set<number>): boolean {
+  const adminUnit = unitGroups.find((item) => item.Title === "ADMIN");
+  if (!adminUnit) return false;
+
+  const memberIds = readMemberIds(adminUnit.members);
+  return Array.from(principalIds).some((principalId) => memberIds.has(principalId));
+}
+
 async function getCurrentUser(): Promise<CurrentUserResponse> {
   const url = `${spConfig.siteUrl}/_api/web/currentuser?$select=Id,IsSiteAdmin`;
   return spGetJson<CurrentUserResponse>(url);
@@ -97,18 +115,13 @@ export async function resolveAuthorization(): Promise<AuthorizationResult> {
 
   const userId = readNumber(currentUser.Id);
   const isSiteAdmin = readBoolean(currentUser.IsSiteAdmin);
-  const isAdmin = resolveAdmin(isSiteAdmin, currentUserGroups);
+  const principalIds = buildPrincipalIds(userId, currentUserGroups);
+  const isUnitAdmin = isMemberOfAdminUnit(unitGroups, principalIds);
+  const isAdmin = isUnitAdmin || resolveAdmin(isSiteAdmin, currentUserGroups);
 
   if (isAdmin) {
     return { isAdmin: true, hasAccess: true, allowedUnits: [] };
   }
-
-  const principalIds = new Set<number>();
-  if (userId != null) principalIds.add(userId);
-  currentUserGroups.forEach((group) => {
-    const groupId = readNumber(group.Id);
-    if (groupId != null) principalIds.add(groupId);
-  });
 
   const allowedUnits = new Set<string>();
   unitGroups.forEach((item) => {
