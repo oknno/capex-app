@@ -29,20 +29,67 @@ function renderLongTextBlock(title: string, text: string): string {
   `;
 }
 
+const MONEY_FIELDS: Array<keyof ProjectRow> = ["budgetBrl", "roceGain", "roceLoss"];
+const DATE_FIELDS: Array<keyof ProjectRow> = ["startDate", "endDate"];
+
+const PRINT_FIELDS_ORDER: Array<keyof ProjectRow> = [
+  "budgetBrl",
+  "projectLeader",
+  "approvalYear",
+  "investmentLevel",
+  "fundingSource",
+  "program",
+  "company",
+  "center",
+  "unit",
+  "location",
+  "depreciationCostCenter",
+  "category",
+  "investmentType",
+  "assetType",
+  "projectFunction",
+  "projectUser",
+  "sourceProjectCode",
+  "hasRoce",
+  "startDate",
+  "endDate",
+  "kpiType",
+  "kpiName",
+  "kpiDescription",
+  "kpiCurrent",
+  "kpiExpected",
+  "roceGain",
+  "roceGainDescription",
+  "roceLoss",
+  "roceLossDescription",
+  "roceClassification"
+];
+
+function formatFieldValue(project: ProjectRow, field: keyof ProjectRow): string {
+  const value = project[field];
+
+  if (MONEY_FIELDS.includes(field)) {
+    return fmtMoney(typeof value === "number" ? value : Number(value));
+  }
+
+  if (DATE_FIELDS.includes(field)) {
+    return fmtDate(typeof value === "string" ? value : undefined);
+  }
+
+  const normalized = typeof value === "string" ? value.trim() : value;
+  if (normalized == null || normalized === "") return "-";
+
+  return String(normalized);
+}
+
 function buildProjectSummaryHtml(project: ProjectRow): string {
   const title = String(project.Title ?? "-");
   const status = String(project.status ?? "Rascunho");
   const sapCodeLabel = projectFieldLabel("codigoSAP");
-  const dateRange = `${fmtDate(project.startDate)}  →  ${fmtDate(project.endDate)}`;
 
-  const fieldsHtml = [
-    renderField(projectFieldLabel("budgetBrl"), fmtMoney(project.budgetBrl)),
-    renderField(projectFieldLabel("projectLeader"), String(project.projectLeader ?? "-")),
-    renderField("Início / Fim", dateRange),
-    renderField(projectFieldLabel("unit"), String(project.unit ?? "-")),
-    renderField(projectFieldLabel("fundingSource"), String(project.fundingSource ?? "-")),
-    renderField("Programa", String(project.program ?? "-"))
-  ].join("\n");
+  const fieldsHtml = PRINT_FIELDS_ORDER
+    .map((field) => renderField(projectFieldLabel(field), formatFieldValue(project, field)))
+    .join("\n");
 
   const businessNeed = truncateText(String(project.businessNeed ?? "-"), 10000);
   const proposedSolution = truncateText(String(project.proposedSolution ?? "-"), 10000);
@@ -63,16 +110,19 @@ function buildProjectSummaryHtml(project: ProjectRow): string {
     .title { font-size: 24px; font-weight: 700; margin: 0; }
     .status { font-size: 14px; font-weight: 700; }
     .sap { font-size: 14px; font-weight: 600; margin: 0 0 14px; }
-    .grid { border-top: 1px solid #d1d5db; padding-top: 12px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 16px; }
-    .field-item { break-inside: avoid; }
+    .grid { border-top: 1px solid #d1d5db; padding-top: 12px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 16px; align-items: start; }
+    .field-item { break-inside: avoid; page-break-inside: avoid; }
     .field-label { font-size: 12px; color: #6b7280; margin-bottom: 2px; }
     .field-value { font-size: 14px; font-weight: 600; }
     .blocks { border-top: 1px solid #d1d5db; padding-top: 12px; margin-top: 12px; display: grid; gap: 12px; }
+    .block { break-inside: avoid; page-break-inside: avoid; }
     .block h2 { font-size: 14px; margin: 0 0 6px; }
     .block p { font-size: 13px; margin: 0; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; }
 
     @media print {
       body { margin: 12mm; }
+      .grid,
+      .blocks { page-break-inside: auto; }
     }
   </style>
 </head>
