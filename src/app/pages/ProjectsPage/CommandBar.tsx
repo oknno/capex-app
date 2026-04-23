@@ -145,7 +145,8 @@ export function CommandBar(props: {
   onSendToApproval: () => void;
   onBackStatus: () => void;
 
-  onExport: () => void;
+  onExportTable: () => void;
+  onExportProject: () => void;
 }) {
   const hasSelection = props.selectedId != null;
 
@@ -178,8 +179,65 @@ export function CommandBar(props: {
           onClear={props.onClear}
         />
 
-        <Button onClick={props.onExport}>Exportar</Button>
+        <ExportMenu
+          canExportProject={hasSelection}
+          onExportTable={props.onExportTable}
+          onExportProject={props.onExportProject}
+        />
       </div>
+    </div>
+  );
+}
+
+function ExportMenu(props: {
+  canExportProject: boolean;
+  onExportTable: () => void;
+  onExportProject: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    function onDocMouseDown(ev: MouseEvent) {
+      if (!open) return;
+      const target = ev.target as Node | null;
+      if (!target) return;
+      if (rootRef.current && !rootRef.current.contains(target)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onDocMouseDown);
+    return () => document.removeEventListener("mousedown", onDocMouseDown);
+  }, [open]);
+
+  function onClickTable() {
+    props.onExportTable();
+    setOpen(false);
+  }
+
+  function onClickProject() {
+    if (!props.canExportProject) return;
+    props.onExportProject();
+    setOpen(false);
+  }
+
+  return (
+    <div ref={rootRef} style={styles.filterRoot}>
+      <Button onClick={() => setOpen((prev) => !prev)}>Exportar</Button>
+      {open && (
+        <div style={{ ...styles.popover, width: 220, padding: uiTokens.spacing.sm }}>
+          <div style={{ display: "grid", gap: uiTokens.spacing.xs }}>
+            <Button onClick={onClickTable}>Exportar tabela</Button>
+            <Button
+              onClick={onClickProject}
+              disabled={!props.canExportProject}
+              title={!props.canExportProject ? "Selecione um projeto." : undefined}
+            >
+              Exportar projeto
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
