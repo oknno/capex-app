@@ -4,6 +4,7 @@ import type { WizardDraftState } from "../../../../../domain/projects/project.va
 import { projectFieldLabel } from "../../fieldLabels";
 import { SectionTitle } from "./WizardUi";
 import { uiTokens } from "../../../../components/ui/tokens";
+import { PepSummaryList } from "./PepSummaryList";
 
 type SummaryValue = string | number | undefined;
 
@@ -90,102 +91,6 @@ function SummarySection(props: {
   );
 }
 
-function PepSummaryCard(props: {
-  needStructure: boolean;
-  pepTitle: string;
-  year: number;
-  activity?: string;
-  milestone?: string;
-  amountBrl: number;
-}) {
-  const primaryText = props.needStructure ? (props.milestone ?? "—") : props.pepTitle;
-  const secondaryText = props.needStructure ? (props.activity ?? props.pepTitle) : String(props.year);
-
-  return (
-    <article
-      className="pep-summary-card"
-      style={{
-        border: `1px solid ${uiTokens.colors.border}`,
-        borderRadius: 12,
-        padding: 16,
-        background: uiTokens.colors.surface
-      }}
-    >
-      <div
-        className="pep-summary-card-grid"
-        style={{
-          display: "grid",
-          gap: 16,
-          gridTemplateColumns: props.needStructure
-            ? "minmax(0, 1.05fr) minmax(0, 1.35fr) minmax(150px, 0.7fr)"
-            : "minmax(0, 1.5fr) minmax(84px, 0.5fr) minmax(150px, 0.7fr)",
-          alignItems: "start"
-        }}
-      >
-        <div className="pep-summary-group" style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: uiTokens.colors.textMuted, marginBottom: 6, letterSpacing: 0.1 }}>
-            {props.needStructure ? "Marco" : "Elemento PEP"}
-          </div>
-          <div
-            title={primaryText}
-            style={{
-              fontSize: 14,
-              fontWeight: 600,
-              color: uiTokens.colors.textStrong,
-              lineHeight: 1.5,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap"
-            }}
-          >
-            {primaryText}
-          </div>
-        </div>
-
-        <div className="pep-summary-group" style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: uiTokens.colors.textMuted, marginBottom: 6, letterSpacing: 0.1 }}>
-            {props.needStructure ? "Atividade" : "Ano"}
-          </div>
-          <div
-            title={secondaryText}
-            className={props.needStructure ? "pep-summary-activity" : undefined}
-            style={{
-              fontSize: 14,
-              fontWeight: 500,
-              color: uiTokens.colors.textStrong,
-              lineHeight: 1.5,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: props.needStructure ? "normal" : "nowrap"
-            }}
-          >
-            {secondaryText}
-          </div>
-        </div>
-
-        <div className="pep-summary-group pep-summary-value-group" style={{ minWidth: 0 }}>
-          <div className="pep-summary-value-label" style={{ fontSize: 12, fontWeight: 600, color: uiTokens.colors.textMuted, marginBottom: 6, textAlign: "right", letterSpacing: 0.1 }}>
-            Valor (R$)
-          </div>
-          <div
-            className="pep-summary-value"
-            style={{
-              fontSize: 14,
-              fontWeight: 600,
-              color: uiTokens.colors.textStrong,
-              lineHeight: 1.5,
-              textAlign: "right",
-              whiteSpace: "nowrap"
-            }}
-          >
-            {props.amountBrl.toLocaleString("pt-BR")}
-          </div>
-        </div>
-      </div>
-    </article>
-  );
-}
-
 export function ReviewStep(props: {
   projectId: number | null;
   state: WizardDraftState;
@@ -193,17 +98,6 @@ export function ReviewStep(props: {
 }) {
   const { project, milestones, activities, peps } = props.state;
 
-  const pepSummaryItems = peps.map((pep) => {
-    const activity = activities.find((item) => item.tempId === pep.activityTempId);
-    const milestone = milestones.find((item) => item.tempId === activity?.milestoneTempId);
-    return {
-      pepTitle: pep.Title,
-      year: pep.year,
-      activity: activity?.Title,
-      milestone: milestone?.Title,
-      amountBrl: Number(pep.amountBrl) || 0
-    };
-  });
 
   const ganttItems = activities
     .filter((activity) => activity.startDate && activity.endDate)
@@ -234,34 +128,6 @@ export function ReviewStep(props: {
           }
         }
 
-        .pep-summary-activity {
-          display: -webkit-box;
-          -webkit-box-orient: vertical;
-          -webkit-line-clamp: 2;
-          max-height: calc(1.5em * 2);
-        }
-
-        @supports not (-webkit-line-clamp: 2) {
-          .pep-summary-activity {
-            white-space: nowrap !important;
-          }
-        }
-
-        @media (max-width: 760px) {
-          .pep-summary-card-grid {
-            grid-template-columns: minmax(0, 1fr) !important;
-            gap: 12px !important;
-          }
-
-          .pep-summary-value-group {
-            align-items: flex-start;
-          }
-
-          .pep-summary-value-label,
-          .pep-summary-value {
-            text-align: left !important;
-          }
-        }
       `}</style>
       <SectionTitle title="Resumo para validação" subtitle="Conferência final das informações preenchidas nas etapas 1 e 2." />
 
@@ -317,23 +183,12 @@ export function ReviewStep(props: {
       </SummarySection>
 
       <SummarySection title={props.needStructure ? "7. Resumo de Estrutura e PEPs" : "7. Resumo de PEPs"} columns={1}>
-        {!pepSummaryItems.length ? (
-          <SummaryField label="Status" value="Nenhum PEP cadastrado." />
-        ) : (
-          <div style={{ display: "grid", gap: 10 }}>
-            {pepSummaryItems.map((item, index) => (
-              <PepSummaryCard
-                key={`${item.pepTitle}_${item.activity ?? "sem-atividade"}_${index}`}
-                needStructure={props.needStructure}
-                pepTitle={item.pepTitle}
-                year={item.year}
-                activity={item.activity}
-                milestone={item.milestone}
-                amountBrl={item.amountBrl}
-              />
-            ))}
-          </div>
-        )}
+        <PepSummaryList
+          needStructure={props.needStructure}
+          peps={peps}
+          activities={activities}
+          milestones={milestones}
+        />
       </SummarySection>
 
       {props.needStructure && (
