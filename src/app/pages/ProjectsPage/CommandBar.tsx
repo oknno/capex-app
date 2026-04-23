@@ -123,10 +123,14 @@ export function CommandBar(props: {
   canDelete: boolean;
   canSend: boolean;
   canBack: boolean;
+  canApprove: boolean;
+  canReject: boolean;
   editDisabledReason?: string;
   deleteDisabledReason?: string;
   sendDisabledReason?: string;
   backDisabledReason?: string;
+  approveDisabledReason?: string;
+  rejectDisabledReason?: string;
 
   filters: ProjectsFilters;
   onChangeFilters: (patch: Partial<ProjectsFilters>) => void;
@@ -146,6 +150,9 @@ export function CommandBar(props: {
 
   onSendToApproval: () => void;
   onBackStatus: () => void;
+  onApprove: () => void;
+  onReject: () => void;
+  showApprovalActions: boolean;
 
   onExportTable: () => void;
   onExportProject: () => void;
@@ -180,6 +187,25 @@ export function CommandBar(props: {
 
         <Button disabled={!props.canSend} title={!props.canSend ? props.sendDisabledReason : undefined} onClick={props.onSendToApproval}>Enviar p/ Aprovação</Button>
         <Button disabled={!props.canBack} title={!props.canBack ? props.backDisabledReason : undefined} onClick={props.onBackStatus}>Voltar Status</Button>
+        {props.showApprovalActions && (
+          <>
+            <Button
+              tone="primary"
+              disabled={!props.canApprove}
+              title={!props.canApprove ? props.approveDisabledReason : undefined}
+              onClick={props.onApprove}
+            >
+              Aprovar
+            </Button>
+            <Button
+              disabled={!props.canReject}
+              title={!props.canReject ? props.rejectDisabledReason : undefined}
+              onClick={props.onReject}
+            >
+              Reprovar
+            </Button>
+          </>
+        )}
 
         <span style={styles.divider} />
 

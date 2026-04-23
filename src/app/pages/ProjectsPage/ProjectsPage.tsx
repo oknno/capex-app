@@ -10,8 +10,10 @@ import { editProject } from "../../../application/use-cases/editProject";
 import { sendProjectToApproval } from "../../../application/use-cases/sendToApproval";
 import { moveProjectBackToDraft } from "../../../application/use-cases/backToDraft";
 import { deleteDraftProjectAndRelated } from "../../../application/use-cases/deleteProject";
+import { approveSelectedProject } from "../../../application/use-cases/approveProject";
+import { rejectSelectedProject } from "../../../application/use-cases/rejectProject";
 import { normalizeError } from "../../../application/errors/appError";
-import { canBack, canDelete, canEdit, canSend, getCommandBarPolicies } from "../../../application/policies/projectActionPolicies";
+import { canApprove, canBack, canDelete, canEdit, canReject, canSend, getCommandBarPolicies } from "../../../application/policies/projectActionPolicies";
 
 import { ProjectWizardModal } from "./ProjectWizardModal";
 import { Card } from "../../components/ui/Card";
@@ -227,12 +229,84 @@ export function ProjectsPage(props: {
     });
   }
 
+  async function onApprove() {
+    const selected = selectedForPolicies;
+    const check = canApprove(selected);
+    if (!isAdmin) {
+      notify("Apenas administradores podem aprovar projetos.", "error");
+      return;
+    }
+    if (!check.ok || !selected) {
+      notify(check.reason ?? "Não foi possível aprovar o projeto.", "info");
+      return;
+    }
+
+    const codigoSAP = window.prompt("Informe o Código SAP para aprovar o projeto:", String(selected.codigoSAP ?? "")) ?? "";
+    const normalizedCode = codigoSAP.trim();
+    if (!normalizedCode) {
+      notify("Código SAP é obrigatório para aprovar o projeto.", "error");
+      return;
+    }
+
+    requestConfirm({
+      title: "Aprovar projeto",
+      message: `Aprovar o projeto #${selected.Id}?`,
+      confirmingText: "Aprovando...",
+      onConfirm: async () => {
+        try {
+          await approveSelectedProject(selected, { isAdmin, codigoSAP: normalizedCode });
+          await list.loadFirstPage();
+          list.setSelectedId(selected.Id);
+          await refreshSelectedDetails(selected.Id);
+          notify("Projeto aprovado com sucesso.", "success");
+        } catch (e) {
+          const appError = normalizeError(e, "Erro ao aprovar o projeto.");
+          notify(appError.userMessage, "error");
+        }
+      }
+    });
+  }
+
+  async function onReject() {
+    const selected = selectedForPolicies;
+    const check = canReject(selected);
+    if (!isAdmin) {
+      notify("Apenas administradores podem reprovar projetos.", "error");
+      return;
+    }
+    if (!check.ok || !selected) {
+      notify(check.reason ?? "Não foi possível reprovar o projeto.", "info");
+      return;
+    }
+
+    requestConfirm({
+      title: "Reprovar projeto",
+      message: `Reprovar o projeto #${selected.Id}?`,
+      tone: "danger",
+      confirmingText: "Reprovando...",
+      onConfirm: async () => {
+        try {
+          await rejectSelectedProject(selected, { isAdmin });
+          await list.loadFirstPage();
+          list.setSelectedId(selected.Id);
+          await refreshSelectedDetails(selected.Id);
+          notify("Projeto reprovado com sucesso.", "success");
+        } catch (e) {
+          const appError = normalizeError(e, "Erro ao reprovar o projeto.");
+          notify(appError.userMessage, "error");
+        }
+      }
+    });
+  }
+
 
   const commandPolicies = getCommandBarPolicies(selectedForPolicies);
   const editPolicy = canEdit(selectedForPolicies);
   const deletePolicy = canDelete(selectedForPolicies);
   const sendPolicy = canSend(selectedForPolicies);
   const backPolicy = canBack(selectedForPolicies);
+  const approvePolicy = canApprove(selectedForPolicies);
+  const rejectPolicy = canReject(selectedForPolicies);
 
   function onExportTable() {
     const exported = exportProjectsCsv(list.items);
@@ -282,10 +356,14 @@ export function ProjectsPage(props: {
         canDelete={deletePolicy.ok}
         canSend={sendPolicy.ok}
         canBack={backPolicy.ok}
+        canApprove={isAdmin && approvePolicy.ok}
+        canReject={isAdmin && rejectPolicy.ok}
         editDisabledReason={editPolicy.reason}
         deleteDisabledReason={deletePolicy.reason}
         sendDisabledReason={sendPolicy.reason}
         backDisabledReason={backPolicy.reason}
+        approveDisabledReason={!isAdmin ? "Apenas administradores podem aprovar projetos." : approvePolicy.reason}
+        rejectDisabledReason={!isAdmin ? "Apenas administradores podem reprovar projetos." : rejectPolicy.reason}
         filters={list.filters}
         onChangeFilters={(patch) => list.setFilters((prev) => ({ ...prev, ...patch }))}
         onApply={list.loadFirstPage}
@@ -312,6 +390,9 @@ export function ProjectsPage(props: {
         onDelete={onDelete}
         onSendToApproval={onSendToApproval}
         onBackStatus={onBackStatus}
+        onApprove={onApprove}
+        onReject={onReject}
+        showApprovalActions={isAdmin}
         onExportTable={onExportTable}
         onExportProject={onExportProject}
       />

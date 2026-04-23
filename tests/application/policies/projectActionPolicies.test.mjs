@@ -3,8 +3,10 @@ import test from "node:test";
 
 import {
   canBack,
+  canApprove,
   canDelete,
   canEdit,
+  canReject,
   canSend,
   getCommandBarPolicies,
   PROJECT_STATUSES,
@@ -14,32 +16,32 @@ const scenarios = [
   {
     name: "Rascunho",
     project: { status: "Rascunho" },
-    expected: { edit: true, delete: true, send: true, back: false },
+    expected: { edit: true, delete: true, send: true, back: false, approve: false, reject: false },
   },
   {
     name: "Em Aprovação",
     project: { status: "Em Aprovação" },
-    expected: { edit: false, delete: false, send: false, back: true },
+    expected: { edit: false, delete: false, send: false, back: true, approve: true, reject: true },
   },
   {
     name: "Aprovado",
     project: { status: "Aprovado" },
-    expected: { edit: false, delete: false, send: false, back: false },
+    expected: { edit: false, delete: false, send: false, back: false, approve: false, reject: false },
   },
   {
     name: "Reprovado",
     project: { status: "Reprovado" },
-    expected: { edit: false, delete: false, send: false, back: true },
+    expected: { edit: false, delete: false, send: false, back: true, approve: false, reject: false },
   },
   {
     name: "sem status",
     project: { status: "" },
-    expected: { edit: true, delete: true, send: false, back: false },
+    expected: { edit: true, delete: true, send: false, back: false, approve: false, reject: false },
   },
   {
     name: "status desconhecido",
     project: { status: "Cancelado" },
-    expected: { edit: false, delete: false, send: false, back: false },
+    expected: { edit: false, delete: false, send: false, back: false, approve: false, reject: false },
   },
 ];
 
@@ -48,16 +50,20 @@ test("lista de status de projeto conhecidos pela command bar", () => {
 });
 
 for (const scenario of scenarios) {
-  test(`canEdit/canDelete/canSend/canBack para status ${scenario.name}`, () => {
+test(`canEdit/canDelete/canSend/canBack/canApprove/canReject para status ${scenario.name}`, () => {
     const editResult = canEdit(scenario.project);
     const deleteResult = canDelete(scenario.project);
     const sendResult = canSend(scenario.project);
     const backResult = canBack(scenario.project);
+    const approveResult = canApprove(scenario.project);
+    const rejectResult = canReject(scenario.project);
 
     assert.equal(editResult.ok, scenario.expected.edit);
     assert.equal(deleteResult.ok, scenario.expected.delete);
     assert.equal(sendResult.ok, scenario.expected.send);
     assert.equal(backResult.ok, scenario.expected.back);
+    assert.equal(approveResult.ok, scenario.expected.approve);
+    assert.equal(rejectResult.ok, scenario.expected.reject);
   });
 }
 
@@ -68,6 +74,8 @@ test("fallback seguro sem projeto selecionado", () => {
   assert.equal(policies.delete.ok, false);
   assert.equal(policies.sendToApproval.ok, false);
   assert.equal(policies.backToDraft.ok, false);
+  assert.equal(policies.approve.ok, false);
+  assert.equal(policies.reject.ok, false);
   assert.equal(policies.edit.reason, "Selecione um projeto.");
 });
 
