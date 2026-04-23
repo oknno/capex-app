@@ -207,7 +207,7 @@ function renderGanttSection(schedule: ScheduleExportData): string {
       return `
         <div class="gantt-activity">
           <div class="gantt-row-label">
-            <span class="gantt-name">${escapeHtml(item.activityTitle)}</span>
+            <span class="gantt-name"><span class="gantt-prefix">[ATIVIDADE]</span> ${escapeHtml(item.activityTitle)}</span>
             <span class="gantt-date">${escapeHtml(toDateLabel(item.startDate))} - ${escapeHtml(toDateLabel(item.endDate))}</span>
           </div>
           <div class="gantt-track">
@@ -219,8 +219,8 @@ function renderGanttSection(schedule: ScheduleExportData): string {
 
     return `
       <div class="gantt-group">
-        <div class="gantt-row-label">
-          <span class="gantt-name">${escapeHtml(group.milestoneName)}</span>
+        <div class="gantt-row-label gantt-group-header">
+          <span class="gantt-name"><span class="gantt-prefix">[MARCO]</span> ${escapeHtml(group.milestoneName)}</span>
           <span class="gantt-date">${escapeHtml(toDateLabel(group.startDateMin))} - ${escapeHtml(toDateLabel(group.endDateMax))}</span>
         </div>
         <div class="gantt-track">
@@ -237,7 +237,22 @@ function renderGanttSection(schedule: ScheduleExportData): string {
     <section class="block gantt-wrap">
       <h2>Cronograma (Gantt)</h2>
       <div class="gantt-period">Período do cronograma: ${escapeHtml(rangeLabel)}</div>
+      <div class="gantt-legend" aria-label="Legenda do cronograma">
+        <span class="gantt-legend-item"><span class="gantt-legend-icon milestone"></span> Marco</span>
+        <span class="gantt-legend-item"><span class="gantt-legend-icon activity"></span> Atividade</span>
+      </div>
       <div class="gantt-grid">${groupsHtml}</div>
+      <div class="gantt-fallback-list">
+        <h3>Lista estruturada (fallback sem barras)</h3>
+        ${groups.map((group) => `
+          <div class="gantt-fallback-group">
+            <div><strong>[MARCO]</strong> ${escapeHtml(group.milestoneName)} (${escapeHtml(toDateLabel(group.startDateMin))} - ${escapeHtml(toDateLabel(group.endDateMax))})</div>
+            <ul>
+              ${group.activities.map((item) => `<li><strong>[ATIVIDADE]</strong> ${escapeHtml(item.activityTitle)} (${escapeHtml(toDateLabel(item.startDate))} - ${escapeHtml(toDateLabel(item.endDate))})</li>`).join("")}
+            </ul>
+          </div>
+        `).join("")}
+      </div>
     </section>
   `;
 }
@@ -298,11 +313,18 @@ function buildProjectSummaryHtml(project: ProjectRow, schedule: ScheduleExportDa
     .long-text-block p { font-size: 12px; margin: 0; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; line-height: 1.45; color: #111827; }
     .gantt-wrap { margin-top: 0; }
     .gantt-period { font-size: 12px; color: #6b7280; margin-bottom: 8px; }
+    .gantt-legend { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin-bottom: 8px; font-size: 11px; font-weight: 600; color: #374151; }
+    .gantt-legend-item { display: inline-flex; align-items: center; gap: 6px; }
+    .gantt-legend-icon { width: 14px; height: 10px; border-radius: 999px; border: 1px solid transparent; display: inline-block; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    .gantt-legend-icon.milestone { background: #f59e0b; border-color: #b45309; background-image: repeating-linear-gradient(45deg, rgb(0 0 0 / 0.18) 0 4px, transparent 4px 8px); }
+    .gantt-legend-icon.activity { background: #06b6d4; border-color: #0e7490; background-image: repeating-linear-gradient(-45deg, rgb(0 0 0 / 0.18) 0 3px, transparent 3px 7px); }
     .gantt-grid { display: grid; gap: 8px; }
-    .gantt-group { display: grid; gap: 6px; break-inside: avoid; page-break-inside: avoid; }
+    .gantt-group { display: grid; gap: 6px; break-inside: avoid; page-break-inside: avoid; padding: 8px; border: 1px solid #d1d5db; border-radius: 10px; background: #f9fafb; }
     .gantt-activities { display: grid; gap: 6px; }
     .gantt-activity { display: grid; gap: 4px; }
     .gantt-row-label { display: flex; gap: 8px; align-items: center; justify-content: space-between; font-size: 12px; }
+    .gantt-group-header { padding: 6px 8px; border-radius: 8px; background: #e5e7eb; border: 1px solid #cbd5e1; }
+    .gantt-prefix { font-size: 10px; letter-spacing: 0.04em; color: #334155; font-weight: 800; margin-right: 4px; }
     .gantt-name { min-width: 0; font-weight: 600; }
     .gantt-date { text-align: right; color: #374151; white-space: nowrap; }
     .gantt-track {
@@ -334,6 +356,11 @@ function buildProjectSummaryHtml(project: ProjectRow, schedule: ScheduleExportDa
       border-color: #0e7490;
       background-image: repeating-linear-gradient(-45deg, rgb(0 0 0 / 0.18) 0 3px, transparent 3px 7px);
     }
+    .gantt-fallback-list { margin-top: 12px; border-top: 1px dashed #9ca3af; padding-top: 10px; font-size: 11px; color: #1f2937; }
+    .gantt-fallback-list h3 { margin: 0 0 8px; font-size: 12px; }
+    .gantt-fallback-group + .gantt-fallback-group { margin-top: 8px; }
+    .gantt-fallback-group ul { margin: 4px 0 0 16px; padding: 0; }
+    .gantt-fallback-group li + li { margin-top: 2px; }
 
     @media print {
       @page { margin: 12mm; size: auto; }
@@ -347,6 +374,7 @@ function buildProjectSummaryHtml(project: ProjectRow, schedule: ScheduleExportDa
       .summary-section-header p,
       .field-label,
       .gantt-period,
+      .gantt-legend,
       .gantt-row-label { font-size: 10px; }
       .field-value { font-size: 11px; }
       .long-text-block h4 { font-size: 10px; }
