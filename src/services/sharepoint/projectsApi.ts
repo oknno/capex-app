@@ -1,7 +1,7 @@
-import { spConfig } from "./spConfig";
-import { spGetJson, spPostJson, spPatchJson, getDigest } from "./spHttp";
-import { getListFieldsCached } from "./listSchemaCache";
-import { buildProjectsQueryPlan, mergeProjectChunkResults } from "./projectsQueryPlanner";
+import { spConfig } from "./spConfig.ts";
+import { spGetJson, spPostJson, spPatchJson, getDigest } from "./spHttp.ts";
+import { getListFieldsCached } from "./listSchemaCache.ts";
+import { buildProjectsQueryPlan, mergeProjectChunkResults } from "./projectsQueryPlanner.ts";
 
 export type ProjectRow = {
   Id: number;
@@ -51,6 +51,16 @@ export type SortDir = "asc" | "desc";
 
 type SpRecord = Record<string, unknown>;
 type ProjectFieldKey = keyof ProjectDraft | "Id";
+type ChunkedCursorState = {
+  v: 1;
+  mode: "chunked";
+  top: number;
+  orderBy: SortBy;
+  orderDir: SortDir;
+  chunkFilters: string[];
+  chunkNextLinks: Array<string | null>;
+  pendingItems: ProjectRow[];
+};
 type SpListResponse = {
   value?: unknown;
   d?: { results?: unknown; __next?: unknown };
@@ -58,7 +68,7 @@ type SpListResponse = {
   ["odata.nextLink"]?: unknown;
   __next?: unknown;
 };
-export { UnitFilterLimitError } from "./projectsQueryPlanner";
+export { UnitFilterLimitError } from "./projectsQueryPlanner.ts";
 
 const PROJECT_FIELDS: Array<keyof ProjectRow> = [
   "Id",
@@ -102,6 +112,7 @@ const PROJECT_FIELDS: Array<keyof ProjectRow> = [
 const PROJECT_DEFAULT_SELECT = PROJECT_FIELDS.join(",");
 const PROJECT_READ_MANDATORY_FIELDS = new Set(["Id", "Title"]);
 const BLOCKED_PROJECT_PAYLOAD_KEYS = new Set(["Id"]);
+const CHUNKED_CURSOR_PREFIX = "__chunked_cursor__:";
 let projectsFieldNamesIndexPromise: Promise<Map<string, string> | null> | null = null;
 
 const SP_PROJECT_INTERNAL_NAMES: Record<ProjectFieldKey, string> = {
@@ -188,6 +199,48 @@ function pickNextLink(data: SpListResponse): string | undefined {
   return typeof link === "string" && link.length > 0 ? link : undefined;
 }
 
+function isInternalChunkedCursor(nextLink: string): boolean {
+  return nextLink.startsWith(CHUNKED_CURSOR_PREFIX);
+}
+
+function createChunkedCursor(state: ChunkedCursorState): string {
+  return `${CHUNKED_CURSOR_PREFIX}${encodeURIComponent(JSON.stringify(state))}`;
+}
+
+function parseChunkedCursor(cursor: string): ChunkedCursorState {
+  const raw = cursor.slice(CHUNKED_CURSOR_PREFIX.length);
+  const parsed = JSON.parse(decodeURIComponent(raw)) as Partial<ChunkedCursorState>;
+  if (
+    parsed?.v !== 1 ||
+    parsed.mode !== "chunked" ||
+    !Array.isArray(parsed.chunkFilters) ||
+    !Array.isArray(parsed.chunkNextLinks) ||
+    !Array.isArray(parsed.pendingItems)
+  ) {
+    throw new Error("Invalid chunked cursor");
+  }
+  return {
+    v: 1,
+    mode: "chunked",
+    top: Number(parsed.top) || 0,
+    orderBy: (parsed.orderBy as SortBy) ?? "Id",
+    orderDir: (parsed.orderDir as SortDir) ?? "desc",
+    chunkFilters: parsed.chunkFilters,
+    chunkNextLinks: parsed.chunkNextLinks.map((link) => (typeof link === "string" && link.length > 0 ? link : null)),
+    pendingItems: parsed.pendingItems as ProjectRow[]
+  };
+}
+
+function mergeChunkItems(args: { chunks: ProjectRow[][]; orderBy: SortBy; orderDir: SortDir }): ProjectRow[] {
+  const totalItems = args.chunks.reduce((acc, chunk) => acc + chunk.length, 0);
+  return mergeProjectChunkResults({
+    chunks: args.chunks,
+    orderBy: args.orderBy,
+    orderDir: args.orderDir,
+    top: Math.max(totalItems, 0)
+  });
+}
+
 function buildRawProjectPayload(source: ProjectUpdate): Record<string, unknown> {
   const payload: Record<string, unknown> = {};
   (Object.keys(source) as Array<keyof ProjectUpdate>).forEach((key) => {
@@ -266,6 +319,45 @@ export async function getProjectsPage(args: {
   const schemaFieldNameIndex = await getProjectsFieldNameIndex();
 
   if (args.nextLink) {
+    if (isInternalChunkedCursor(args.nextLink)) {
+      const state = parseChunkedCursor(args.nextLink);
+      const pendingChunks: ProjectRow[][] = [state.pendingItems];
+      const nextLinks = state.chunkNextLinks.slice();
+
+      while (pendingChunks.reduce((acc, chunk) => acc + chunk.length, 0) < state.top && nextLinks.some(Boolean)) {
+        const chunkRequests = nextLinks
+          .map((url, index) => ({ url, index }))
+          .filter((entry): entry is { url: string; index: number } => Boolean(entry.url));
+        const chunkResponses = await Promise.all(chunkRequests.map((entry) => spGetJson<SpListResponse>(entry.url)));
+
+        chunkResponses.forEach((response, responseIdx) => {
+          const targetIdx = chunkRequests[responseIdx].index;
+          nextLinks[targetIdx] = pickNextLink(response) ?? null;
+          pendingChunks.push(readItems(response).map((item) => mapProjectRow(item, schemaFieldNameIndex)));
+        });
+      }
+
+      const merged = mergeChunkItems({
+        chunks: pendingChunks,
+        orderBy: state.orderBy,
+        orderDir: state.orderDir
+      });
+      const pageItems = merged.slice(0, state.top);
+      const remainingItems = merged.slice(state.top);
+      const hasMore = remainingItems.length > 0 || nextLinks.some(Boolean);
+
+      return {
+        items: pageItems,
+        nextLink: hasMore
+          ? createChunkedCursor({
+              ...state,
+              chunkNextLinks: nextLinks,
+              pendingItems: remainingItems
+            })
+          : undefined
+      };
+    }
+
     const data = await spGetJson<SpListResponse>(args.nextLink);
     return { items: readItems(data).map((item) => mapProjectRow(item, schemaFieldNameIndex)), nextLink: pickNextLink(data) };
   }
@@ -305,10 +397,28 @@ export async function getProjectsPage(args: {
     chunks: chunkResponses.map((response) => readItems(response).map((item) => mapProjectRow(item, schemaFieldNameIndex))),
     orderBy,
     orderDir,
-    top
+    top: Number.MAX_SAFE_INTEGER
   });
+  const nextLinks = chunkResponses.map((response) => pickNextLink(response) ?? null);
+  const pageItems = merged.slice(0, top);
+  const remainingItems = merged.slice(top);
+  const hasMore = remainingItems.length > 0 || nextLinks.some(Boolean);
 
-  return { items: merged, nextLink: undefined };
+  return {
+    items: pageItems,
+    nextLink: hasMore
+      ? createChunkedCursor({
+          v: 1,
+          mode: "chunked",
+          top,
+          orderBy,
+          orderDir,
+          chunkFilters: queryPlan.chunkFilters,
+          chunkNextLinks: nextLinks,
+          pendingItems: remainingItems
+        })
+      : undefined
+  };
 }
 
 export async function getProjectById(id: number): Promise<ProjectRow> {
