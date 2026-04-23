@@ -213,8 +213,8 @@ export function ProjectsPage(props: {
   const backPolicy = canBack(selectedForPolicies);
 
   function onExportTable() {
-    const hasExported = exportProjectsCsv(list.items);
-    if (!hasExported) {
+    const exported = exportProjectsCsv(list.items);
+    if (!exported) {
       notify("Nenhum projeto carregado para exportar.", "info");
       return;
     }
