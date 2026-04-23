@@ -20,6 +20,7 @@ type UseProjectsListOptions = {
 };
 
 const PAGE_SIZE = 15;
+const DEFAULT_FILTERS: ProjectsFilters = { searchTitle: "", status: "", unit: "", sortBy: "Id", sortDir: "desc" };
 
 export function useProjectsList(
   initialFilters: ProjectsFilters,
@@ -91,9 +92,39 @@ export function useProjectsList(
     }
   }, [deps, nextLink]);
 
-  const clearFilters = useCallback(() => {
-    setFilters({ searchTitle: "", status: "", unit: "", sortBy: "Id", sortDir: "desc" });
-  }, []);
+  const clearFilters = useCallback(async () => {
+    setState("loading");
+    setErrorMsg("");
+    setFilters(DEFAULT_FILTERS);
+
+    try {
+      const res = await deps.getProjectsPage({
+        top: PAGE_SIZE,
+        unitIn: options.isAdmin ? undefined : options.allowedUnits,
+        orderBy: DEFAULT_FILTERS.sortBy,
+        orderDir: DEFAULT_FILTERS.sortDir
+      });
+
+      setItems(res.items);
+      setSelectedId((currentSelectedId) =>
+        currentSelectedId !== null && res.items.some((item) => item.Id === currentSelectedId)
+          ? currentSelectedId
+          : null
+      );
+      setNextLink(res.nextLink);
+      setState("idle");
+    } catch (e: unknown) {
+      const appError =
+        e instanceof UnitFilterLimitError
+          ? { userMessage: e.userMessage }
+          : normalizeError(e, "Erro ao carregar Projects.");
+      setState("error");
+      setErrorMsg(appError.userMessage);
+      if (!(e instanceof UnitFilterLimitError)) {
+        console.error(e);
+      }
+    }
+  }, [deps, options.allowedUnits, options.isAdmin]);
 
   return {
     items,
