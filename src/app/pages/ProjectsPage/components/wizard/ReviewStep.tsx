@@ -41,7 +41,7 @@ function SummaryField(props: {
   label: string;
   value: SummaryValue;
   minWidth?: number;
-  colSpan?: 1 | 2 | 3;
+  colSpan?: 1 | 2 | 3 | 4;
   forceSpan?: 1 | 2 | 3;
 }) {
   const colSpan = props.colSpan ?? getSummaryFieldSpan(props.value, props.forceSpan);
