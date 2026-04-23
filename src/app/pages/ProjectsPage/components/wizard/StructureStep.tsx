@@ -5,6 +5,7 @@ import type { ActivityDraftLocal, MilestoneDraftLocal } from "../../../../../dom
 import { ensurePepElementOption, getPepElementOptions } from "./wizardOptions";
 import { SectionTitle } from "./WizardUi";
 import { wizardLayoutStyles } from "./wizardLayoutStyles";
+import { GanttPreview } from "./GanttPreview";
 import { Button } from "../../../../components/ui/Button";
 import { Field } from "../../../../components/ui/Field";
 import { StateMessage } from "../../../../components/ui/StateMessage";
@@ -27,17 +28,6 @@ function emptyActivityForm() {
 }
 
 type ActivityFormState = ReturnType<typeof emptyActivityForm>;
-
-type GanttItem = {
-  milestoneTitle: string;
-  activityTitle: string;
-  startDate: string;
-  endDate: string;
-};
-
-function toDateLabel(value: string) {
-  return new Date(`${value}T00:00:00`).toLocaleDateString("pt-BR");
-}
 
 export function StructureStep(props: {
   readOnly: boolean;
@@ -63,30 +53,6 @@ export function StructureStep(props: {
     }
     return grouped;
   }, [props.milestones, props.activities]);
-
-  const ganttItems = useMemo<GanttItem[]>(() => props.activities
-    .filter((activity) => activity.startDate && activity.endDate)
-    .map((activity) => ({
-      milestoneTitle: props.milestones.find((milestone) => milestone.tempId === activity.milestoneTempId)?.Title ?? "MARCO",
-      activityTitle: activity.Title || "ATIVIDADE",
-      startDate: activity.startDate as string,
-      endDate: activity.endDate as string
-    })), [props.activities, props.milestones]);
-
-  const ganttBounds = useMemo(() => {
-    if (ganttItems.length === 0) return null;
-    const starts = ganttItems.map((item) => new Date(`${item.startDate}T00:00:00`).getTime());
-    const ends = ganttItems.map((item) => new Date(`${item.endDate}T00:00:00`).getTime());
-    return {
-      min: Math.min(...starts),
-      max: Math.max(...ends)
-    };
-  }, [ganttItems]);
-
-  const ganttRangeLabel = useMemo(() => {
-    if (!ganttBounds) return null;
-    return `${new Date(ganttBounds.min).toLocaleDateString("pt-BR")} - ${new Date(ganttBounds.max).toLocaleDateString("pt-BR")}`;
-  }, [ganttBounds]);
 
   const pepOptions = useMemo(() => getPepElementOptions(props.company), [props.company]);
 
@@ -394,34 +360,7 @@ export function StructureStep(props: {
 
         <div style={{ ...wizardLayoutStyles.cardSubtle, background: uiTokens.colors.surface, marginTop: uiTokens.spacing.md }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: uiTokens.colors.textStrong, marginBottom: uiTokens.spacing.sm }}>Pré-visualização do cronograma (Gantt)</div>
-          {ganttItems.length === 0 || !ganttBounds ? (
-            <StateMessage state="empty" message="Preencha início e término das atividades para visualizar o cronograma." />
-          ) : (
-            <div style={{ display: "grid", gap: uiTokens.spacing.sm }}>
-              <div style={{ fontSize: 12, color: uiTokens.colors.textMuted }}>
-                Período do cronograma: {ganttRangeLabel}
-              </div>
-              {ganttItems.map((item) => {
-                const total = Math.max(ganttBounds.max - ganttBounds.min, 1);
-                const start = new Date(`${item.startDate}T00:00:00`).getTime();
-                const end = new Date(`${item.endDate}T00:00:00`).getTime();
-                const left = ((start - ganttBounds.min) / total) * 100;
-                const width = (Math.max(end - start, 86400000) / total) * 100;
-
-                return (
-                  <div key={`${item.milestoneTitle}_${item.activityTitle}_${item.startDate}_${item.endDate}`}>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: uiTokens.colors.textMuted, marginBottom: 4 }}>
-                      <span>{item.milestoneTitle} • {item.activityTitle}</span>
-                      <span>{toDateLabel(item.startDate)} - {toDateLabel(item.endDate)}</span>
-                    </div>
-                    <div style={{ position: "relative", height: 14, borderRadius: 999, background: uiTokens.colors.border, overflow: "hidden" }}>
-                      <div style={{ position: "absolute", left: `${left}%`, width: `${Math.min(width, 100 - left)}%`, top: 0, bottom: 0, borderRadius: 999, background: uiTokens.colors.accentAlt }} />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          <GanttPreview milestones={props.milestones} activities={props.activities} />
         </div>
       </div>
     </div>
