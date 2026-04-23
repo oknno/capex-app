@@ -273,7 +273,13 @@ function buildProjectSummaryHtml(project: ProjectRow, schedule: ScheduleExportDa
   <meta charset="utf-8" />
   <title>Resumo do Projeto #${project.Id}</title>
   <style>
-    body { font-family: Arial, Helvetica, sans-serif; color: #111827; margin: 24px; }
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      color: #111827;
+      margin: 24px;
+      print-color-adjust: exact;
+      -webkit-print-color-adjust: exact;
+    }
     .header { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 12px; break-inside: avoid; page-break-inside: avoid; }
     .title { font-size: 24px; font-weight: 700; margin: 0; }
     .status { font-size: 14px; font-weight: 700; }
@@ -299,10 +305,35 @@ function buildProjectSummaryHtml(project: ProjectRow, schedule: ScheduleExportDa
     .gantt-row-label { display: flex; gap: 8px; align-items: center; justify-content: space-between; font-size: 12px; }
     .gantt-name { min-width: 0; font-weight: 600; }
     .gantt-date { text-align: right; color: #374151; white-space: nowrap; }
-    .gantt-track { position: relative; height: 12px; border-radius: 999px; background: #d1d5db; overflow: hidden; }
-    .gantt-bar { position: absolute; top: 0; bottom: 0; border-radius: 999px; }
-    .gantt-bar.milestone { background: #f59e0b; }
-    .gantt-bar.activity { background: #06b6d4; }
+    .gantt-track {
+      position: relative;
+      height: 12px;
+      border-radius: 999px;
+      background: #d1d5db;
+      border: 1px solid #9ca3af;
+      overflow: hidden;
+      print-color-adjust: exact;
+      -webkit-print-color-adjust: exact;
+    }
+    .gantt-bar {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      print-color-adjust: exact;
+      -webkit-print-color-adjust: exact;
+    }
+    .gantt-bar.milestone {
+      background: #f59e0b;
+      border-color: #b45309;
+      background-image: repeating-linear-gradient(45deg, rgb(0 0 0 / 0.18) 0 4px, transparent 4px 8px);
+    }
+    .gantt-bar.activity {
+      background: #06b6d4;
+      border-color: #0e7490;
+      background-image: repeating-linear-gradient(-45deg, rgb(0 0 0 / 0.18) 0 3px, transparent 3px 7px);
+    }
 
     @media print {
       @page { margin: 12mm; size: auto; }
