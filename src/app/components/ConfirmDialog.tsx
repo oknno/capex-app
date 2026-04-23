@@ -12,7 +12,6 @@ export function ConfirmDialog(props: {
 }) {
   if (!props.open) return null;
 
-  const tone = props.tone ?? "neutral";
   const confirming = Boolean(props.confirming);
 
   return (
@@ -61,11 +60,7 @@ export function ConfirmDialog(props: {
             {props.cancelText ?? "Cancelar"}
           </button>
 
-          <button
-            className={`btn ${tone === "danger" ? "danger" : "primary"}`}
-            onClick={props.onConfirm}
-            disabled={confirming}
-          >
+          <button className="btn primary" onClick={props.onConfirm} disabled={confirming}>
             {confirming ? props.confirmingText ?? "Processando..." : props.confirmText ?? "Confirmar"}
           </button>
         </div>
