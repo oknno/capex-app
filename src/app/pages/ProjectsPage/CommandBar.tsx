@@ -9,7 +9,7 @@ type SortBy = "Title" | "Id" | "approvalYear";
 type SortDir = "asc" | "desc";
 
 const STATUS_OPTIONS = [...PROJECT_STATUSES];
-const UNIT_OPTIONS = Array.from(
+const ALL_UNIT_OPTIONS = Array.from(
   new Set(
     Object.values(UNIT_OPTIONS_BY_CENTER)
       .flat()
@@ -137,6 +137,8 @@ export function CommandBar(props: {
   onRefresh: () => void;
 
   onNew: () => void;
+  canCreate: boolean;
+  createDisabledReason?: string;
   onView: () => void;
   onEdit: () => void;
   onDuplicate: () => void;
@@ -147,8 +149,10 @@ export function CommandBar(props: {
 
   onExportTable: () => void;
   onExportProject: () => void;
+  availableUnits?: string[];
 }) {
   const hasSelection = props.selectedId != null;
+  const unitOptions = props.availableUnits ?? ALL_UNIT_OPTIONS;
 
   return (
     <div style={styles.commandBar}>
@@ -158,7 +162,14 @@ export function CommandBar(props: {
 
       <div style={styles.actionsWrap}>
         <Button onClick={props.onRefresh}>Atualizar</Button>
-        <Button tone="primary" onClick={props.onNew}>Novo</Button>
+        <Button
+          tone="primary"
+          onClick={props.onNew}
+          disabled={!props.canCreate}
+          title={!props.canCreate ? props.createDisabledReason : undefined}
+        >
+          Novo
+        </Button>
 
         <Button disabled={!hasSelection} title={!hasSelection ? "Selecione um projeto." : undefined} onClick={props.onView}>Visualizar</Button>
         <Button disabled={!props.canEdit} title={!props.canEdit ? props.editDisabledReason : undefined} onClick={props.onEdit}>Editar</Button>
@@ -174,6 +185,7 @@ export function CommandBar(props: {
 
         <FilterMenu
           value={props.filters}
+          unitOptions={unitOptions}
           onChange={props.onChangeFilters}
           onApply={props.onApply}
           onClear={props.onClear}
@@ -244,6 +256,7 @@ function ExportMenu(props: {
 
 function FilterMenu(props: {
   value: ProjectsFilters;
+  unitOptions: string[];
   onChange: (patch: Partial<ProjectsFilters>) => void;
   onApply: () => void;
   onClear: () => void;
@@ -324,7 +337,7 @@ function FilterMenu(props: {
                 style={styles.select}
               >
                 <option value="">Todas</option>
-                {UNIT_OPTIONS.map((unit) => (
+                {props.unitOptions.map((unit) => (
                   <option key={unit} value={unit}>{unit}</option>
                 ))}
               </select>
