@@ -5,27 +5,9 @@ import { projectFieldLabel } from "../../fieldLabels";
 import { SectionTitle } from "./WizardUi";
 import { uiTokens } from "../../../../components/ui/tokens";
 import { PepSummaryList } from "./PepSummaryList";
+import { GanttPreview } from "./GanttPreview";
 
 type SummaryValue = string | number | undefined;
-type GanttItem = {
-  milestone: string;
-  title: string;
-  startDate: string;
-  endDate: string;
-};
-
-type GanttBounds = {
-  min: number;
-  max: number;
-};
-
-type MilestoneGroup = {
-  milestoneName: string;
-  startDateMin: string;
-  endDateMax: string;
-  activities: GanttItem[];
-};
-
 function renderValue(value: SummaryValue) {
   return value === undefined || value === "" ? "—" : String(value);
 }
@@ -53,15 +35,6 @@ function getSummaryFieldSpan(value: SummaryValue, forceSpan?: 1 | 2 | 3): 1 | 2 
 function toDateLabel(value?: string) {
   if (!value) return "—";
   return new Date(`${value}T00:00:00`).toLocaleDateString("pt-BR");
-}
-
-function getBarPosition(startDate: string, endDate: string, bounds: GanttBounds) {
-  const total = Math.max(bounds.max - bounds.min, 1);
-  const start = new Date(`${startDate}T00:00:00`).getTime();
-  const end = new Date(`${endDate}T00:00:00`).getTime();
-  const left = ((start - bounds.min) / total) * 100;
-  const width = (Math.max(end - start, 86400000) / total) * 100;
-  return { left, width: Math.min(width, 100 - left) };
 }
 
 function SummaryField(props: {
@@ -124,46 +97,6 @@ export function ReviewStep(props: {
   needStructure: boolean;
 }) {
   const { project, milestones, activities, peps } = props.state;
-
-
-  const ganttItems: GanttItem[] = activities
-    .filter((activity) => activity.startDate && activity.endDate)
-    .map((activity) => ({
-      milestone: milestones.find((item) => item.tempId === activity.milestoneTempId)?.Title ?? "MARCO",
-      title: activity.Title,
-      startDate: activity.startDate as string,
-      endDate: activity.endDate as string
-    }));
-
-  const ganttBounds: GanttBounds | null = ganttItems.length > 0
-    ? {
-      min: Math.min(...ganttItems.map((item) => new Date(`${item.startDate}T00:00:00`).getTime())),
-      max: Math.max(...ganttItems.map((item) => new Date(`${item.endDate}T00:00:00`).getTime()))
-    }
-    : null;
-
-  const milestoneGroups: MilestoneGroup[] = Object.values(
-    ganttItems.reduce<Record<string, MilestoneGroup>>((acc, item) => {
-      const current = acc[item.milestone];
-      if (!current) {
-        acc[item.milestone] = {
-          milestoneName: item.milestone,
-          startDateMin: item.startDate,
-          endDateMax: item.endDate,
-          activities: [item]
-        };
-        return acc;
-      }
-
-      acc[item.milestone] = {
-        ...current,
-        startDateMin: item.startDate < current.startDateMin ? item.startDate : current.startDateMin,
-        endDateMax: item.endDate > current.endDateMax ? item.endDate : current.endDateMax,
-        activities: [...current.activities, item]
-      };
-      return acc;
-    }, {})
-  );
 
   return (
     <div style={{ padding: 14, display: "grid", gap: 16 }}>
@@ -243,42 +176,7 @@ export function ReviewStep(props: {
 
       {props.needStructure && (
         <SummarySection title="8. Cronograma (Gantt)" columns={1}>
-          {!ganttBounds || ganttItems.length === 0 ? (
-            <SummaryField label="Status" value="Sem atividades com início e término para exibir cronograma." />
-          ) : (
-            <div style={{ display: "grid", gap: 10 }}>
-              {milestoneGroups.map((milestoneGroup) => {
-                const milestoneBar = getBarPosition(milestoneGroup.startDateMin, milestoneGroup.endDateMax, ganttBounds);
-                return (
-                  <div key={`${milestoneGroup.milestoneName}_${milestoneGroup.startDateMin}_${milestoneGroup.endDateMax}`} style={{ display: "grid", gap: 8 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: uiTokens.colors.text, marginBottom: 2 }}>
-                      <span style={{ minWidth: 0, flex: 1 }}>{milestoneGroup.milestoneName}</span>
-                      <span style={{ marginLeft: "auto", textAlign: "right" }}>{toDateLabel(milestoneGroup.startDateMin)} - {toDateLabel(milestoneGroup.endDateMax)}</span>
-                    </div>
-                    <div style={{ position: "relative", height: 14, borderRadius: 999, background: uiTokens.colors.border, overflow: "hidden" }}>
-                      <div style={{ position: "absolute", left: `${milestoneBar.left}%`, width: `${milestoneBar.width}%`, top: 0, bottom: 0, background: uiTokens.colors.accentWarning, borderRadius: 999 }} />
-                    </div>
-                    <div style={{ display: "grid", gap: 8 }}>
-                      {milestoneGroup.activities.map((item) => {
-                        const activityBar = getBarPosition(item.startDate, item.endDate, ganttBounds);
-                        return (
-                          <div key={`${item.milestone}_${item.title}_${item.startDate}_${item.endDate}`}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: uiTokens.colors.text, marginBottom: 4 }}>
-                              <span style={{ minWidth: 0, flex: 1 }}>{item.title}</span>
-                              <span style={{ marginLeft: "auto", textAlign: "right" }}>{toDateLabel(item.startDate)} - {toDateLabel(item.endDate)}</span>
-                            </div>
-                            <div style={{ position: "relative", height: 14, borderRadius: 999, background: uiTokens.colors.border, overflow: "hidden" }}>
-                              <div style={{ position: "absolute", left: `${activityBar.left}%`, width: `${activityBar.width}%`, top: 0, bottom: 0, background: uiTokens.colors.accentAlt, borderRadius: 999 }} />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          <GanttPreview milestones={milestones} activities={activities} />
         </SummarySection>
       )}
 
