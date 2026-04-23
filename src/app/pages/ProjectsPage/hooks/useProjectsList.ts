@@ -72,13 +72,14 @@ export function useProjectsList(
   }, [deps, filters, options.allowedUnits, options.isAdmin]);
 
   const loadMore = useCallback(async () => {
-    if (!nextLink) return;
+    const paginationCursor = nextLink;
+    if (!paginationCursor) return;
 
     setState("loading");
     setErrorMsg("");
 
     try {
-      const res = await deps.getProjectsPage({ nextLink });
+      const res = await deps.getProjectsPage({ nextLink: paginationCursor });
       setItems((prev) => prev.concat(res.items));
       setNextLink(res.nextLink);
       setState("idle");
