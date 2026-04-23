@@ -50,7 +50,7 @@ function SummaryField(props: {
     <div
       className="summary-field"
       style={{
-        minWidth: props.minWidth ?? 180,
+        minWidth: props.minWidth ?? 0,
         gridColumn: `span ${colSpan}`,
         border: `1px solid ${uiTokens.colors.border}`,
         borderRadius: 12,
@@ -119,7 +119,7 @@ function SummarySection(props: {
         style={{
           display: "grid",
           gap: 14,
-          gridTemplateColumns: `repeat(${props.columns ?? 3}, minmax(180px, 1fr))`
+          gridTemplateColumns: `repeat(${props.columns ?? 3}, minmax(0, 1fr))`
         }}
       >
         {props.children}
@@ -176,7 +176,7 @@ export function ReviewStep(props: {
         <SummaryField label="Projeto de origem" value={project.sourceProjectCode} />
       </SummarySection>
 
-      <SummarySection title="3. Informação Operacional" subtitle="Estrutura organizacional e responsáveis pela execução." columns={4}>
+      <SummarySection title="3. Informação Operacional" subtitle="Estrutura organizacional e responsáveis pela execução." columns={2}>
         <SummaryField label="Empresa" value={project.company} />
         <SummaryField label="Centro" value={project.center} />
         <SummaryField label="Unidade" value={project.unit} />
