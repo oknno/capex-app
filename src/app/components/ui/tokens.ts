@@ -16,6 +16,7 @@ export const uiTokens = {
     accent: "#111827",
     accentAlt: "#0f172a",
     accentSoft: "#eef2ff",
+    accentWarning: "#f59e0b",
     danger: "#b91c1c",
   },
   spacing: {
