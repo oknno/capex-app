@@ -2,7 +2,7 @@ import type { ProjectRow } from "../../../../services/sharepoint/projectsApi";
 import type { ActivityRow } from "../../../../services/sharepoint/activitiesApi";
 import type { MilestoneRow } from "../../../../services/sharepoint/milestonesApi";
 import { projectFieldLabel } from "../fieldLabels";
-import { fmtDate, fmtMoney, getSapCodeDisplay, truncateText } from "./projectSummaryFormatters";
+import { fmtDate, fmtMoney, getSapCodeDisplay } from "./projectSummaryFormatters";
 
 function escapeHtml(value: string): string {
   return value
@@ -13,32 +13,25 @@ function escapeHtml(value: string): string {
     .replaceAll("'", "&#39;");
 }
 
-function renderField(label: string, value: string): string {
+function renderField(label: string, value: string, colSpan?: number): string {
+  const colSpanStyle = colSpan ? ` style="grid-column: span ${colSpan}"` : "";
+
   return `
-    <div class="field-item">
+    <div class="field-item"${colSpanStyle}>
       <div class="field-label">${escapeHtml(label)}</div>
       <div class="field-value">${escapeHtml(value)}</div>
     </div>
   `;
 }
 
-function renderLongTextBlock(title: string, text: string): string {
-  return `
-    <div class="long-text-block">
-      <h4>${escapeHtml(title)}</h4>
-      <p>${escapeHtml(text)}</p>
-    </div>
-  `;
-}
-
-function renderSection(title: string, subtitle: string | undefined, fieldsHtml: string): string {
+function renderSection(section: ProjectSection, fieldsHtml: string): string {
   return `
     <section class="summary-section">
       <div class="summary-section-header">
-        <h3>${escapeHtml(title)}</h3>
-        ${subtitle ? `<p>${escapeHtml(subtitle)}</p>` : ""}
+        <h3>${escapeHtml(section.title)}</h3>
+        ${section.subtitle ? `<p>${escapeHtml(section.subtitle)}</p>` : ""}
       </div>
-      <div class="summary-grid">${fieldsHtml}</div>
+      <div class="summary-grid" style="--cols: ${section.columns}">${fieldsHtml}</div>
     </section>
   `;
 }
@@ -73,45 +66,83 @@ const DATE_FIELDS: Array<keyof ProjectRow> = ["startDate", "endDate"];
 type ProjectSection = {
   title: string;
   subtitle?: string;
-  fields: Array<keyof ProjectRow>;
+  columns: number;
+  fields: Array<{
+    field: keyof ProjectRow;
+    colSpan?: number;
+  }>;
 };
 
 const PROJECT_SECTIONS: ProjectSection[] = [
   {
     title: "1. Sobre o Projeto",
     subtitle: "Dados principais para identificação e planejamento.",
-    fields: ["Title", "budgetBrl", "investmentLevel", "approvalYear", "startDate", "endDate", "projectFunction"]
+    columns: 4,
+    fields: [
+      { field: "Title", colSpan: 2 },
+      { field: "budgetBrl", colSpan: 2 },
+      { field: "investmentLevel" },
+      { field: "approvalYear" },
+      { field: "startDate" },
+      { field: "endDate" },
+      { field: "projectFunction", colSpan: 4 }
+    ]
   },
   {
     title: "2. Origem e Programa",
     subtitle: "Vínculo da verba com iniciativa e projeto de referência.",
-    fields: ["fundingSource", "program", "sourceProjectCode"]
+    columns: 3,
+    fields: [{ field: "fundingSource" }, { field: "program" }, { field: "sourceProjectCode" }]
   },
   {
     title: "3. Informação Operacional",
     subtitle: "Estrutura organizacional e responsáveis pela execução.",
+    columns: 2,
     fields: [
-      "company",
-      "center",
-      "unit",
-      "location",
-      "depreciationCostCenter",
-      "category",
-      "investmentType",
-      "assetType",
-      "projectUser",
-      "projectLeader"
+      { field: "company" },
+      { field: "center" },
+      { field: "unit" },
+      { field: "location" },
+      { field: "depreciationCostCenter" },
+      { field: "category" },
+      { field: "investmentType" },
+      { field: "assetType" },
+      { field: "projectUser" },
+      { field: "projectLeader" }
     ]
   },
   {
-    title: "4. Indicadores de Desempenho",
-    subtitle: "Indicadores e metas esperadas com a implementação.",
-    fields: ["kpiType", "kpiName", "kpiCurrent", "kpiExpected", "kpiDescription"]
+    title: "4. Detalhamento Complementar",
+    subtitle: "Contexto do problema e direcionamento da solução.",
+    columns: 2,
+    fields: [
+      { field: "businessNeed", colSpan: 2 },
+      { field: "proposedSolution", colSpan: 2 }
+    ]
   },
   {
-    title: "5. ROCE",
+    title: "5. Indicadores de Desempenho",
+    subtitle: "Indicadores e metas esperadas com a implementação.",
+    columns: 4,
+    fields: [
+      { field: "kpiType", colSpan: 2 },
+      { field: "kpiName", colSpan: 2 },
+      { field: "kpiCurrent", colSpan: 2 },
+      { field: "kpiExpected", colSpan: 2 },
+      { field: "kpiDescription", colSpan: 4 }
+    ]
+  },
+  {
+    title: "6. ROCE",
     subtitle: "Ganhos, perdas e classificação financeira do investimento.",
-    fields: ["hasRoce", "roceClassification", "roceGain", "roceLoss", "roceGainDescription", "roceLossDescription"]
+    columns: 6,
+    fields: [
+      { field: "roceClassification", colSpan: 2 },
+      { field: "roceGain", colSpan: 2 },
+      { field: "roceLoss", colSpan: 2 },
+      { field: "roceGainDescription", colSpan: 3 },
+      { field: "roceLossDescription", colSpan: 3 }
+    ]
   }
 ];
 
@@ -264,23 +295,11 @@ function buildProjectSummaryHtml(project: ProjectRow, schedule: ScheduleExportDa
 
   const sectionsHtml = PROJECT_SECTIONS.map((section) => {
     const sectionFieldsHtml = section.fields
-      .map((field) => renderField(projectFieldLabel(field), formatFieldValue(project, field)))
+      .map(({ field, colSpan }) => renderField(projectFieldLabel(field), formatFieldValue(project, field), colSpan))
       .join("\n");
 
-    return renderSection(section.title, section.subtitle, sectionFieldsHtml);
+    return renderSection(section, sectionFieldsHtml);
   }).join("\n");
-
-  const businessNeed = truncateText(String(project.businessNeed ?? "-"), 10000);
-  const proposedSolution = truncateText(String(project.proposedSolution ?? "-"), 10000);
-
-  const detailSectionHtml = renderSection(
-    "6. Detalhamento Complementar",
-    "Contexto do problema e direcionamento da solução.",
-    [
-    renderLongTextBlock(projectFieldLabel("businessNeed"), businessNeed),
-    renderLongTextBlock(projectFieldLabel("proposedSolution"), proposedSolution)
-    ].join("\n")
-  );
 
   return `<!doctype html>
 <html lang="pt-BR">
@@ -304,13 +323,10 @@ function buildProjectSummaryHtml(project: ProjectRow, schedule: ScheduleExportDa
     .summary-section-header { display: grid; gap: 4px; }
     .summary-section-header h3 { margin: 0; font-size: 16px; font-weight: 800; color: #111827; }
     .summary-section-header p { margin: 0; font-size: 12px; color: #6b7280; }
-    .summary-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px; align-items: start; }
+    .summary-grid { display: grid; grid-template-columns: repeat(var(--cols, 1), minmax(0, 1fr)); gap: 10px 12px; align-items: start; }
     .field-item { break-inside: avoid; page-break-inside: avoid; border: 1px solid #d1d5db; border-radius: 12px; background: #f9fafb; padding: 10px 12px; }
     .field-label { font-size: 11px; font-weight: 700; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.03em; }
-    .field-value { font-size: 13px; font-weight: 600; line-height: 1.45; }
-    .long-text-block { grid-column: span 2; border: 1px solid #d1d5db; border-radius: 12px; background: #f9fafb; padding: 12px; break-inside: avoid; page-break-inside: avoid; }
-    .long-text-block h4 { font-size: 12px; font-weight: 700; margin: 0 0 6px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.03em; }
-    .long-text-block p { font-size: 12px; margin: 0; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; line-height: 1.45; color: #111827; }
+    .field-value { font-size: 13px; font-weight: 600; line-height: 1.45; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; }
     .gantt-wrap { margin-top: 0; }
     .gantt-period { font-size: 12px; color: #6b7280; margin-bottom: 8px; }
     .gantt-legend { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin-bottom: 8px; font-size: 11px; font-weight: 600; color: #374151; }
@@ -377,8 +393,6 @@ function buildProjectSummaryHtml(project: ProjectRow, schedule: ScheduleExportDa
       .gantt-legend,
       .gantt-row-label { font-size: 10px; }
       .field-value { font-size: 11px; }
-      .long-text-block h4 { font-size: 10px; }
-      .long-text-block p { font-size: 10px; }
       .gantt-track { height: 10px; }
     }
 
@@ -389,7 +403,7 @@ function buildProjectSummaryHtml(project: ProjectRow, schedule: ScheduleExportDa
 
     @media print and (max-width: 999px) {
       .summary-grid { grid-template-columns: 1fr; }
-      .long-text-block { grid-column: span 1; }
+      .field-item { grid-column: span 1 !important; }
       .sections { grid-template-columns: 1fr; }
     }
   </style>
@@ -403,7 +417,6 @@ function buildProjectSummaryHtml(project: ProjectRow, schedule: ScheduleExportDa
 
   <section class="sections">
     ${sectionsHtml}
-    ${detailSectionHtml}
     ${renderGanttSection(schedule)}
   </section>
 </body>
