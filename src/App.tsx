@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import "./index.css";
 import { getProjectsPage } from "./services/sharepoint/projectsApi";
 import type { ProjectRow } from "./services/sharepoint/projectsApi";
+import { resolveAuthorization } from "./services/sharepoint/authorizationApi";
 import { ProjectsPage } from "./app/pages/ProjectsPage/ProjectsPage";
 import { BootstrapLoader } from "./app/components/BootstrapLoader";
 import { ToastProvider } from "./app/components/notifications/ToastProvider";
@@ -12,6 +13,9 @@ type BootState = "loading" | "ready" | "error";
 type BootstrapData = {
   items: ProjectRow[];
   nextLink?: string;
+  allowedUnits: string[];
+  isAdmin: boolean;
+  hasAccess: boolean;
 };
 
 const DEFAULT_MIN_BOOT_DURATION_MS_NON_PROD = 3000;
@@ -40,7 +44,12 @@ function getMinBootDurationMs() {
 
 export default function App() {
   const [bootState, setBootState] = useState<BootState>("loading");
-  const [bootstrapData, setBootstrapData] = useState<BootstrapData>({ items: [] });
+  const [bootstrapData, setBootstrapData] = useState<BootstrapData>({
+    items: [],
+    allowedUnits: [],
+    isAdmin: false,
+    hasAccess: false
+  });
   const [bootError, setBootError] = useState("");
   const [loadingTitleIndex, setLoadingTitleIndex] = useState(0);
   const minBootDurationMs = getMinBootDurationMs();
@@ -67,11 +76,32 @@ export default function App() {
       setLoadingTitleIndex(0);
 
       try {
+        const authz = await resolveAuthorization();
+
+        if (!authz.hasAccess) {
+          const remainingDelay = Math.max(0, minBootDurationMs - (Date.now() - bootStartedAt));
+          if (remainingDelay > 0) {
+            await new Promise((resolve) => window.setTimeout(resolve, remainingDelay));
+          }
+
+          if (cancelled) return;
+          setBootstrapData({
+            items: [],
+            nextLink: undefined,
+            allowedUnits: authz.allowedUnits,
+            isAdmin: authz.isAdmin,
+            hasAccess: false
+          });
+          setBootState("ready");
+          return;
+        }
+
         const result = await getProjectsPage({
           top: 15,
           searchTitle: INITIAL_FILTERS.searchTitle,
           statusEquals: INITIAL_FILTERS.status || undefined,
           unitEquals: INITIAL_FILTERS.unit || undefined,
+          unitIn: authz.isAdmin ? undefined : authz.allowedUnits,
           orderBy: INITIAL_FILTERS.sortBy,
           orderDir: INITIAL_FILTERS.sortDir
         });
@@ -82,7 +112,12 @@ export default function App() {
         }
 
         if (cancelled) return;
-        setBootstrapData(result);
+        setBootstrapData({
+          ...result,
+          allowedUnits: authz.allowedUnits,
+          isAdmin: authz.isAdmin,
+          hasAccess: true
+        });
         setBootState("ready");
       } catch (error) {
         console.error(error);
@@ -127,6 +162,9 @@ export default function App() {
       <ProjectsPage
         initialItems={bootstrapData.items}
         initialNextLink={bootstrapData.nextLink}
+        allowedUnits={bootstrapData.allowedUnits}
+        isAdmin={bootstrapData.isAdmin}
+        hasAccess={bootstrapData.hasAccess}
         skipInitialLoad
       />
     );

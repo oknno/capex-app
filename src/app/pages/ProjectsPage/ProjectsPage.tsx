@@ -26,21 +26,27 @@ import { useToast } from "../../components/notifications/useToast";
 import { Button } from "../../components/ui/Button";
 import { exportProjectsCsv } from "./utils/exportProjectsCsv";
 import { exportProjectView } from "./utils/exportProjectView";
+import { BootstrapLoader } from "../../components/BootstrapLoader";
 
 export function ProjectsPage(props: {
   onWantsRefreshHeader?: () => void;
   onRegisterRefresh?: (fn: () => void) => void;
   initialItems?: ProjectRow[];
   initialNextLink?: string;
+  allowedUnits: string[];
+  isAdmin: boolean;
+  hasAccess: boolean;
   skipInitialLoad?: boolean;
 }) {
-  const { onRegisterRefresh, skipInitialLoad } = props;
+  const { onRegisterRefresh, skipInitialLoad, allowedUnits, isAdmin, hasAccess } = props;
   const list = useProjectsList(
     { searchTitle: "", status: "", unit: "", sortBy: "Id", sortDir: "desc" },
     {
       initialItems: props.initialItems,
       initialNextLink: props.initialNextLink,
-      initialState: "idle"
+      initialState: "idle",
+      allowedUnits,
+      isAdmin
     }
   );
   const loadFirstPage = list.loadFirstPage;
@@ -84,6 +90,10 @@ export function ProjectsPage(props: {
   }, [list.selectedId]);
 
   async function onCreate(draft: ProjectDraft): Promise<number> {
+    if (!hasAccess) {
+      notify("Você não possui permissão para criar projetos.", "error");
+      throw new Error("Sem permissão para criar projetos.");
+    }
     try {
       const id = await createProject(draft);
       await list.loadFirstPage();
@@ -110,6 +120,14 @@ export function ProjectsPage(props: {
       notify(appError.userMessage, "error");
       throw e;
     }
+  }
+
+  function onRequestCreate() {
+    if (!hasAccess) {
+      notify("Você não possui permissão para criar projetos.", "error");
+      return;
+    }
+    setWizard({ mode: "create" });
   }
 
   function requestConfirm(config: { title: string; message: string; onConfirm: () => Promise<void> | void; tone?: "danger" | "neutral"; confirmingText?: string }) {
@@ -246,6 +264,15 @@ export function ProjectsPage(props: {
     }
   }
 
+  if (!hasAccess) {
+    return (
+      <BootstrapLoader
+        title="Acesso bloqueado"
+        subtitle="Você não possui permissão para acessar nenhuma unidade do CAPEX. Solicite acesso ao administrador."
+      />
+    );
+  }
+
   return (
     <div style={styles.pageWrap}>
       <CommandBar
@@ -264,7 +291,10 @@ export function ProjectsPage(props: {
         onApply={list.loadFirstPage}
         onClear={list.clearFilters}
         onRefresh={list.loadFirstPage}
-        onNew={() => setWizard({ mode: "create" })}
+        onNew={onRequestCreate}
+        canCreate={hasAccess}
+        createDisabledReason={!hasAccess ? "Sem permissão para criar projeto." : undefined}
+        availableUnits={isAdmin ? undefined : allowedUnits}
         onView={() => list.selected && setWizard({ mode: "view", initial: list.selected })}
         onEdit={() => {
           if (!list.selected) return;

@@ -15,6 +15,8 @@ type UseProjectsListOptions = {
   initialItems?: ProjectRow[];
   initialNextLink?: string;
   initialState?: LoadState;
+  allowedUnits?: string[];
+  isAdmin?: boolean;
 };
 
 const PAGE_SIZE = 15;
@@ -43,6 +45,7 @@ export function useProjectsList(
         searchTitle: filters.searchTitle,
         statusEquals: filters.status || undefined,
         unitEquals: filters.unit || undefined,
+        unitIn: options.isAdmin ? undefined : options.allowedUnits,
         orderBy: filters.sortBy,
         orderDir: filters.sortDir
       });
@@ -61,7 +64,7 @@ export function useProjectsList(
       setErrorMsg(appError.userMessage);
       console.error(e);
     }
-  }, [deps, filters]);
+  }, [deps, filters, options.allowedUnits, options.isAdmin]);
 
   const loadMore = useCallback(async () => {
     if (!nextLink) return;
