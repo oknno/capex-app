@@ -103,33 +103,36 @@ function PepSummaryCard(props: {
 
   return (
     <article
+      className="pep-summary-card"
       style={{
         border: `1px solid ${uiTokens.colors.border}`,
         borderRadius: 12,
-        padding: 12,
+        padding: 16,
         background: uiTokens.colors.surface
       }}
     >
       <div
+        className="pep-summary-card-grid"
         style={{
           display: "grid",
-          gap: 12,
+          gap: 16,
           gridTemplateColumns: props.needStructure
             ? "minmax(0, 1.05fr) minmax(0, 1.35fr) minmax(150px, 0.7fr)"
             : "minmax(0, 1.5fr) minmax(84px, 0.5fr) minmax(150px, 0.7fr)",
           alignItems: "start"
         }}
       >
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: uiTokens.colors.text, marginBottom: 4 }}>
+        <div className="pep-summary-group" style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: uiTokens.colors.textMuted, marginBottom: 6, letterSpacing: 0.1 }}>
             {props.needStructure ? "Marco" : "Elemento PEP"}
           </div>
           <div
             title={primaryText}
             style={{
               fontSize: 14,
+              fontWeight: 600,
               color: uiTokens.colors.textStrong,
-              lineHeight: 1.4,
+              lineHeight: 1.5,
               overflow: "hidden",
               textOverflow: "ellipsis",
               whiteSpace: "nowrap"
@@ -139,34 +142,38 @@ function PepSummaryCard(props: {
           </div>
         </div>
 
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: uiTokens.colors.text, marginBottom: 4 }}>
+        <div className="pep-summary-group" style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: uiTokens.colors.textMuted, marginBottom: 6, letterSpacing: 0.1 }}>
             {props.needStructure ? "Atividade" : "Ano"}
           </div>
           <div
             title={secondaryText}
+            className={props.needStructure ? "pep-summary-activity" : undefined}
             style={{
               fontSize: 14,
+              fontWeight: 500,
               color: uiTokens.colors.textStrong,
-              lineHeight: 1.4,
+              lineHeight: 1.5,
               overflow: "hidden",
               textOverflow: "ellipsis",
-              whiteSpace: "nowrap"
+              whiteSpace: props.needStructure ? "normal" : "nowrap"
             }}
           >
             {secondaryText}
           </div>
         </div>
 
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: uiTokens.colors.text, marginBottom: 4, textAlign: "right" }}>
+        <div className="pep-summary-group pep-summary-value-group" style={{ minWidth: 0 }}>
+          <div className="pep-summary-value-label" style={{ fontSize: 12, fontWeight: 600, color: uiTokens.colors.textMuted, marginBottom: 6, textAlign: "right", letterSpacing: 0.1 }}>
             Valor (R$)
           </div>
           <div
+            className="pep-summary-value"
             style={{
               fontSize: 14,
+              fontWeight: 600,
               color: uiTokens.colors.textStrong,
-              lineHeight: 1.4,
+              lineHeight: 1.5,
               textAlign: "right",
               whiteSpace: "nowrap"
             }}
@@ -224,6 +231,35 @@ export function ReviewStep(props: {
 
           .summary-field {
             grid-column: span 1 !important;
+          }
+        }
+
+        .pep-summary-activity {
+          display: -webkit-box;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 2;
+          max-height: calc(1.5em * 2);
+        }
+
+        @supports not (-webkit-line-clamp: 2) {
+          .pep-summary-activity {
+            white-space: nowrap !important;
+          }
+        }
+
+        @media (max-width: 760px) {
+          .pep-summary-card-grid {
+            grid-template-columns: minmax(0, 1fr) !important;
+            gap: 12px !important;
+          }
+
+          .pep-summary-value-group {
+            align-items: flex-start;
+          }
+
+          .pep-summary-value-label,
+          .pep-summary-value {
+            text-align: left !important;
           }
         }
       `}</style>
