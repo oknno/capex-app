@@ -24,6 +24,7 @@ import { ProjectsTableSection } from "./components/ProjectsTableSection";
 import { ProjectSummarySection } from "./components/ProjectSummarySection";
 import { projectsPageStyles as styles } from "./components/ProjectsPage.styles";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { InputDialog } from "../../components/InputDialog";
 import { useToast } from "../../components/notifications/useToast";
 import { Button } from "../../components/ui/Button";
 import { exportProjectsCsv } from "./utils/exportProjectsCsv";
@@ -57,6 +58,7 @@ export function ProjectsPage(props: {
   const [selectedFull, setSelectedFull] = useState<ProjectRow | null>(null);
   const [selectedFullState, setSelectedFullState] = useState<"idle" | "loading" | "error">("idle");
   const [confirmState, setConfirmState] = useState<{ title: string; message: string; onConfirm: () => Promise<void> | void; tone?: "danger" | "neutral"; confirmingText?: string } | null>(null);
+  const [approvalCodeModal, setApprovalCodeModal] = useState<{ projectId: number; initialCode: string } | null>(null);
   const [confirmingAction, setConfirmingAction] = useState(false);
   const selectedForPolicies = selectedFull ?? list.selected;
 
@@ -257,30 +259,7 @@ export function ProjectsPage(props: {
       return;
     }
 
-    const codigoSAP = window.prompt("Informe o Código SAP para aprovar o projeto:", String(selected.codigoSAP ?? "")) ?? "";
-    const normalizedCode = codigoSAP.trim();
-    if (!normalizedCode) {
-      notify("Código SAP é obrigatório para aprovar o projeto.", "error");
-      return;
-    }
-
-    requestConfirm({
-      title: "Aprovar projeto",
-      message: `Aprovar o projeto #${selected.Id}?`,
-      confirmingText: "Aprovando...",
-      onConfirm: async () => {
-        try {
-          await approveSelectedProject(selected, { isAdmin, codigoSAP: normalizedCode });
-          await list.loadFirstPage();
-          list.setSelectedId(selected.Id);
-          await refreshSelectedDetails(selected.Id);
-          notify("Projeto aprovado com sucesso.", "success");
-        } catch (e) {
-          const appError = normalizeError(e, "Erro ao aprovar o projeto.");
-          notify(appError.userMessage, "error");
-        }
-      }
-    });
+    setApprovalCodeModal({ projectId: selected.Id, initialCode: String(selected.codigoSAP ?? "") });
   }
 
   async function onReject() {
@@ -468,6 +447,47 @@ export function ProjectsPage(props: {
           void Promise.resolve(confirmState.onConfirm()).finally(() => {
             setConfirmingAction(false);
             setConfirmState(null);
+          });
+        }}
+      />
+
+      <InputDialog
+        open={Boolean(approvalCodeModal)}
+        title={approvalCodeModal ? `Aprovar projeto #${approvalCodeModal.projectId}` : "Aprovar projeto"}
+        label="Informe o Código SAP para aprovar o projeto:"
+        placeholder="Ex.: SAP-12345"
+        defaultValue={approvalCodeModal?.initialCode}
+        confirmText="Continuar"
+        onClose={() => setApprovalCodeModal(null)}
+        onConfirm={(codigoSAP) => {
+          const selected = selectedForPolicies;
+          if (!selected || !approvalCodeModal || selected.Id !== approvalCodeModal.projectId) {
+            setApprovalCodeModal(null);
+            notify("Projeto selecionado não está mais disponível para aprovação.", "error");
+            return;
+          }
+          const normalizedCode = codigoSAP.trim();
+          if (!normalizedCode) {
+            notify("Código SAP é obrigatório para aprovar o projeto.", "error");
+            return;
+          }
+          setApprovalCodeModal(null);
+          requestConfirm({
+            title: "Aprovar projeto",
+            message: `Aprovar o projeto #${selected.Id}?`,
+            confirmingText: "Aprovando...",
+            onConfirm: async () => {
+              try {
+                await approveSelectedProject(selected, { isAdmin, codigoSAP: normalizedCode });
+                await list.loadFirstPage();
+                list.setSelectedId(selected.Id);
+                await refreshSelectedDetails(selected.Id);
+                notify("Projeto aprovado com sucesso.", "success");
+              } catch (e) {
+                const appError = normalizeError(e, "Erro ao aprovar o projeto.");
+                notify(appError.userMessage, "error");
+              }
+            }
           });
         }}
       />
