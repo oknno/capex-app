@@ -72,7 +72,7 @@ const statusActionMatrix: Record<StatusBucket, Record<CommandBarAction, ActionRu
     duplicate: { enabled: true },
     delete: { enabled: false, reasonWhenDisabled: "Somente projetos em rascunho podem ser excluídos." },
     sendToApproval: { enabled: true },
-    backToDraft: { enabled: true },
+    backToDraft: { enabled: false, reasonWhenDisabled: "Projeto reprovado não pode voltar status." },
     approve: { enabled: false, reasonWhenDisabled: "Projeto reprovado não pode ser aprovado diretamente." },
     reject: { enabled: false, reasonWhenDisabled: "Projeto já está reprovado." },
   },

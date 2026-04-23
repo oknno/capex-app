@@ -116,6 +116,7 @@ export type ProjectsFilters = {
 };
 
 export function CommandBar(props: {
+  isAdmin: boolean;
   selectedId: number | null;
   totalLoaded: number;
 
@@ -164,7 +165,9 @@ export function CommandBar(props: {
   return (
     <div style={styles.commandBar}>
       <div style={styles.titleWrap}>
-        <div style={styles.title}>Termo de Abertura de Projeto - TAP 2.0</div>
+        <div style={styles.title}>
+          Termo de Abertura de Projeto{props.isAdmin ? " | ADMIN" : ""}
+        </div>
       </div>
 
       <div style={styles.actionsWrap}>

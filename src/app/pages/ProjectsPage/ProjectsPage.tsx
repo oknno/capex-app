@@ -367,6 +367,7 @@ export function ProjectsPage(props: {
   return (
     <div style={styles.pageWrap}>
       <CommandBar
+        isAdmin={isAdmin}
         selectedId={list.selectedId}
         totalLoaded={list.items.length}
         canEdit={hasPermissionOnSelected && editPolicy.ok}
