@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import "./index.css";
-import { getProjectsPage } from "./services/sharepoint/projectsApi";
+import { getProjectsPage, UnitFilterLimitError } from "./services/sharepoint/projectsApi";
 import type { ProjectRow } from "./services/sharepoint/projectsApi";
 import { resolveAuthorization } from "./services/sharepoint/authorizationApi";
 import { ProjectsPage } from "./app/pages/ProjectsPage/ProjectsPage";
@@ -120,7 +120,13 @@ export default function App() {
         });
         setBootState("ready");
       } catch (error) {
-        console.error(error);
+        const loadErrorMessage =
+          error instanceof UnitFilterLimitError
+            ? error.userMessage
+            : "Não foi possível carregar os projetos iniciais. Tente novamente em instantes.";
+        if (!(error instanceof UnitFilterLimitError)) {
+          console.error(error);
+        }
 
         const remainingDelay = Math.max(0, minBootDurationMs - (Date.now() - bootStartedAt));
         if (remainingDelay > 0) {
@@ -128,7 +134,7 @@ export default function App() {
         }
 
         if (cancelled) return;
-        setBootError("Não foi possível carregar os projetos iniciais. Tente novamente em instantes.");
+        setBootError(loadErrorMessage);
         setBootState("error");
       }
     }

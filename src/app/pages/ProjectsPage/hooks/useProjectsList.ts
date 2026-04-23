@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 
-import { getProjectsPage } from "../../../../services/sharepoint/projectsApi";
+import { getProjectsPage, UnitFilterLimitError } from "../../../../services/sharepoint/projectsApi";
 import type { ProjectRow } from "../../../../services/sharepoint/projectsApi";
 import type { ProjectsFilters } from "../CommandBar";
 import { normalizeError } from "../../../../application/errors/appError";
@@ -59,10 +59,15 @@ export function useProjectsList(
       setNextLink(res.nextLink);
       setState("idle");
     } catch (e: unknown) {
-      const appError = normalizeError(e, "Erro ao carregar Projects.");
+      const appError =
+        e instanceof UnitFilterLimitError
+          ? { userMessage: e.userMessage }
+          : normalizeError(e, "Erro ao carregar Projects.");
       setState("error");
       setErrorMsg(appError.userMessage);
-      console.error(e);
+      if (!(e instanceof UnitFilterLimitError)) {
+        console.error(e);
+      }
     }
   }, [deps, filters, options.allowedUnits, options.isAdmin]);
 
