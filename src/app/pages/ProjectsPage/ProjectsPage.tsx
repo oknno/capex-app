@@ -458,6 +458,8 @@ export function ProjectsPage(props: {
         placeholder="Ex.: SAP-12345"
         defaultValue={approvalCodeModal?.initialCode}
         confirmText="Continuar"
+        confirming={confirmingAction}
+        confirmingText="Aprovando..."
         onClose={() => setApprovalCodeModal(null)}
         onConfirm={(codigoSAP) => {
           const selected = selectedForPolicies;
@@ -471,24 +473,22 @@ export function ProjectsPage(props: {
             notify("Código SAP é obrigatório para aprovar o projeto.", "error");
             return;
           }
-          setApprovalCodeModal(null);
-          requestConfirm({
-            title: "Aprovar projeto",
-            message: `Aprovar o projeto #${selected.Id}?`,
-            confirmingText: "Aprovando...",
-            onConfirm: async () => {
-              try {
-                await approveSelectedProject(selected, { isAdmin, codigoSAP: normalizedCode });
-                await list.loadFirstPage();
-                list.setSelectedId(selected.Id);
-                await refreshSelectedDetails(selected.Id);
-                notify("Projeto aprovado com sucesso.", "success");
-              } catch (e) {
-                const appError = normalizeError(e, "Erro ao aprovar o projeto.");
-                notify(appError.userMessage, "error");
-              }
+          setConfirmingAction(true);
+          void (async () => {
+            try {
+              await approveSelectedProject(selected, { isAdmin, codigoSAP: normalizedCode });
+              await list.loadFirstPage();
+              list.setSelectedId(selected.Id);
+              await refreshSelectedDetails(selected.Id);
+              notify("Projeto aprovado com sucesso.", "success");
+              setApprovalCodeModal(null);
+            } catch (e) {
+              const appError = normalizeError(e, "Erro ao aprovar o projeto.");
+              notify(appError.userMessage, "error");
+            } finally {
+              setConfirmingAction(false);
             }
-          });
+          })();
         }}
       />
     </div>
