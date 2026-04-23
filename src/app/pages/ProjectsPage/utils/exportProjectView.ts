@@ -242,18 +242,18 @@ function buildProjectSummaryHtml(project: ProjectRow, schedule: ScheduleExportDa
   <title>Resumo do Projeto #${project.Id}</title>
   <style>
     body { font-family: Arial, Helvetica, sans-serif; color: #111827; margin: 24px; }
-    .header { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+    .header { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 12px; break-inside: avoid; page-break-inside: avoid; }
     .title { font-size: 24px; font-weight: 700; margin: 0; }
     .status { font-size: 14px; font-weight: 700; }
-    .sap { font-size: 14px; font-weight: 600; margin: 0 0 14px; }
+    .sap { font-size: 14px; font-weight: 600; margin: 0 0 14px; break-inside: avoid; page-break-inside: avoid; }
     .grid { border-top: 1px solid #d1d5db; padding-top: 12px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 16px; align-items: start; }
     .field-item { break-inside: avoid; page-break-inside: avoid; }
     .field-label { font-size: 12px; color: #6b7280; margin-bottom: 2px; }
     .field-value { font-size: 14px; font-weight: 600; }
     .blocks { border-top: 1px solid #d1d5db; padding-top: 12px; margin-top: 12px; display: grid; gap: 12px; }
-    .block { break-inside: avoid; page-break-inside: avoid; }
+    .block { break-inside: avoid; page-break-inside: avoid; margin-bottom: 2px; }
     .block h2 { font-size: 14px; margin: 0 0 6px; }
-    .block p { font-size: 13px; margin: 0; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; }
+    .block p { font-size: 12px; margin: 0; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; line-height: 1.4; }
     .gantt-wrap { margin-top: 4px; }
     .gantt-period { font-size: 12px; color: #6b7280; margin-bottom: 8px; }
     .gantt-grid { display: grid; gap: 8px; }
@@ -269,9 +269,32 @@ function buildProjectSummaryHtml(project: ProjectRow, schedule: ScheduleExportDa
     .gantt-bar.activity { background: #06b6d4; }
 
     @media print {
-      body { margin: 12mm; }
+      @page { margin: 12mm; size: auto; }
+      body { margin: 0; font-size: 11px; }
+      .header { margin-bottom: 10px; }
+      .title { font-size: 20px; }
+      .status { font-size: 13px; }
+      .sap { font-size: 12px; margin-bottom: 12px; }
+      .grid { gap: 8px 12px; }
+      .field-label { font-size: 10px; }
+      .field-value { font-size: 12px; }
+      .block h2 { font-size: 12px; }
+      .block p { font-size: 10px; }
+      .gantt-period,
+      .gantt-row-label { font-size: 10px; }
+      .gantt-track { height: 10px; }
+    }
+
+    @media print and (min-width: 1000px) {
       .grid,
-      .blocks { page-break-inside: auto; }
+      .blocks { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 16px; }
+      .blocks > .block,
+      .blocks > .gantt-wrap { align-self: start; }
+    }
+
+    @media print and (max-width: 999px) {
+      .grid,
+      .blocks { grid-template-columns: 1fr; }
     }
   </style>
 </head>
