@@ -108,30 +108,30 @@ export function GanttPreview(props: {
         const milestoneBar = getBarPosition(milestoneGroup.startDateMin, milestoneGroup.endDateMax, ganttBounds);
         return (
           <div key={`${milestoneGroup.milestoneName}_${milestoneGroup.startDateMin}_${milestoneGroup.endDateMax}`} style={{ display: "grid", gap: uiTokens.spacing.xs }}>
-            <div style={{ display: "flex", alignItems: "center", gap: uiTokens.spacing.xs, fontSize: 12, color: uiTokens.colors.text, marginBottom: 2 }}>
-              <span style={{ minWidth: 0, flex: 1 }}>{milestoneGroup.milestoneName}</span>
-              <span style={{ marginLeft: "auto", textAlign: "right" }}>{toDateLabel(milestoneGroup.startDateMin)} - {toDateLabel(milestoneGroup.endDateMax)}</span>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: uiTokens.spacing.xs, fontSize: 12, color: uiTokens.colors.text, marginBottom: 4 }}>
+                <span style={{ minWidth: 0, flex: 1 }}><strong>[MARCO]</strong> {milestoneGroup.milestoneName}</span>
+                <span style={{ marginLeft: "auto", textAlign: "right" }}>{toDateLabel(milestoneGroup.startDateMin)} - {toDateLabel(milestoneGroup.endDateMax)}</span>
+              </div>
+              <div style={{ position: "relative", height: 14, borderRadius: 999, background: uiTokens.colors.border, overflow: "hidden" }}>
+                <div style={{ position: "absolute", left: `${milestoneBar.left}%`, width: `${milestoneBar.width}%`, top: 0, bottom: 0, background: uiTokens.colors.accentWarning, borderRadius: 999 }} />
+              </div>
             </div>
-            <div style={{ position: "relative", height: 14, borderRadius: 999, background: uiTokens.colors.border, overflow: "hidden" }}>
-              <div style={{ position: "absolute", left: `${milestoneBar.left}%`, width: `${milestoneBar.width}%`, top: 0, bottom: 0, background: uiTokens.colors.accentWarning, borderRadius: 999 }} />
-            </div>
-            <div style={{ display: "grid", gap: uiTokens.spacing.xs }}>
-              {milestoneGroup.activities.map((item) => {
-                const activityBar = getBarPosition(item.startDate, item.endDate, ganttBounds);
+            {milestoneGroup.activities.map((item) => {
+              const activityBar = getBarPosition(item.startDate, item.endDate, ganttBounds);
 
-                return (
-                  <div key={`${item.milestoneTitle}_${item.activityTitle}_${item.startDate}_${item.endDate}`}>
-                    <div style={{ display: "flex", alignItems: "center", gap: uiTokens.spacing.xs, fontSize: 12, color: uiTokens.colors.text, marginBottom: 4 }}>
-                      <span style={{ minWidth: 0, flex: 1 }}>{item.activityTitle}</span>
-                      <span style={{ marginLeft: "auto", textAlign: "right" }}>{toDateLabel(item.startDate)} - {toDateLabel(item.endDate)}</span>
-                    </div>
-                    <div style={{ position: "relative", height: 14, borderRadius: 999, background: uiTokens.colors.border, overflow: "hidden" }}>
-                      <div style={{ position: "absolute", left: `${activityBar.left}%`, width: `${activityBar.width}%`, top: 0, bottom: 0, background: uiTokens.colors.accentAlt, borderRadius: 999 }} />
-                    </div>
+              return (
+                <div key={`${item.milestoneTitle}_${item.activityTitle}_${item.startDate}_${item.endDate}`}>
+                  <div style={{ display: "flex", alignItems: "center", gap: uiTokens.spacing.xs, fontSize: 12, color: uiTokens.colors.text, marginBottom: 4 }}>
+                    <span style={{ minWidth: 0, flex: 1 }}><strong>[ATIVIDADE]</strong> {item.activityTitle}</span>
+                    <span style={{ marginLeft: "auto", textAlign: "right" }}>{toDateLabel(item.startDate)} - {toDateLabel(item.endDate)}</span>
                   </div>
-                );
-              })}
-            </div>
+                  <div style={{ position: "relative", height: 14, borderRadius: 999, background: uiTokens.colors.border, overflow: "hidden" }}>
+                    <div style={{ position: "absolute", left: `${activityBar.left}%`, width: `${activityBar.width}%`, top: 0, bottom: 0, background: uiTokens.colors.accentAlt, borderRadius: 999 }} />
+                  </div>
+                </div>
+              );
+            })}
           </div>
         );
       })}
