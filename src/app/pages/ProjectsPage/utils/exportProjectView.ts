@@ -227,9 +227,12 @@ function renderGanttSection(schedule: ScheduleExportData): string {
 
   if (ganttItems.length === 0) {
     return `
-      <section class="block gantt-wrap">
-        <h2>Cronograma (Gantt)</h2>
-        <p>Sem atividades com início e término para exibir cronograma.</p>
+      <section class="summary-section gantt-wrap">
+        <div class="summary-section-header">
+          <h3>8. Cronograma (Gantt)</h3>
+          <p>Visão consolidada dos marcos e atividades planejadas.</p>
+        </div>
+        <p class="gantt-empty">Sem atividades com início e término para exibir cronograma.</p>
       </section>
     `;
   }
@@ -274,8 +277,11 @@ function renderGanttSection(schedule: ScheduleExportData): string {
   }).join("\n");
 
   return `
-    <section class="block gantt-wrap">
-      <h2>Cronograma (Gantt)</h2>
+    <section class="summary-section gantt-wrap">
+      <div class="summary-section-header">
+        <h3>8. Cronograma (Gantt)</h3>
+        <p>Visão consolidada dos marcos e atividades planejadas.</p>
+      </div>
       <div class="gantt-period">Período do cronograma: ${escapeHtml(rangeLabel)}</div>
       <div class="gantt-legend" aria-label="Legenda do cronograma">
         <span class="gantt-legend-item"><span class="gantt-legend-icon milestone"></span> Marco</span>
@@ -373,6 +379,7 @@ function buildProjectSummaryHtml(project: ProjectRow, schedule: ScheduleExportDa
     .field-label { font-size: 11px; font-weight: 700; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.03em; }
     .field-value { font-size: 13px; font-weight: 600; line-height: 1.45; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; }
     .gantt-wrap { margin-top: 0; }
+    .gantt-empty { border: 1px dashed #9ca3af; border-radius: 12px; padding: 14px; font-size: 13px; color: #6b7280; text-align: center; margin: 0; }
     .gantt-period { font-size: 12px; color: #6b7280; margin-bottom: 8px; }
     .gantt-legend { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin-bottom: 8px; font-size: 11px; font-weight: 600; color: #374151; }
     .gantt-legend-item { display: inline-flex; align-items: center; gap: 6px; }
