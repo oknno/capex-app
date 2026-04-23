@@ -238,7 +238,7 @@ function renderGanttSection(schedule: ScheduleExportData): string {
       return `
         <div class="gantt-activity">
           <div class="gantt-row-label">
-            <span class="gantt-name"><span class="gantt-prefix">[ATIVIDADE]</span> ${escapeHtml(item.activityTitle)}</span>
+            <span class="gantt-name"><span class="gantt-prefix">[ATIVIDADE]</span> &quot;${escapeHtml(item.activityTitle)}&quot;</span>
             <span class="gantt-date">${escapeHtml(toDateLabel(item.startDate))} - ${escapeHtml(toDateLabel(item.endDate))}</span>
           </div>
           <div class="gantt-track">
@@ -251,7 +251,7 @@ function renderGanttSection(schedule: ScheduleExportData): string {
     return `
       <div class="gantt-group">
         <div class="gantt-row-label gantt-group-header">
-          <span class="gantt-name">${escapeHtml(group.milestoneName)}</span>
+          <span class="gantt-name"><span class="gantt-prefix">[MARCO]</span> &quot;${escapeHtml(group.milestoneName)}&quot;</span>
           <span class="gantt-date">${escapeHtml(toDateLabel(group.startDateMin))} - ${escapeHtml(toDateLabel(group.endDateMax))}</span>
         </div>
         <div class="gantt-track">
