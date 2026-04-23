@@ -212,13 +212,32 @@ export function ProjectsPage(props: {
   const sendPolicy = canSend(selectedForPolicies);
   const backPolicy = canBack(selectedForPolicies);
 
-  function onExport() {
+  function onExportTable() {
     const hasExported = exportProjectsCsv(list.items);
     if (!hasExported) {
       notify("Nenhum projeto carregado para exportar.", "info");
       return;
     }
     notify("Lista de projetos exportada em CSV.", "success");
+  }
+
+  function onExportProject() {
+    if (!list.selected) {
+      notify("Selecione um projeto.", "info");
+      return;
+    }
+
+    const payload = JSON.stringify(list.selected, null, 2);
+    const blob = new Blob([payload], { type: "application/json;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `projeto-${list.selected.Id}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    notify(`Projeto #${list.selected.Id} exportado.`, "success");
   }
 
   return (
@@ -257,7 +276,8 @@ export function ProjectsPage(props: {
         onDelete={onDelete}
         onSendToApproval={onSendToApproval}
         onBackStatus={onBackStatus}
-        onExport={onExport}
+        onExportTable={onExportTable}
+        onExportProject={onExportProject}
       />
 
       <div style={styles.grid}>
