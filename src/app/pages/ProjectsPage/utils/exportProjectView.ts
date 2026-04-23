@@ -396,11 +396,6 @@ function buildProjectSummaryHtml(project: ProjectRow, schedule: ScheduleExportDa
       .gantt-track { height: 10px; }
     }
 
-    @media print {
-      .sections { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 12px; align-items: start; }
-      .sections > .summary-section:last-child { grid-column: 1 / -1; }
-    }
-
     @media print and (max-width: 680px) {
       .summary-grid { grid-template-columns: 1fr; }
       .field-item { grid-column: span 1 !important; }
