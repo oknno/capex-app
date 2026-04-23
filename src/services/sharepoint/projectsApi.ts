@@ -1,6 +1,7 @@
 import { spConfig } from "./spConfig";
 import { spGetJson, spPostJson, spPatchJson, getDigest } from "./spHttp";
 import { getListFieldsCached } from "./listSchemaCache";
+import { buildProjectsQueryPlan, mergeProjectChunkResults } from "./projectsQueryPlanner";
 
 export type ProjectRow = {
   Id: number;
@@ -57,6 +58,7 @@ type SpListResponse = {
   ["odata.nextLink"]?: unknown;
   __next?: unknown;
 };
+export { UnitFilterLimitError } from "./projectsQueryPlanner";
 
 const PROJECT_FIELDS: Array<keyof ProjectRow> = [
   "Id",
@@ -272,25 +274,41 @@ export async function getProjectsPage(args: {
   const orderBy = args.orderBy ?? "Id";
   const orderDir = args.orderDir ?? "desc";
   const orderExpr = orderBy === "Id" ? `Id ${orderDir}` : `${orderBy} ${orderDir},Id ${orderDir}`;
+  const queryPlan = buildProjectsQueryPlan({
+    searchTitle: args.searchTitle,
+    statusEquals: args.statusEquals,
+    unitEquals: args.unitEquals,
+    unitIn: args.unitIn,
+    top,
+    orderExpr
+  });
 
-  const filters: string[] = [];
-  if (args.searchTitle?.trim()) filters.push(`substringof('${escapeODataString(args.searchTitle.trim())}',Title)`);
-  if (args.statusEquals?.trim()) filters.push(`status eq '${escapeODataString(args.statusEquals.trim())}'`);
-  if (args.unitEquals?.trim()) filters.push(`unit eq '${escapeODataString(args.unitEquals.trim())}'`);
-  if (args.unitIn?.length) {
-    const unitFilters = args.unitIn
-      .map((unit) => unit.trim())
-      .filter(Boolean)
-      .map((unit) => `unit eq '${escapeODataString(unit)}'`);
-    if (unitFilters.length) filters.push(`(${unitFilters.join(" or ")})`);
+  if (queryPlan.mode === "single") {
+    const data = await fetchProjectsPage({
+      top: queryPlan.top,
+      orderExpr: queryPlan.orderExpr,
+      filters: queryPlan.filters
+    });
+    return { items: readItems(data).map((item) => mapProjectRow(item, schemaFieldNameIndex)), nextLink: pickNextLink(data) };
   }
 
-  const data = await fetchProjectsPage({
-    top,
-    orderExpr,
-    filters: filters.length ? filters.join(" and ") : undefined
+  const chunkResponses = await Promise.all(
+    queryPlan.chunkFilters.map((chunkFilter) =>
+      fetchProjectsPage({
+        top: queryPlan.top,
+        orderExpr: queryPlan.orderExpr,
+        filters: chunkFilter
+      })
+    )
+  );
+  const merged = mergeProjectChunkResults({
+    chunks: chunkResponses.map((response) => readItems(response).map((item) => mapProjectRow(item, schemaFieldNameIndex))),
+    orderBy,
+    orderDir,
+    top
   });
-  return { items: readItems(data).map((item) => mapProjectRow(item, schemaFieldNameIndex)), nextLink: pickNextLink(data) };
+
+  return { items: merged, nextLink: undefined };
 }
 
 export async function getProjectById(id: number): Promise<ProjectRow> {
@@ -313,10 +331,6 @@ export async function updateProject(id: number, patch: ProjectUpdate): Promise<v
   const digest = await getDigest();
   const payload = await buildProjectPayload(patch);
   await spPatchJson(url, payload, digest);
-}
-
-function escapeODataString(v: string) {
-  return v.replace(/'/g, "''");
 }
 
 async function fetchProjectsPage(args: {
