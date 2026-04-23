@@ -4,6 +4,7 @@ import { getProjectById } from "../../../services/sharepoint/projectsApi";
 import type { ProjectDraft, ProjectRow } from "../../../services/sharepoint/projectsApi";
 import { getMilestonesByProject } from "../../../services/sharepoint/milestonesApi";
 import { getActivitiesBatchByProject } from "../../../services/sharepoint/activitiesApi";
+import { getPepsBatchByProject } from "../../../services/sharepoint/pepsApi";
 import { createProject } from "../../../application/use-cases/createProject";
 import { editProject } from "../../../application/use-cases/editProject";
 import { sendProjectToApproval } from "../../../application/use-cases/sendToApproval";
@@ -232,11 +233,12 @@ export function ProjectsPage(props: {
     }
 
     try {
-      const [milestones, activities] = await Promise.all([
+      const [milestones, activities, peps] = await Promise.all([
         getMilestonesByProject(selected.Id),
-        getActivitiesBatchByProject(selected.Id, { pageSize: 500, maxPages: 20 })
+        getActivitiesBatchByProject(selected.Id, { pageSize: 500, maxPages: 20 }),
+        getPepsBatchByProject(selected.Id, { pageSize: 500, maxPages: 20 })
       ]);
-      exportProjectView(selected, { milestones, activities });
+      exportProjectView(selected, { milestones, activities, peps });
       notify(`Resumo do projeto #${selected.Id} pronto para impressão/PDF.`, "success");
     } catch (e) {
       console.error(e);

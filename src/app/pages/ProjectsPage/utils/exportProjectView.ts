@@ -1,6 +1,8 @@
 import type { ProjectRow } from "../../../../services/sharepoint/projectsApi";
 import type { ActivityRow } from "../../../../services/sharepoint/activitiesApi";
 import type { MilestoneRow } from "../../../../services/sharepoint/milestonesApi";
+import type { PepRow } from "../../../../services/sharepoint/pepsApi";
+import { requiresStructure } from "../../../../domain/projects/project.calculations";
 import { projectFieldLabel } from "../fieldLabels";
 import { fmtDate, fmtMoney, getSapCodeDisplay } from "./projectSummaryFormatters";
 
@@ -39,6 +41,7 @@ function renderSection(section: ProjectSection, fieldsHtml: string): string {
 type ScheduleExportData = {
   milestones: MilestoneRow[];
   activities: ActivityRow[];
+  peps: PepRow[];
 };
 
 type GanttItem = {
@@ -58,6 +61,12 @@ type MilestoneGroup = {
   startDateMin: string;
   endDateMax: string;
   activities: GanttItem[];
+};
+
+type PepSummaryItem = {
+  primaryText: string;
+  secondaryText: string;
+  amountBrl: number;
 };
 
 const MONEY_FIELDS: Array<keyof ProjectRow> = ["budgetBrl", "roceGain", "roceLoss"];
@@ -273,17 +282,52 @@ function renderGanttSection(schedule: ScheduleExportData): string {
         <span class="gantt-legend-item"><span class="gantt-legend-icon activity"></span> Atividade</span>
       </div>
       <div class="gantt-grid">${groupsHtml}</div>
-      <div class="gantt-fallback-list">
-        <h3>Lista estruturada (fallback sem barras)</h3>
-        ${groups.map((group) => `
-          <div class="gantt-fallback-group">
-            <div>${escapeHtml(group.milestoneName)} (${escapeHtml(toDateLabel(group.startDateMin))} - ${escapeHtml(toDateLabel(group.endDateMax))})</div>
-            <ul>
-              ${group.activities.map((item) => `<li><strong>[ATIVIDADE]</strong> ${escapeHtml(item.activityTitle)} (${escapeHtml(toDateLabel(item.startDate))} - ${escapeHtml(toDateLabel(item.endDate))})</li>`).join("")}
-            </ul>
-          </div>
-        `).join("")}
+    </section>
+  `;
+}
+
+function renderPepSummarySection(schedule: ScheduleExportData, needStructure: boolean): string {
+  const headerTitle = needStructure ? "7. Resumo de Estrutura e PEPs" : "7. Resumo de PEPs";
+  const firstColumnLabel = needStructure ? "Marco" : "Elemento PEP";
+  const secondColumnLabel = needStructure ? "Atividade" : "Ano";
+  const tableGridClass = needStructure ? "pep-table-grid-structure" : "pep-table-grid-simple";
+
+  const pepItems: PepSummaryItem[] = schedule.peps.map((pep) => {
+    const activity = schedule.activities.find((item) => item.Id === pep.activitiesIdId);
+    const milestone = schedule.milestones.find((item) => item.Id === activity?.milestonesIdId);
+
+    return {
+      primaryText: needStructure ? (milestone?.Title ?? "—") : pep.Title,
+      secondaryText: needStructure ? (activity?.Title ?? pep.Title) : String(pep.year),
+      amountBrl: Number(pep.amountBrl) || 0
+    };
+  });
+
+  const rowsHtml = pepItems.map((item) => `
+    <article class="pep-summary-row ${tableGridClass}">
+      <div class="pep-cell pep-primary" title="${escapeHtml(item.primaryText)}">${escapeHtml(item.primaryText)}</div>
+      <div class="pep-cell pep-secondary" title="${escapeHtml(item.secondaryText)}">${escapeHtml(item.secondaryText)}</div>
+      <div class="pep-cell pep-value">${escapeHtml(item.amountBrl.toLocaleString("pt-BR"))}</div>
+    </article>
+  `).join("\n");
+
+  return `
+    <section class="summary-section">
+      <div class="summary-section-header">
+        <h3>${headerTitle}</h3>
       </div>
+      ${pepItems.length === 0
+        ? `<div class="pep-empty">Nenhum PEP cadastrado para este projeto.</div>`
+        : `
+          <div class="pep-summary-table">
+            <header class="pep-summary-header ${tableGridClass}">
+              <span>${firstColumnLabel}</span>
+              <span>${secondColumnLabel}</span>
+              <span class="pep-value">Valor (R$)</span>
+            </header>
+            ${rowsHtml}
+          </div>
+        `}
     </section>
   `;
 }
@@ -292,6 +336,7 @@ function buildProjectSummaryHtml(project: ProjectRow, schedule: ScheduleExportDa
   const title = String(project.Title ?? "-");
   const status = String(project.status ?? "Rascunho");
   const sapCodeLabel = projectFieldLabel("codigoSAP");
+  const needStructure = requiresStructure(project.budgetBrl);
 
   const sectionsHtml = PROJECT_SECTIONS.map((section) => {
     const sectionFieldsHtml = section.fields
@@ -372,11 +417,17 @@ function buildProjectSummaryHtml(project: ProjectRow, schedule: ScheduleExportDa
       border-color: #0e7490;
       background-image: repeating-linear-gradient(-45deg, rgb(0 0 0 / 0.18) 0 3px, transparent 3px 7px);
     }
-    .gantt-fallback-list { margin-top: 12px; font-size: 11px; color: #1f2937; }
-    .gantt-fallback-list h3 { margin: 0 0 8px; font-size: 12px; }
-    .gantt-fallback-group + .gantt-fallback-group { margin-top: 8px; }
-    .gantt-fallback-group ul { margin: 4px 0 0 16px; padding: 0; }
-    .gantt-fallback-group li + li { margin-top: 2px; }
+    .pep-summary-table { border: 1px solid #d1d5db; border-radius: 12px; overflow: hidden; background: #ffffff; }
+    .pep-table-grid-structure { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.35fr) minmax(130px, 0.7fr); gap: 16px; align-items: start; }
+    .pep-table-grid-simple { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(84px, 0.5fr) minmax(130px, 0.7fr); gap: 16px; align-items: start; }
+    .pep-summary-header { padding: 12px 14px; border-bottom: 1px solid #d1d5db; background: #f3f4f6; color: #6b7280; font-size: 12px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; }
+    .pep-summary-row { padding: 14px; border-bottom: 1px solid #e5e7eb; background: #ffffff; }
+    .pep-summary-row:last-child { border-bottom: none; }
+    .pep-cell { min-width: 0; font-size: 14px; line-height: 1.45; color: #111827; }
+    .pep-primary { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pep-secondary { font-weight: 500; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+    .pep-value { text-align: right; font-weight: 600; white-space: nowrap; }
+    .pep-empty { border: 1px dashed #9ca3af; border-radius: 12px; padding: 14px; font-size: 13px; color: #6b7280; text-align: center; }
 
     @media print {
       @page { margin: 12mm; size: auto; }
@@ -391,8 +442,10 @@ function buildProjectSummaryHtml(project: ProjectRow, schedule: ScheduleExportDa
       .field-label,
       .gantt-period,
       .gantt-legend,
-      .gantt-row-label { font-size: 10px; }
+      .gantt-row-label,
+      .pep-summary-header { font-size: 10px; }
       .field-value { font-size: 11px; }
+      .pep-cell { font-size: 11px; }
       .gantt-track { height: 10px; }
     }
 
@@ -400,6 +453,14 @@ function buildProjectSummaryHtml(project: ProjectRow, schedule: ScheduleExportDa
       .summary-grid { grid-template-columns: 1fr; }
       .field-item { grid-column: span 1 !important; }
       .sections { grid-template-columns: 1fr; }
+      .pep-table-grid-structure,
+      .pep-table-grid-simple {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 10px;
+      }
+      .pep-value {
+        text-align: left;
+      }
     }
   </style>
 </head>
@@ -412,6 +473,7 @@ function buildProjectSummaryHtml(project: ProjectRow, schedule: ScheduleExportDa
 
   <section class="sections">
     ${sectionsHtml}
+    ${renderPepSummarySection(schedule, needStructure)}
     ${renderGanttSection(schedule)}
   </section>
 </body>
