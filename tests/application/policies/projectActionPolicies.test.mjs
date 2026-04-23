@@ -31,7 +31,7 @@ const scenarios = [
   {
     name: "Reprovado",
     project: { status: "Reprovado" },
-    expected: { edit: true, delete: false, send: true, back: true, approve: false, reject: false },
+    expected: { edit: true, delete: false, send: true, back: false, approve: false, reject: false },
   },
   {
     name: "sem status",
@@ -85,4 +85,11 @@ test("troca rápida de seleção recalcula ações", () => {
 
   assert.equal(draftPolicies.sendToApproval.ok, true);
   assert.equal(approvedPolicies.sendToApproval.ok, false);
+});
+
+test("em reprovado mantém envio permitido e voltar status desabilitado", () => {
+  const rejectedPolicies = getCommandBarPolicies({ status: "Reprovado" });
+  assert.equal(rejectedPolicies.sendToApproval.ok, true);
+  assert.equal(rejectedPolicies.backToDraft.ok, false);
+  assert.equal(rejectedPolicies.backToDraft.reason, "Projeto reprovado não pode voltar status.");
 });
