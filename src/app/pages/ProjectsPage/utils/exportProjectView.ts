@@ -251,7 +251,7 @@ function renderGanttSection(schedule: ScheduleExportData): string {
     return `
       <div class="gantt-group">
         <div class="gantt-row-label gantt-group-header">
-          <span class="gantt-name"><span class="gantt-prefix">[MARCO]</span> ${escapeHtml(group.milestoneName)}</span>
+          <span class="gantt-name">${escapeHtml(group.milestoneName)}</span>
           <span class="gantt-date">${escapeHtml(toDateLabel(group.startDateMin))} - ${escapeHtml(toDateLabel(group.endDateMax))}</span>
         </div>
         <div class="gantt-track">
@@ -277,7 +277,7 @@ function renderGanttSection(schedule: ScheduleExportData): string {
         <h3>Lista estruturada (fallback sem barras)</h3>
         ${groups.map((group) => `
           <div class="gantt-fallback-group">
-            <div><strong>[MARCO]</strong> ${escapeHtml(group.milestoneName)} (${escapeHtml(toDateLabel(group.startDateMin))} - ${escapeHtml(toDateLabel(group.endDateMax))})</div>
+            <div>${escapeHtml(group.milestoneName)} (${escapeHtml(toDateLabel(group.startDateMin))} - ${escapeHtml(toDateLabel(group.endDateMax))})</div>
             <ul>
               ${group.activities.map((item) => `<li><strong>[ATIVIDADE]</strong> ${escapeHtml(item.activityTitle)} (${escapeHtml(toDateLabel(item.startDate))} - ${escapeHtml(toDateLabel(item.endDate))})</li>`).join("")}
             </ul>
