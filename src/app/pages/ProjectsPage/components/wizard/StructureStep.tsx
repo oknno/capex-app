@@ -168,7 +168,12 @@ export function StructureStep(props: {
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: uiTokens.spacing.sm, flexWrap: "wrap" }}>
                       <div style={{ flex: 1, minWidth: 260 }}>
                         <Field label="Nome do Marco">
-                          <input value={milestone.Title} onChange={(e) => updateMilestoneTitle(milestone.tempId, e.target.value)} style={wizardLayoutStyles.input} />
+                          <input
+                            value={milestone.Title}
+                            onChange={(e) => updateMilestoneTitle(milestone.tempId, e.target.value)}
+                            placeholder="Ex.: Revamp do Alto-Forno 2"
+                            style={wizardLayoutStyles.input}
+                          />
                         </Field>
                       </div>
                       <Button
@@ -192,7 +197,7 @@ export function StructureStep(props: {
                           <input
                             value={activity.Title}
                             onChange={(e) => updateActivity(activity.tempId, { Title: e.target.value.toUpperCase() })}
-                            placeholder="Ex.: Obra civil"
+                            placeholder="Ex.: Montagem da nova linha de lingotamento"
                             style={wizardLayoutStyles.input}
                           />
                         </Field>
@@ -271,7 +276,12 @@ export function StructureStep(props: {
 
                       <div style={wizardLayoutStyles.journeyPairGrid}>
                         <Field label="Título da Atividade">
-                          <input value={form.acTitle} onChange={(e) => setFormField(milestone.tempId, { acTitle: e.target.value })} placeholder="Ex.: Obra civil" style={wizardLayoutStyles.input} />
+                          <input
+                            value={form.acTitle}
+                            onChange={(e) => setFormField(milestone.tempId, { acTitle: e.target.value })}
+                            placeholder="Ex.: Montagem da nova linha de lingotamento"
+                            style={wizardLayoutStyles.input}
+                          />
                         </Field>
 
                         <Field label="Valor da Atividade (R$)">
@@ -335,7 +345,12 @@ export function StructureStep(props: {
         {isAddingMilestone ? (
           <div style={{ ...wizardLayoutStyles.cardSubtle, background: uiTokens.colors.surface, marginTop: uiTokens.spacing.md }}>
             <Field label="Nome do Marco">
-              <input value={newMilestoneTitle} onChange={(e) => setNewMilestoneTitle(e.target.value)} style={wizardLayoutStyles.input} placeholder="Ex.: ETAPA 1" />
+              <input
+                value={newMilestoneTitle}
+                onChange={(e) => setNewMilestoneTitle(e.target.value)}
+                style={wizardLayoutStyles.input}
+                placeholder="Ex.: Revamp do Alto-Forno 2"
+              />
             </Field>
             <div style={{ display: "flex", gap: uiTokens.spacing.sm, flexWrap: "wrap" }}>
               <Button tone="primary" disabled={props.readOnly || !newMilestoneTitle.trim()} onClick={addMilestone}>
