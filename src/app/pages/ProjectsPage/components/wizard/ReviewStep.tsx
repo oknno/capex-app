@@ -12,7 +12,6 @@ type GanttItem = {
   title: string;
   startDate: string;
   endDate: string;
-  amountBrl: number;
 };
 
 type GanttBounds = {
@@ -24,7 +23,6 @@ type MilestoneGroup = {
   milestoneName: string;
   startDateMin: string;
   endDateMax: string;
-  totalAmountBrl: number;
   activities: GanttItem[];
 };
 
@@ -55,10 +53,6 @@ function getSummaryFieldSpan(value: SummaryValue, forceSpan?: 1 | 2 | 3): 1 | 2 
 function toDateLabel(value?: string) {
   if (!value) return "—";
   return new Date(`${value}T00:00:00`).toLocaleDateString("pt-BR");
-}
-
-function formatBrl(value?: number) {
-  return (Number(value) || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
 function getBarPosition(startDate: string, endDate: string, bounds: GanttBounds) {
@@ -138,8 +132,7 @@ export function ReviewStep(props: {
       milestone: milestones.find((item) => item.tempId === activity.milestoneTempId)?.Title ?? "MARCO",
       title: activity.Title,
       startDate: activity.startDate as string,
-      endDate: activity.endDate as string,
-      amountBrl: Number(activity.amountBrl) || 0
+      endDate: activity.endDate as string
     }));
 
   const ganttBounds: GanttBounds | null = ganttItems.length > 0
@@ -157,7 +150,6 @@ export function ReviewStep(props: {
           milestoneName: item.milestone,
           startDateMin: item.startDate,
           endDateMax: item.endDate,
-          totalAmountBrl: item.amountBrl,
           activities: [item]
         };
         return acc;
@@ -167,7 +159,6 @@ export function ReviewStep(props: {
         ...current,
         startDateMin: item.startDate < current.startDateMin ? item.startDate : current.startDateMin,
         endDateMax: item.endDate > current.endDateMax ? item.endDate : current.endDateMax,
-        totalAmountBrl: current.totalAmountBrl + item.amountBrl,
         activities: [...current.activities, item]
       };
       return acc;
@@ -260,10 +251,9 @@ export function ReviewStep(props: {
                 const milestoneBar = getBarPosition(milestoneGroup.startDateMin, milestoneGroup.endDateMax, ganttBounds);
                 return (
                   <div key={`${milestoneGroup.milestoneName}_${milestoneGroup.startDateMin}_${milestoneGroup.endDateMax}`} style={{ display: "grid", gap: 8 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 12, color: uiTokens.colors.text, marginBottom: 2 }}>
-                      <span>{milestoneGroup.milestoneName}</span>
-                      <span>{toDateLabel(milestoneGroup.startDateMin)} - {toDateLabel(milestoneGroup.endDateMax)}</span>
-                      <span>{formatBrl(milestoneGroup.totalAmountBrl)}</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: uiTokens.colors.text, marginBottom: 2 }}>
+                      <span style={{ minWidth: 0, flex: 1 }}>{milestoneGroup.milestoneName}</span>
+                      <span style={{ marginLeft: "auto", textAlign: "right" }}>{toDateLabel(milestoneGroup.startDateMin)} - {toDateLabel(milestoneGroup.endDateMax)}</span>
                     </div>
                     <div style={{ position: "relative", height: 14, borderRadius: 999, background: uiTokens.colors.border, overflow: "hidden" }}>
                       <div style={{ position: "absolute", left: `${milestoneBar.left}%`, width: `${milestoneBar.width}%`, top: 0, bottom: 0, background: uiTokens.colors.accentWarning, borderRadius: 999 }} />
@@ -273,10 +263,9 @@ export function ReviewStep(props: {
                         const activityBar = getBarPosition(item.startDate, item.endDate, ganttBounds);
                         return (
                           <div key={`${item.milestone}_${item.title}_${item.startDate}_${item.endDate}`}>
-                            <div style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 12, color: uiTokens.colors.text, marginBottom: 4 }}>
-                              <span>{item.title}</span>
-                              <span>{toDateLabel(item.startDate)} - {toDateLabel(item.endDate)}</span>
-                              <span>{formatBrl(item.amountBrl)}</span>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: uiTokens.colors.text, marginBottom: 4 }}>
+                              <span style={{ minWidth: 0, flex: 1 }}>{item.title}</span>
+                              <span style={{ marginLeft: "auto", textAlign: "right" }}>{toDateLabel(item.startDate)} - {toDateLabel(item.endDate)}</span>
                             </div>
                             <div style={{ position: "relative", height: 14, borderRadius: 999, background: uiTokens.colors.border, overflow: "hidden" }}>
                               <div style={{ position: "absolute", left: `${activityBar.left}%`, width: `${activityBar.width}%`, top: 0, bottom: 0, background: uiTokens.colors.accentAlt, borderRadius: 999 }} />
