@@ -335,11 +335,11 @@ function buildProjectSummaryHtml(project: ProjectRow, schedule: ScheduleExportDa
     .gantt-legend-icon.milestone { background: #f59e0b; border-color: #b45309; background-image: repeating-linear-gradient(45deg, rgb(0 0 0 / 0.18) 0 4px, transparent 4px 8px); }
     .gantt-legend-icon.activity { background: #06b6d4; border-color: #0e7490; background-image: repeating-linear-gradient(-45deg, rgb(0 0 0 / 0.18) 0 3px, transparent 3px 7px); }
     .gantt-grid { display: grid; gap: 8px; }
-    .gantt-group { display: grid; gap: 6px; break-inside: avoid; page-break-inside: avoid; padding: 8px; border: 1px solid #d1d5db; border-radius: 10px; background: #f9fafb; }
+    .gantt-group { display: grid; gap: 6px; break-inside: avoid; page-break-inside: avoid; margin: 2px 0; }
     .gantt-activities { display: grid; gap: 6px; }
     .gantt-activity { display: grid; gap: 4px; }
     .gantt-row-label { display: flex; gap: 8px; align-items: center; justify-content: space-between; font-size: 12px; }
-    .gantt-group-header { padding: 6px 8px; border-radius: 8px; background: #e5e7eb; border: 1px solid #cbd5e1; }
+    .gantt-group-header { margin-bottom: 2px; }
     .gantt-prefix { font-size: 10px; letter-spacing: 0.04em; color: #334155; font-weight: 800; margin-right: 4px; }
     .gantt-name { min-width: 0; font-weight: 600; }
     .gantt-date { text-align: right; color: #374151; white-space: nowrap; }
@@ -372,7 +372,7 @@ function buildProjectSummaryHtml(project: ProjectRow, schedule: ScheduleExportDa
       border-color: #0e7490;
       background-image: repeating-linear-gradient(-45deg, rgb(0 0 0 / 0.18) 0 3px, transparent 3px 7px);
     }
-    .gantt-fallback-list { margin-top: 12px; border-top: 1px dashed #9ca3af; padding-top: 10px; font-size: 11px; color: #1f2937; }
+    .gantt-fallback-list { margin-top: 12px; font-size: 11px; color: #1f2937; }
     .gantt-fallback-list h3 { margin: 0 0 8px; font-size: 12px; }
     .gantt-fallback-group + .gantt-fallback-group { margin-top: 8px; }
     .gantt-fallback-group ul { margin: 4px 0 0 16px; padding: 0; }
