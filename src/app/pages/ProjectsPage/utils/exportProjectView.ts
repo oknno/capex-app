@@ -24,9 +24,21 @@ function renderField(label: string, value: string): string {
 
 function renderLongTextBlock(title: string, text: string): string {
   return `
-    <section class="block">
-      <h2>${escapeHtml(title)}</h2>
+    <div class="long-text-block">
+      <h4>${escapeHtml(title)}</h4>
       <p>${escapeHtml(text)}</p>
+    </div>
+  `;
+}
+
+function renderSection(title: string, subtitle: string | undefined, fieldsHtml: string): string {
+  return `
+    <section class="summary-section">
+      <div class="summary-section-header">
+        <h3>${escapeHtml(title)}</h3>
+        ${subtitle ? `<p>${escapeHtml(subtitle)}</p>` : ""}
+      </div>
+      <div class="summary-grid">${fieldsHtml}</div>
     </section>
   `;
 }
@@ -58,37 +70,49 @@ type MilestoneGroup = {
 const MONEY_FIELDS: Array<keyof ProjectRow> = ["budgetBrl", "roceGain", "roceLoss"];
 const DATE_FIELDS: Array<keyof ProjectRow> = ["startDate", "endDate"];
 
-const PRINT_FIELDS_ORDER: Array<keyof ProjectRow> = [
-  "budgetBrl",
-  "projectLeader",
-  "approvalYear",
-  "investmentLevel",
-  "fundingSource",
-  "program",
-  "company",
-  "center",
-  "unit",
-  "location",
-  "depreciationCostCenter",
-  "category",
-  "investmentType",
-  "assetType",
-  "projectFunction",
-  "projectUser",
-  "sourceProjectCode",
-  "hasRoce",
-  "startDate",
-  "endDate",
-  "kpiType",
-  "kpiName",
-  "kpiDescription",
-  "kpiCurrent",
-  "kpiExpected",
-  "roceGain",
-  "roceGainDescription",
-  "roceLoss",
-  "roceLossDescription",
-  "roceClassification"
+type ProjectSection = {
+  title: string;
+  subtitle?: string;
+  fields: Array<keyof ProjectRow>;
+};
+
+const PROJECT_SECTIONS: ProjectSection[] = [
+  {
+    title: "1. Sobre o Projeto",
+    subtitle: "Dados principais para identificação e planejamento.",
+    fields: ["Title", "budgetBrl", "investmentLevel", "approvalYear", "startDate", "endDate", "projectFunction"]
+  },
+  {
+    title: "2. Origem e Programa",
+    subtitle: "Vínculo da verba com iniciativa e projeto de referência.",
+    fields: ["fundingSource", "program", "sourceProjectCode"]
+  },
+  {
+    title: "3. Informação Operacional",
+    subtitle: "Estrutura organizacional e responsáveis pela execução.",
+    fields: [
+      "company",
+      "center",
+      "unit",
+      "location",
+      "depreciationCostCenter",
+      "category",
+      "investmentType",
+      "assetType",
+      "projectUser",
+      "projectLeader"
+    ]
+  },
+  {
+    title: "4. Indicadores de Desempenho",
+    subtitle: "Indicadores e metas esperadas com a implementação.",
+    fields: ["kpiType", "kpiName", "kpiCurrent", "kpiExpected", "kpiDescription"]
+  },
+  {
+    title: "5. ROCE",
+    subtitle: "Ganhos, perdas e classificação financeira do investimento.",
+    fields: ["hasRoce", "roceClassification", "roceGain", "roceLoss", "roceGainDescription", "roceLossDescription"]
+  }
 ];
 
 function formatFieldValue(project: ProjectRow, field: keyof ProjectRow): string {
@@ -223,17 +247,25 @@ function buildProjectSummaryHtml(project: ProjectRow, schedule: ScheduleExportDa
   const status = String(project.status ?? "Rascunho");
   const sapCodeLabel = projectFieldLabel("codigoSAP");
 
-  const fieldsHtml = PRINT_FIELDS_ORDER
-    .map((field) => renderField(projectFieldLabel(field), formatFieldValue(project, field)))
-    .join("\n");
+  const sectionsHtml = PROJECT_SECTIONS.map((section) => {
+    const sectionFieldsHtml = section.fields
+      .map((field) => renderField(projectFieldLabel(field), formatFieldValue(project, field)))
+      .join("\n");
+
+    return renderSection(section.title, section.subtitle, sectionFieldsHtml);
+  }).join("\n");
 
   const businessNeed = truncateText(String(project.businessNeed ?? "-"), 10000);
   const proposedSolution = truncateText(String(project.proposedSolution ?? "-"), 10000);
 
-  const longBlocksHtml = [
+  const detailSectionHtml = renderSection(
+    "6. Detalhamento Complementar",
+    "Contexto do problema e direcionamento da solução.",
+    [
     renderLongTextBlock(projectFieldLabel("businessNeed"), businessNeed),
     renderLongTextBlock(projectFieldLabel("proposedSolution"), proposedSolution)
-  ].join("\n");
+    ].join("\n")
+  );
 
   return `<!doctype html>
 <html lang="pt-BR">
@@ -246,15 +278,19 @@ function buildProjectSummaryHtml(project: ProjectRow, schedule: ScheduleExportDa
     .title { font-size: 24px; font-weight: 700; margin: 0; }
     .status { font-size: 14px; font-weight: 700; }
     .sap { font-size: 14px; font-weight: 600; margin: 0 0 14px; break-inside: avoid; page-break-inside: avoid; }
-    .grid { border-top: 1px solid #d1d5db; padding-top: 12px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 16px; align-items: start; }
-    .field-item { break-inside: avoid; page-break-inside: avoid; }
-    .field-label { font-size: 12px; color: #6b7280; margin-bottom: 2px; }
-    .field-value { font-size: 14px; font-weight: 600; }
-    .blocks { border-top: 1px solid #d1d5db; padding-top: 12px; margin-top: 12px; display: grid; gap: 12px; }
-    .block { break-inside: avoid; page-break-inside: avoid; margin-bottom: 2px; }
-    .block h2 { font-size: 14px; margin: 0 0 6px; }
-    .block p { font-size: 12px; margin: 0; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; line-height: 1.4; }
-    .gantt-wrap { margin-top: 4px; }
+    .sections { margin-top: 8px; display: grid; gap: 12px; }
+    .summary-section { border: 1px solid #d1d5db; border-radius: 16px; background: #ffffff; padding: 16px; display: grid; gap: 12px; break-inside: avoid; page-break-inside: avoid; }
+    .summary-section-header { display: grid; gap: 4px; }
+    .summary-section-header h3 { margin: 0; font-size: 16px; font-weight: 800; color: #111827; }
+    .summary-section-header p { margin: 0; font-size: 12px; color: #6b7280; }
+    .summary-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px; align-items: start; }
+    .field-item { break-inside: avoid; page-break-inside: avoid; border: 1px solid #d1d5db; border-radius: 12px; background: #f9fafb; padding: 10px 12px; }
+    .field-label { font-size: 11px; font-weight: 700; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.03em; }
+    .field-value { font-size: 13px; font-weight: 600; line-height: 1.45; }
+    .long-text-block { grid-column: span 2; border: 1px solid #d1d5db; border-radius: 12px; background: #f9fafb; padding: 12px; break-inside: avoid; page-break-inside: avoid; }
+    .long-text-block h4 { font-size: 12px; font-weight: 700; margin: 0 0 6px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.03em; }
+    .long-text-block p { font-size: 12px; margin: 0; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; line-height: 1.45; color: #111827; }
+    .gantt-wrap { margin-top: 0; }
     .gantt-period { font-size: 12px; color: #6b7280; margin-bottom: 8px; }
     .gantt-grid { display: grid; gap: 8px; }
     .gantt-group { display: grid; gap: 6px; break-inside: avoid; page-break-inside: avoid; }
@@ -275,26 +311,27 @@ function buildProjectSummaryHtml(project: ProjectRow, schedule: ScheduleExportDa
       .title { font-size: 20px; }
       .status { font-size: 13px; }
       .sap { font-size: 12px; margin-bottom: 12px; }
-      .grid { gap: 8px 12px; }
-      .field-label { font-size: 10px; }
-      .field-value { font-size: 12px; }
-      .block h2 { font-size: 12px; }
-      .block p { font-size: 10px; }
+      .summary-grid { gap: 8px 10px; }
+      .summary-section-header h3 { font-size: 14px; }
+      .summary-section-header p,
+      .field-label,
       .gantt-period,
       .gantt-row-label { font-size: 10px; }
+      .field-value { font-size: 11px; }
+      .long-text-block h4 { font-size: 10px; }
+      .long-text-block p { font-size: 10px; }
       .gantt-track { height: 10px; }
     }
 
     @media print and (min-width: 1000px) {
-      .grid,
-      .blocks { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 16px; }
-      .blocks > .block,
-      .blocks > .gantt-wrap { align-self: start; }
+      .sections { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 12px; align-items: start; }
+      .sections > .summary-section:last-child { grid-column: 1 / -1; }
     }
 
     @media print and (max-width: 999px) {
-      .grid,
-      .blocks { grid-template-columns: 1fr; }
+      .summary-grid { grid-template-columns: 1fr; }
+      .long-text-block { grid-column: span 1; }
+      .sections { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -305,12 +342,9 @@ function buildProjectSummaryHtml(project: ProjectRow, schedule: ScheduleExportDa
   </header>
   <p class="sap">${escapeHtml(sapCodeLabel)}: ${escapeHtml(getSapCodeDisplay(project))}</p>
 
-  <section class="grid">
-    ${fieldsHtml}
-  </section>
-
-  <section class="blocks">
-    ${longBlocksHtml}
+  <section class="sections">
+    ${sectionsHtml}
+    ${detailSectionHtml}
     ${renderGanttSection(schedule)}
   </section>
 </body>
