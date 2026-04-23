@@ -1,4 +1,6 @@
 import type { ProjectRow } from "../../../../services/sharepoint/projectsApi";
+import type { ActivityRow } from "../../../../services/sharepoint/activitiesApi";
+import type { MilestoneRow } from "../../../../services/sharepoint/milestonesApi";
 import { projectFieldLabel } from "../fieldLabels";
 import { fmtDate, fmtMoney, getSapCodeDisplay, truncateText } from "./projectSummaryFormatters";
 
@@ -28,6 +30,30 @@ function renderLongTextBlock(title: string, text: string): string {
     </section>
   `;
 }
+
+type ScheduleExportData = {
+  milestones: MilestoneRow[];
+  activities: ActivityRow[];
+};
+
+type GanttItem = {
+  milestoneTitle: string;
+  activityTitle: string;
+  startDate: string;
+  endDate: string;
+};
+
+type GanttBounds = {
+  min: number;
+  max: number;
+};
+
+type MilestoneGroup = {
+  milestoneName: string;
+  startDateMin: string;
+  endDateMax: string;
+  activities: GanttItem[];
+};
 
 const MONEY_FIELDS: Array<keyof ProjectRow> = ["budgetBrl", "roceGain", "roceLoss"];
 const DATE_FIELDS: Array<keyof ProjectRow> = ["startDate", "endDate"];
@@ -82,7 +108,117 @@ function formatFieldValue(project: ProjectRow, field: keyof ProjectRow): string 
   return String(normalized);
 }
 
-function buildProjectSummaryHtml(project: ProjectRow): string {
+function getBarPosition(startDate: string, endDate: string, bounds: GanttBounds) {
+  const total = Math.max(bounds.max - bounds.min, 1);
+  const start = new Date(`${startDate}T00:00:00`).getTime();
+  const end = new Date(`${endDate}T00:00:00`).getTime();
+  const left = ((start - bounds.min) / total) * 100;
+  const width = (Math.max(end - start, 86400000) / total) * 100;
+
+  return {
+    left,
+    width: Math.min(width, 100 - left)
+  };
+}
+
+function groupByMilestone(items: GanttItem[]) {
+  return Object.values(
+    items.reduce<Record<string, MilestoneGroup>>((acc, item) => {
+      const current = acc[item.milestoneTitle];
+      if (!current) {
+        acc[item.milestoneTitle] = {
+          milestoneName: item.milestoneTitle,
+          startDateMin: item.startDate,
+          endDateMax: item.endDate,
+          activities: [item]
+        };
+        return acc;
+      }
+
+      acc[item.milestoneTitle] = {
+        ...current,
+        startDateMin: item.startDate < current.startDateMin ? item.startDate : current.startDateMin,
+        endDateMax: item.endDate > current.endDateMax ? item.endDate : current.endDateMax,
+        activities: [...current.activities, item]
+      };
+      return acc;
+    }, {})
+  );
+}
+
+function toDateLabel(value?: string) {
+  if (!value) return "—";
+  return new Date(`${value}T00:00:00`).toLocaleDateString("pt-BR");
+}
+
+function renderGanttSection(schedule: ScheduleExportData): string {
+  const ganttItems: GanttItem[] = schedule.activities
+    .filter((activity) => activity.startDate && activity.endDate)
+    .map((activity) => ({
+      milestoneTitle: schedule.milestones.find((milestone) => milestone.Id === activity.milestonesIdId)?.Title ?? "MARCO",
+      activityTitle: activity.Title || "ATIVIDADE",
+      startDate: String(activity.startDate).slice(0, 10),
+      endDate: String(activity.endDate).slice(0, 10)
+    }));
+
+  if (ganttItems.length === 0) {
+    return `
+      <section class="block gantt-wrap">
+        <h2>Cronograma (Gantt)</h2>
+        <p>Sem atividades com início e término para exibir cronograma.</p>
+      </section>
+    `;
+  }
+
+  const starts = ganttItems.map((item) => new Date(`${item.startDate}T00:00:00`).getTime());
+  const ends = ganttItems.map((item) => new Date(`${item.endDate}T00:00:00`).getTime());
+  const bounds: GanttBounds = { min: Math.min(...starts), max: Math.max(...ends) };
+  const rangeLabel = `${new Date(bounds.min).toLocaleDateString("pt-BR")} - ${new Date(bounds.max).toLocaleDateString("pt-BR")}`;
+  const groups = groupByMilestone(ganttItems);
+
+  const groupsHtml = groups.map((group) => {
+    const milestoneBar = getBarPosition(group.startDateMin, group.endDateMax, bounds);
+    const activitiesHtml = group.activities.map((item) => {
+      const activityBar = getBarPosition(item.startDate, item.endDate, bounds);
+      return `
+        <div class="gantt-activity">
+          <div class="gantt-row-label">
+            <span class="gantt-name">${escapeHtml(item.activityTitle)}</span>
+            <span class="gantt-date">${escapeHtml(toDateLabel(item.startDate))} - ${escapeHtml(toDateLabel(item.endDate))}</span>
+          </div>
+          <div class="gantt-track">
+            <div class="gantt-bar activity" style="left:${activityBar.left}%;width:${activityBar.width}%;"></div>
+          </div>
+        </div>
+      `;
+    }).join("\n");
+
+    return `
+      <div class="gantt-group">
+        <div class="gantt-row-label">
+          <span class="gantt-name">${escapeHtml(group.milestoneName)}</span>
+          <span class="gantt-date">${escapeHtml(toDateLabel(group.startDateMin))} - ${escapeHtml(toDateLabel(group.endDateMax))}</span>
+        </div>
+        <div class="gantt-track">
+          <div class="gantt-bar milestone" style="left:${milestoneBar.left}%;width:${milestoneBar.width}%;"></div>
+        </div>
+        <div class="gantt-activities">
+          ${activitiesHtml}
+        </div>
+      </div>
+    `;
+  }).join("\n");
+
+  return `
+    <section class="block gantt-wrap">
+      <h2>Cronograma (Gantt)</h2>
+      <div class="gantt-period">Período do cronograma: ${escapeHtml(rangeLabel)}</div>
+      <div class="gantt-grid">${groupsHtml}</div>
+    </section>
+  `;
+}
+
+function buildProjectSummaryHtml(project: ProjectRow, schedule: ScheduleExportData): string {
   const title = String(project.Title ?? "-");
   const status = String(project.status ?? "Rascunho");
   const sapCodeLabel = projectFieldLabel("codigoSAP");
@@ -118,6 +254,19 @@ function buildProjectSummaryHtml(project: ProjectRow): string {
     .block { break-inside: avoid; page-break-inside: avoid; }
     .block h2 { font-size: 14px; margin: 0 0 6px; }
     .block p { font-size: 13px; margin: 0; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; }
+    .gantt-wrap { margin-top: 4px; }
+    .gantt-period { font-size: 12px; color: #6b7280; margin-bottom: 8px; }
+    .gantt-grid { display: grid; gap: 8px; }
+    .gantt-group { display: grid; gap: 6px; break-inside: avoid; page-break-inside: avoid; }
+    .gantt-activities { display: grid; gap: 6px; }
+    .gantt-activity { display: grid; gap: 4px; }
+    .gantt-row-label { display: flex; gap: 8px; align-items: center; justify-content: space-between; font-size: 12px; }
+    .gantt-name { min-width: 0; font-weight: 600; }
+    .gantt-date { text-align: right; color: #374151; white-space: nowrap; }
+    .gantt-track { position: relative; height: 12px; border-radius: 999px; background: #d1d5db; overflow: hidden; }
+    .gantt-bar { position: absolute; top: 0; bottom: 0; border-radius: 999px; }
+    .gantt-bar.milestone { background: #f59e0b; }
+    .gantt-bar.activity { background: #06b6d4; }
 
     @media print {
       body { margin: 12mm; }
@@ -139,13 +288,14 @@ function buildProjectSummaryHtml(project: ProjectRow): string {
 
   <section class="blocks">
     ${longBlocksHtml}
+    ${renderGanttSection(schedule)}
   </section>
 </body>
 </html>`;
 }
 
-export function exportProjectView(project: ProjectRow): void {
-  const html = buildProjectSummaryHtml(project);
+export function exportProjectView(project: ProjectRow, schedule: ScheduleExportData): void {
+  const html = buildProjectSummaryHtml(project, schedule);
   const printWindow = window.open("", "_blank", "width=1024,height=768");
 
   if (!printWindow) {
