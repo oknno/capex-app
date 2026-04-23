@@ -96,11 +96,11 @@ export function useWizardInitialLoad(params: UseWizardInitialLoadParams) {
     const milestoneTempId = uid("ms");
     setState((prev) => ({
       ...prev,
-      milestones: [{ tempId: milestoneTempId, Title: "NOVO MARCO" }],
+      milestones: [{ tempId: milestoneTempId, Title: "" }],
       activities: [
         {
           tempId: uid("ac"),
-          Title: "NOVA ATIVIDADE",
+          Title: "",
           milestoneTempId,
           amountBrl: undefined,
           pepElement: undefined,
