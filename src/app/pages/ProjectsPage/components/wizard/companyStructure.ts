@@ -946,5 +946,159 @@ export const COMPANY_CENTER_UNIT_LOCATION_MAP: Record<string, CompanyStructure> 
         "US"
       ]
     }
+  },
+  "AGS": {
+    "AG01": {
+      "units": [
+        "AG - AGS"
+      ],
+      "locations": [
+        "GR",
+        "TI"
+      ]
+    },
+    "AG02": {
+      "units": [
+        "AG - AGS"
+      ],
+      "locations": [
+        "GR",
+        "TI"
+      ]
+    }
+  },
+  "CF00": {
+    "CF00": {
+      "units": [
+        "CF - CENTRAL FOTO VOLTAICA"
+      ],
+      "locations": [
+        "BC",
+        "GR",
+        "LT",
+        "SC",
+        "TI"
+      ]
+    }
+  },
+  "CF18": {
+    "CF18": {
+      "units": [
+        "CF - CENTRAL FOTO VOLTAICA"
+      ],
+      "locations": [
+        "BC",
+        "CF",
+        "CX",
+        "GR",
+        "IN",
+        "LT",
+        "MF",
+        "SC",
+        "TI",
+        "TK",
+        "TS"
+      ]
+    }
+  },
+  "CF19": {
+    "CF19": {
+      "units": [
+        "CF - CENTRAL FOTO VOLTAICA"
+      ],
+      "locations": [
+        "BC",
+        "CF",
+        "CX",
+        "GR",
+        "IN",
+        "LT",
+        "MF",
+        "SC",
+        "TI",
+        "TK",
+        "TS"
+      ]
+    }
+  },
+  "CF20": {
+    "CF20": {
+      "units": [
+        "CF - CENTRAL FOTO VOLTAICA"
+      ],
+      "locations": [
+        "BC",
+        "CF",
+        "CX",
+        "GR",
+        "IN",
+        "LT",
+        "MF",
+        "SC",
+        "TI",
+        "TK",
+        "TS"
+      ]
+    }
+  },
+  "CF21": {
+    "CF21": {
+      "units": [
+        "CF - CENTRAL FOTO VOLTAICA"
+      ],
+      "locations": [
+        "BC",
+        "CF",
+        "CX",
+        "GR",
+        "IN",
+        "LT",
+        "MF",
+        "SC",
+        "TI",
+        "TK",
+        "TS"
+      ]
+    }
+  },
+  "CF22": {
+    "CF22": {
+      "units": [
+        "CF - CENTRAL FOTO VOLTAICA"
+      ],
+      "locations": [
+        "BC",
+        "CF",
+        "CX",
+        "GR",
+        "IN",
+        "LT",
+        "MF",
+        "SC",
+        "TI",
+        "TK",
+        "TS"
+      ]
+    }
+  },
+  "CF23": {
+    "CF23": {
+      "units": [
+        "CF - CENTRAL FOTO VOLTAICA"
+      ],
+      "locations": [
+        "BC",
+        "CF",
+        "CX",
+        "GR",
+        "IN",
+        "LT",
+        "MF",
+        "SC",
+        "TI",
+        "TK",
+        "TS"
+      ]
+    }
   }
 };
