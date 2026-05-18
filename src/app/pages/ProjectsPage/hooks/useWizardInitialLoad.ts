@@ -143,7 +143,7 @@ export function useWizardInitialLoad(params: UseWizardInitialLoadParams) {
       const activityLimit = getActivityLimitByComplexity(complexity);
       return suggestions.slice(0, activityLimit).map((suggestion) => ({
         tempId: uid("ac"),
-        Title: suggestion.title,
+        Title: "",
         milestoneTempId: milestone.tempId,
         amountBrl: undefined,
         pepElement: undefined,
