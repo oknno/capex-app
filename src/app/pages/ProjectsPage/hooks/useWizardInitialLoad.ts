@@ -33,6 +33,13 @@ function uid(prefix: string) {
   return `${prefix}_${Math.random().toString(16).slice(2)}_${Date.now()}`;
 }
 
+function getActivityLimitByComplexity(complexity: OperationalComplexity): number {
+  if (complexity === "baixa") return 1;
+  if (complexity === "media") return 2;
+  if (complexity === "alta") return 3;
+  return 1;
+}
+
 function sanitizeProjectForDuplication(project?: ProjectRow): ProjectDraft {
   return {
     Title: project?.Title ?? "",
@@ -133,7 +140,8 @@ export function useWizardInitialLoad(params: UseWizardInitialLoadParams) {
     const activitySeed = buildSuggestedActivitiesByMilestone(templateSeedKey, milestoneTitles);
     const activities: ActivityDraftLocal[] = milestones.flatMap((milestone) => {
       const suggestions = activitySeed[milestone.Title] ?? [{ title: "", placeholder: "" }];
-      return suggestions.map((suggestion) => ({
+      const activityLimit = getActivityLimitByComplexity(complexity);
+      return suggestions.slice(0, activityLimit).map((suggestion) => ({
         tempId: uid("ac"),
         Title: suggestion.title,
         milestoneTempId: milestone.tempId,
@@ -142,7 +150,8 @@ export function useWizardInitialLoad(params: UseWizardInitialLoadParams) {
         startDate: state.project.startDate,
         endDate: state.project.endDate,
         supplier: undefined,
-        activityDescription: suggestion.placeholder || undefined
+        activityDescription: "",
+        placeholder: suggestion.placeholder || suggestion.title
       }));
     });
 
@@ -204,6 +213,7 @@ export function useWizardInitialLoad(params: UseWizardInitialLoadParams) {
             endDate: a.endDate ? String(a.endDate).slice(0, 10) : undefined,
             supplier: a.supplier ? String(a.supplier) : undefined,
             activityDescription: a.activityDescription ? String(a.activityDescription) : undefined,
+            placeholder: String(a.Title ?? "").toUpperCase(),
             amountBrl: undefined,
             pepElement: undefined
           };

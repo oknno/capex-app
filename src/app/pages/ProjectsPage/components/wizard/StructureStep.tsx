@@ -214,8 +214,8 @@ export function StructureStep(props: {
                       <Field label="Descrição Geral da Atividade">
                         <textarea
                           value={activity.activityDescription ?? ""}
-                          onChange={(e) => updateActivity(activity.tempId, { activityDescription: e.target.value || undefined })}
-                          placeholder="Descrição geral da atividade"
+                          onChange={(e) => updateActivity(activity.tempId, { activityDescription: e.target.value })}
+                          placeholder={activity.placeholder ?? activity.Title}
                           style={{ ...wizardLayoutStyles.input, ...wizardLayoutStyles.textareaReadable }}
                         />
                       </Field>

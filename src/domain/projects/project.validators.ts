@@ -19,6 +19,7 @@ export type ActivityDraftLocal = {
   endDate?: string;
   supplier?: string;
   activityDescription?: string;
+  placeholder?: string;
 };
 export type PepDraftLocal = { tempId: string; Title: string; year: number; amountBrl: number; activityTempId?: string };
 
