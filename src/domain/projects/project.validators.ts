@@ -98,7 +98,6 @@ export function validateStructure(state: WizardDraftState) {
       throw new Error("Activity com milestone inválido (consistência interna).");
     }
 
-    if (!a.amountBrl || a.amountBrl <= 0) throw new Error("Toda atividade deve possuir Valor da Atividade inteiro > 0.");
 
     if (projectStart && a.startDate && a.startDate < projectStart) {
       throw new Error("Início da atividade não pode ser antes da Data de Início do Projeto.");

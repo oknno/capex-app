@@ -19,7 +19,7 @@ function emptyActivityForm() {
   return {
     acTitle: "",
     acAmount: "",
-    acPepElement: "",
+    acPepElement: PEP_NOT_APPLICABLE_VALUE,
     acStartDate: "",
     acEndDate: "",
     acSupplier: "",
@@ -28,6 +28,13 @@ function emptyActivityForm() {
 }
 
 type ActivityFormState = ReturnType<typeof emptyActivityForm>;
+
+const PEP_NOT_APPLICABLE_VALUE = "__NO_PEP_LINK__";
+const PEP_NOT_APPLICABLE_LABEL = "Não vincular PEP (não se aplica)";
+
+function normalizePepElementSelection(value: string) {
+  return value === PEP_NOT_APPLICABLE_VALUE || !value ? undefined : value;
+}
 
 export function StructureStep(props: {
   readOnly: boolean;
@@ -89,7 +96,6 @@ export function StructureStep(props: {
 
     if (!milestoneTitle.trim()) return props.onValidationError("Nome do marco é obrigatório.");
     if (!form.acTitle.trim()) return props.onValidationError("Título da atividade é obrigatório.");
-    if (!amount || amount <= 0) return props.onValidationError("Valor da Atividade deve ser inteiro > 0.");
     if (!form.acPepElement) return props.onValidationError("Selecione o elemento PEP da atividade.");
     if (props.projectStartDate && form.acStartDate && form.acStartDate < props.projectStartDate) return props.onValidationError("Início da atividade não pode ser antes do início do projeto.");
     if (form.acStartDate && form.acEndDate && form.acEndDate < form.acStartDate) return props.onValidationError("Término da atividade não pode ser antes do início.");
@@ -103,7 +109,7 @@ export function StructureStep(props: {
           Title: form.acTitle.trim().toUpperCase(),
           milestoneTempId,
           amountBrl: amount,
-          pepElement: form.acPepElement,
+          pepElement: normalizePepElementSelection(form.acPepElement),
           startDate: form.acStartDate || undefined,
           endDate: form.acEndDate || undefined,
           supplier: form.acSupplier.trim() || undefined,
@@ -128,7 +134,7 @@ export function StructureStep(props: {
             {props.milestones.map((milestone) => {
               const form = getForm(milestone.tempId);
               const milestoneActivities = activitiesByMilestone[milestone.tempId] ?? [];
-              const canAddActivity = Boolean(form.acTitle.trim() && form.acAmount.trim() && form.acPepElement);
+              const canAddActivity = Boolean(form.acTitle.trim() && form.acPepElement);
               const isAddingActivity = isAddingActivityByMilestone[milestone.tempId] ?? false;
 
               return (
@@ -196,8 +202,8 @@ export function StructureStep(props: {
                       </div>
 
                       <Field label="Elemento PEP">
-                        <select value={activity.pepElement ?? ""} onChange={(e) => updateActivity(activity.tempId, { pepElement: e.target.value || undefined })} style={wizardLayoutStyles.input}>
-                          <option value="">Selecione o elemento PEP</option>
+                        <select value={activity.pepElement ?? PEP_NOT_APPLICABLE_VALUE} onChange={(e) => updateActivity(activity.tempId, { pepElement: normalizePepElementSelection(e.target.value) })} style={wizardLayoutStyles.input}>
+                          <option value={PEP_NOT_APPLICABLE_VALUE}>{PEP_NOT_APPLICABLE_LABEL}</option>
                           {ensurePepElementOption(pepOptions, activity.pepElement).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                         </select>
                       </Field>
@@ -263,7 +269,7 @@ export function StructureStep(props: {
 
                       <Field label="Elemento PEP">
                         <select value={form.acPepElement} onChange={(e) => setFormField(milestone.tempId, { acPepElement: e.target.value })} style={wizardLayoutStyles.input}>
-                          <option value="">Selecione o elemento PEP</option>
+                          <option value={PEP_NOT_APPLICABLE_VALUE}>{PEP_NOT_APPLICABLE_LABEL}</option>
                           {ensurePepElementOption(pepOptions, form.acPepElement).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                         </select>
                       </Field>
