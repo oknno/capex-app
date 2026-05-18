@@ -150,25 +150,6 @@ export function ProjectWizardModal(props: {
     };
   }, [askConfirm, notify, regenerateSuggestedStructure, state.project]);
 
-  const handleAdvance = useCallback(async () => {
-    const nextStep = stepOrder[currentStepIndex + 1];
-    if (nextStep === "execution" && needStructure && !readOnly) {
-      const currentOperationalCategory = String((state.project as { operationalCategory?: string }).operationalCategory ?? "").trim();
-      const currentComplexity = String((state.project as { complexity?: string }).complexity ?? "").trim();
-      const lastSeed = lastStructureSeedRef.current;
-      const shouldRegenerateOnAdvance =
-        Boolean(currentOperationalCategory) &&
-        Boolean(currentComplexity) &&
-        (!!lastSeed && (lastSeed.operationalCategory !== currentOperationalCategory || lastSeed.complexity !== currentComplexity));
-
-      if (shouldRegenerateOnAdvance) {
-        await handleRegenerateStructure();
-      }
-    }
-
-    goNext();
-  }, [currentStepIndex, goNext, handleRegenerateStructure, needStructure, readOnly, state.project, stepOrder]);
-
   useEffect(() => {
     const currentOperationalCategory = String((state.project as { operationalCategory?: string }).operationalCategory ?? "").trim();
     const currentComplexity = String((state.project as { complexity?: string }).complexity ?? "").trim();
@@ -282,6 +263,25 @@ export function ProjectWizardModal(props: {
     notify,
     getForwardBlockingMessage
   });
+
+  const handleAdvance = useCallback(async () => {
+    const nextStep = stepOrder[currentStepIndex + 1];
+    if (nextStep === "execution" && needStructure && !readOnly) {
+      const currentOperationalCategory = String((state.project as { operationalCategory?: string }).operationalCategory ?? "").trim();
+      const currentComplexity = String((state.project as { complexity?: string }).complexity ?? "").trim();
+      const lastSeed = lastStructureSeedRef.current;
+      const shouldRegenerateOnAdvance =
+        Boolean(currentOperationalCategory) &&
+        Boolean(currentComplexity) &&
+        (!!lastSeed && (lastSeed.operationalCategory !== currentOperationalCategory || lastSeed.complexity !== currentComplexity));
+
+      if (shouldRegenerateOnAdvance) {
+        await handleRegenerateStructure();
+      }
+    }
+
+    goNext();
+  }, [currentStepIndex, goNext, handleRegenerateStructure, needStructure, readOnly, state.project, stepOrder]);
 
   const stepLabel = (k: StepKey) => {
     if (k === "project") return "Toda a informação do projeto";
