@@ -23,31 +23,31 @@ export function PepStep(props: {
   company?: string;
   defaultYear: number;
   onChange: (next: PepDraftLocal[]) => void;
-  onValidationError: (message: string) => void;
 }) {
+  const { readOnly, needStructure, milestones, activities, peps, company, defaultYear, onChange } = props;
   const yearOptions = buildYearOptions(5);
-  const pepOptions = useMemo(() => getPepElementOptions(props.company), [props.company]);
-  const canRemovePep = props.peps.length > 1;
+  const pepOptions = useMemo(() => getPepElementOptions(company), [company]);
+  const canRemovePep = peps.length > 1;
 
   useEffect(() => {
-    if (props.readOnly || props.peps.length > 0) return;
-    props.onChange([
+    if (readOnly || peps.length > 0) return;
+    onChange([
       {
         tempId: uid("pp"),
         Title: "",
-        year: props.defaultYear,
+        year: defaultYear,
         amountBrl: 0
       }
     ]);
-  }, [props.defaultYear, props.onChange, props.peps.length, props.readOnly]);
+  }, [defaultYear, onChange, peps.length, readOnly]);
 
   function addPep() {
-    props.onChange([
-      ...props.peps,
+    onChange([
+      ...peps,
       {
         tempId: uid("pp"),
         Title: "",
-        year: props.defaultYear,
+        year: defaultYear,
         amountBrl: 0
       }
     ]);
@@ -55,30 +55,30 @@ export function PepStep(props: {
 
   function removePep(tempId: string) {
     if (!canRemovePep) return;
-    props.onChange(props.peps.filter((pep) => pep.tempId !== tempId));
+    onChange(peps.filter((pep) => pep.tempId !== tempId));
   }
 
   function updatePep(tempId: string, patch: Partial<PepDraftLocal>) {
-    props.onChange(props.peps.map((pep) => (pep.tempId === tempId ? { ...pep, ...patch } : pep)));
+    onChange(peps.map((pep) => (pep.tempId === tempId ? { ...pep, ...patch } : pep)));
   }
 
   return (
     <div style={{ padding: 14, display: "grid", gap: 12 }}>
-      <SectionTitle title={props.needStructure ? "Elemento PEP (rateio das atividades)" : "5. Elemento PEP (projeto abaixo de 1M)"} subtitle={props.needStructure ? "Projeto ≥ 1M: vincule cada PEP a uma atividade." : "Projeto < 1M: preencha apenas elemento, ano e valor do PEP."} />
+      <SectionTitle title={needStructure ? "Elemento PEP (rateio das atividades)" : "5. Elemento PEP (projeto abaixo de 1M)"} subtitle={needStructure ? "Projeto ≥ 1M: vincule cada PEP a uma atividade." : "Projeto < 1M: preencha apenas elemento, ano e valor do PEP."} />
 
       <div style={wizardLayoutStyles.box}>
-        <div style={wizardLayoutStyles.boxHead}>Elementos PEP ({props.peps.length})</div>
-        {!props.peps.length ? (
+        <div style={wizardLayoutStyles.boxHead}>Elementos PEP ({peps.length})</div>
+        {!peps.length ? (
           <div style={wizardLayoutStyles.empty}><StateMessage state="empty" message="Nenhum elemento PEP cadastrado." /></div>
         ) : (
           <div style={{ display: "grid", gap: uiTokens.spacing.md, padding: uiTokens.spacing.sm }}>
-            {props.peps.map((pep) => (
+            {peps.map((pep) => (
               <div key={pep.tempId} style={{ ...wizardLayoutStyles.cardSubtle, background: uiTokens.colors.surface }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: uiTokens.spacing.sm }}>
                   <div style={{ fontWeight: 600 }}>PEP</div>
                   <Button
                     type="button"
-                    disabled={props.readOnly || !canRemovePep}
+                    disabled={readOnly || !canRemovePep}
                     onClick={() => removePep(pep.tempId)}
                     style={{ padding: "6px 10px" }}
                     aria-label="Remover PEP"
@@ -95,17 +95,17 @@ export function PepStep(props: {
                   </select>
                 </Field>
 
-                {props.needStructure && (
+                {needStructure && (
                   <Field label="Atividade vinculada">
                     <select
                       value={pep.activityTempId ?? ""}
                       onChange={(e) => updatePep(pep.tempId, { activityTempId: e.target.value || undefined })}
-                      disabled={props.readOnly || props.activities.length === 0}
+                      disabled={readOnly || activities.length === 0}
                       style={wizardLayoutStyles.input}
                     >
                       <option value="">Selecione a atividade...</option>
-                      {props.activities.map((activity) => {
-                        const milestone = props.milestones.find((item) => item.tempId === activity.milestoneTempId);
+                      {activities.map((activity) => {
+                        const milestone = milestones.find((item) => item.tempId === activity.milestoneTempId);
                         return <option key={activity.tempId} value={activity.tempId}>{activity.Title} — {milestone?.Title ?? ""}</option>;
                       })}
                     </select>
@@ -138,7 +138,7 @@ export function PepStep(props: {
           </div>
         )}
         <div style={{ padding: uiTokens.spacing.sm }}>
-          <Button tone="primary" disabled={props.readOnly} onClick={addPep}>Adicionar PEP</Button>
+          <Button tone="primary" disabled={readOnly} onClick={addPep}>Adicionar PEP</Button>
         </div>
       </div>
     </div>

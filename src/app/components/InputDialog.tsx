@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 export function InputDialog(props: {
   open: boolean;
@@ -13,14 +13,8 @@ export function InputDialog(props: {
   onClose: () => void;
   onConfirm: (value: string) => void;
 }) {
-  const [value, setValue] = useState(props.defaultValue ?? "");
   const inputRef = useRef<HTMLInputElement | null>(null);
   const confirming = Boolean(props.confirming);
-
-  useEffect(() => {
-    if (!props.open) return;
-    setValue(props.defaultValue ?? "");
-  }, [props.defaultValue, props.open]);
 
   useEffect(() => {
     if (!props.open) return;
@@ -63,14 +57,14 @@ export function InputDialog(props: {
           <label style={{ display: "grid", gap: 8 }}>
             <span style={{ fontWeight: 700, color: "#111827" }}>{props.label}</span>
             <input
+              key={`${props.open}-${props.defaultValue ?? ""}`}
               ref={inputRef}
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
+              defaultValue={props.defaultValue ?? ""}
               placeholder={props.placeholder}
               disabled={confirming}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !confirming) {
-                  props.onConfirm(value);
+                  props.onConfirm((e.currentTarget as HTMLInputElement).value);
                 }
               }}
               style={{
@@ -98,7 +92,11 @@ export function InputDialog(props: {
           <button className="btn" onClick={props.onClose} disabled={confirming}>
             {props.cancelText ?? "Cancelar"}
           </button>
-          <button className="btn primary" onClick={() => props.onConfirm(value)} disabled={confirming}>
+          <button
+            className="btn primary"
+            onClick={() => props.onConfirm(inputRef.current?.value ?? "")}
+            disabled={confirming}
+          >
             {confirming ? props.confirmingText ?? "Processando..." : props.confirmText ?? "Continuar"}
           </button>
         </div>

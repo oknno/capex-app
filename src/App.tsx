@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import "./index.css";
 import { getProjectsPage, UnitFilterLimitError } from "./services/sharepoint/projectsApi";
@@ -145,26 +145,20 @@ export default function App() {
     };
   }, [minBootDurationMs]);
 
-  const mainContent = useMemo(() => {
-    if (bootState === "loading") {
-      return (
-        <BootstrapLoader
-          title={LOADING_TITLES[loadingTitleIndex]}
-          subtitle="Conectando ao SharePoint..."
-        />
-      );
-    }
-
-    if (bootState === "error") {
-      return (
-        <BootstrapLoader
-          title="Falha ao iniciar"
-          subtitle={bootError || "Não foi possível conectar ao SharePoint no carregamento inicial."}
-        />
-      );
-    }
-
-    return (
+  let mainContent;
+  if (bootState === "loading") {
+    mainContent = (
+      <BootstrapLoader title={LOADING_TITLES[loadingTitleIndex]} subtitle="Conectando ao SharePoint..." />
+    );
+  } else if (bootState === "error") {
+    mainContent = (
+      <BootstrapLoader
+        title="Falha ao iniciar"
+        subtitle={bootError || "Não foi possível conectar ao SharePoint no carregamento inicial."}
+      />
+    );
+  } else {
+    mainContent = (
       <ProjectsPage
         initialItems={bootstrapData.items}
         initialNextLink={bootstrapData.nextLink}
@@ -174,7 +168,7 @@ export default function App() {
         skipInitialLoad
       />
     );
-  }, [bootError, bootState, bootstrapData.items, bootstrapData.nextLink, loadingTitleIndex]);
+  }
 
   return (
     <ToastProvider>
