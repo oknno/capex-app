@@ -98,8 +98,8 @@ export const ROCE_CLASS_OPTIONS: SelectOption[] = [
 function toFriendlyOperationalLabel(value: string) {
   return value
     .split("_")
-    .map((chunk) => chunk.charAt(0).toUpperCase() + chunk.slice(1))
-    .join(" ");
+    .join(" ")
+    .toUpperCase();
 }
 
 export const OPERATIONAL_CATEGORY_OPTIONS: SelectOption[] = OPERATIONAL_CATEGORIES.map((value) => ({
