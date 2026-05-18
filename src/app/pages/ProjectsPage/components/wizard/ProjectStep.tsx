@@ -117,8 +117,10 @@ export function ProjectStep(props: { draft: ProjectDraft; readOnly: boolean; onC
           </div>
           {["REMANEJAMENTO", "CARRY OVER"].includes(d.fundingSource ?? "") && (
             <FieldText
-              label="Projeto de Origem"
+              label="Projeto"
               value={d.sourceProjectCode ?? ""}
+              placeholder="Informe o projeto"
+              helperText={d.fundingSource === "REMANEJAMENTO" ? "Indique o projeto de origem do remanejamento." : "Indique o projeto carry over."}
               disabled={props.readOnly}
               onChange={(v) => props.onChange({ sourceProjectCode: v.toUpperCase() || undefined })}
             />
