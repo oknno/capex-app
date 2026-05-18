@@ -132,17 +132,17 @@ export function useWizardInitialLoad(params: UseWizardInitialLoadParams) {
     const templateSeedKey = makeStructureTemplateSeedKey(operationalCategory, complexity);
     const activitySeed = buildSuggestedActivitiesByMilestone(templateSeedKey, milestoneTitles);
     const activities: ActivityDraftLocal[] = milestones.flatMap((milestone) => {
-      const suggestions = activitySeed[milestone.Title] ?? [""];
-      return suggestions.map((title) => ({
+      const suggestions = activitySeed[milestone.Title] ?? [{ title: "", placeholder: "" }];
+      return suggestions.map((suggestion) => ({
         tempId: uid("ac"),
-        Title: title,
+        Title: suggestion.title,
         milestoneTempId: milestone.tempId,
         amountBrl: undefined,
         pepElement: undefined,
         startDate: state.project.startDate,
         endDate: state.project.endDate,
         supplier: undefined,
-        activityDescription: undefined
+        activityDescription: suggestion.placeholder || undefined
       }));
     });
 
