@@ -7,9 +7,9 @@ import { projectFieldLabel } from "../fieldLabels";
 
 const styles: Record<string, CSSProperties> = {
   tableWrap: { border: `1px solid ${uiTokens.colors.border}`, borderRadius: uiTokens.radius.md, overflow: "hidden", display: "flex", flexDirection: "column", flex: 1, minHeight: 0 },
-  headerRow: { display: "grid", gridTemplateColumns: "90px 1fr 220px 160px 240px", background: uiTokens.colors.surfaceMuted, borderBottom: `1px solid ${uiTokens.colors.border}` },
+  headerRow: { display: "grid", gridTemplateColumns: "80px minmax(280px, 1.8fr) minmax(200px, 1fr) 130px minmax(180px, 0.8fr)", background: uiTokens.colors.surfaceMuted, borderBottom: `1px solid ${uiTokens.colors.border}` },
   body: { overflowY: "auto", flex: 1, minHeight: 0 },
-  row: { display: "grid", gridTemplateColumns: "90px 1fr 220px 160px 240px", cursor: "pointer", borderBottom: `1px solid ${uiTokens.colors.borderMuted}` },
+  row: { display: "grid", gridTemplateColumns: "80px minmax(280px, 1.8fr) minmax(200px, 1fr) 130px minmax(180px, 0.8fr)", cursor: "pointer", borderBottom: `1px solid ${uiTokens.colors.borderMuted}` },
 };
 
 export function ProjectsTableSection(props: {
@@ -39,10 +39,10 @@ export function ProjectsTableSection(props: {
             return (
               <div key={project.Id} onClick={() => props.onSelect(project.Id)} style={{ ...styles.row, background: active ? uiTokens.colors.accentSoft : uiTokens.colors.surface }}>
                 <Cell>{project.Id}</Cell>
-                <Cell>{project.Title}</Cell>
-                <Cell>{project.unit ?? "-"}</Cell>
+                <Cell title={project.Title}>{project.Title}</Cell>
+                <Cell title={project.unit ?? "-"}>{project.unit ?? "-"}</Cell>
                 <Cell>{project.status ?? "-"}</Cell>
-                <Cell>{project.authorName ?? "-"}</Cell>
+                <Cell title={project.authorName ?? "-"}>{project.authorName ?? "-"}</Cell>
               </div>
             );
           })}
@@ -59,6 +59,6 @@ function CellHeader({ children }: { children: ReactNode }) {
   return <div style={{ padding: "10px 10px", fontSize: 12, fontWeight: 700, color: uiTokens.colors.text }}>{children}</div>;
 }
 
-function Cell({ children }: { children: ReactNode }) {
-  return <div style={{ padding: "10px 10px", fontSize: 13, color: uiTokens.colors.textStrong, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{children}</div>;
+function Cell({ children, title }: { children: ReactNode; title?: string }) {
+  return <div title={title} style={{ padding: "10px 10px", fontSize: 13, color: uiTokens.colors.textStrong, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{children}</div>;
 }
