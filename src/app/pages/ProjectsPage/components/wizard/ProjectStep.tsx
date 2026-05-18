@@ -15,6 +15,7 @@ import {
   OPERATIONAL_CATEGORY_OPTIONS,
   OPERATIONAL_COMPLEXITY_OPTIONS,
   PROGRAM_OPTIONS,
+  ensureProgramOption,
   ROCE_AVAILABILITY_OPTIONS,
   ROCE_CLASS_OPTIONS,
   UNIT_OPTIONS_BY_CENTER,
@@ -49,6 +50,7 @@ function descriptionQualityLabel(text?: string) {
 
 export function ProjectStep(props: { draft: ProjectDraft; readOnly: boolean; onChange: (patch: Partial<ProjectDraft>) => void }) {
   const d = props.draft;
+  const programOptions = ensureProgramOption(PROGRAM_OPTIONS, d.program);
   const yearOptions = buildYearOptions(5);
   const today = todayIsoDate();
   const centerOptions = getOptionsWithFallback(CENTER_OPTIONS_BY_COMPANY[d.company ?? ""], "Centro");
@@ -111,7 +113,7 @@ export function ProjectStep(props: { draft: ProjectDraft; readOnly: boolean; onC
         <div style={wizardLayoutStyles.journeyStack}>
           <div style={wizardLayoutStyles.journeyPairGrid}>
             <FieldSelect label="Origem da Verba" value={d.fundingSource ?? ""} options={FUNDING_SOURCE_OPTIONS} disabled={props.readOnly} onChange={(v) => props.onChange({ fundingSource: v || undefined })} />
-            <FieldSelect label="Programa" value={d.program ?? ""} options={PROGRAM_OPTIONS} disabled={props.readOnly} onChange={(v) => props.onChange({ program: v || undefined })} />
+            <FieldSelect label="Programa" value={d.program ?? ""} options={programOptions} disabled={props.readOnly} onChange={(v) => props.onChange({ program: v || undefined })} />
           </div>
           {d.fundingSource === "REMANEJAMENTO" && (
             <FieldText
