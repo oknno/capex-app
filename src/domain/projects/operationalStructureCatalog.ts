@@ -24,14 +24,46 @@ export const OPERATIONAL_MILESTONES_BY_CATEGORY: Record<OperationalCategory, rea
   infraestrutura_administrativa_ti_e_facilities: ["Definição da Necessidade", "Especificação", "Aquisição / Contratação", "Entrega / Preparação", "Instalação / Configuração", "Liberação para Uso"]
 } as const;
 
-const MILESTONES_COUNT_BY_COMPLEXITY: Record<OperationalComplexity, number> = {
-  baixa: 2,
-  media: 4,
-  alta: 6
+const MILESTONE_INDEXES_BY_COMPLEXITY: Record<OperationalCategory, Record<OperationalComplexity, readonly number[]>> = {
+  aquisicao_e_instalacao_industrial: {
+    alta: [0, 1, 2, 3, 4, 5],
+    media: [0, 2, 4, 5],
+    baixa: [2, 5]
+  },
+  manutencao_industrial_pesada: {
+    alta: [0, 1, 2, 3, 4, 5],
+    media: [0, 1, 3, 5],
+    baixa: [0, 5]
+  },
+  obras_civis_e_infraestrutura_industrial: {
+    alta: [0, 1, 2, 3, 4, 5],
+    media: [0, 1, 3, 5],
+    baixa: [0, 5]
+  },
+  adequacao_normativa_seguranca_e_meio_ambiente: {
+    alta: [0, 1, 2, 3, 4, 5],
+    media: [0, 1, 3, 5],
+    baixa: [0, 5]
+  },
+  automacao_sistemas_e_digitalizacao_industrial: {
+    alta: [0, 1, 2, 3, 4, 5],
+    media: [0, 1, 3, 5],
+    baixa: [0, 5]
+  },
+  engenharia_estudos_e_viabilidade: {
+    alta: [0, 1, 2, 3, 4, 5],
+    media: [0, 1, 2, 5],
+    baixa: [0, 5]
+  },
+  infraestrutura_administrativa_ti_e_facilities: {
+    alta: [0, 1, 2, 3, 4, 5],
+    media: [0, 2, 4, 5],
+    baixa: [2, 5]
+  }
 };
 
 export function buildOperationalMilestones(category: OperationalCategory, complexity: OperationalComplexity): string[] {
   const milestones = OPERATIONAL_MILESTONES_BY_CATEGORY[category];
-  const count = MILESTONES_COUNT_BY_COMPLEXITY[complexity];
-  return milestones.slice(0, count);
+  const indexes = MILESTONE_INDEXES_BY_COMPLEXITY[category][complexity];
+  return indexes.map((index) => milestones[index]);
 }
