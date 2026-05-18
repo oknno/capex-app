@@ -103,7 +103,7 @@ export function ProjectWizardModal(props: {
     };
   }, []);
 
-  const askConfirm = (options: {
+  const askConfirm = useCallback((options: {
     title?: string;
     message: string;
     confirmText?: string;
@@ -119,7 +119,7 @@ export function ProjectWizardModal(props: {
         tone: options.tone,
         resolve
       });
-    });
+    }), []);
 
 
   const handleRegenerateStructure = useCallback(async () => {
@@ -361,7 +361,7 @@ export function ProjectWizardModal(props: {
           {step === "execution" && (
             <div style={{ display: "grid", gap: 12 }}>
               {needStructure && <StructureStep readOnly={readOnly} projectStartDate={state.project.startDate} projectEndDate={state.project.endDate} milestones={state.milestones} activities={state.activities} company={state.project.company} onValidationError={(message) => notify(message, "error")} onChange={(next) => setState((s) => ({ ...s, ...next }))} />}
-              {!needStructure && <PepStep readOnly={readOnly} needStructure={needStructure} milestones={state.milestones} activities={state.activities} peps={state.peps} company={state.project.company} defaultYear={Number(state.project.approvalYear ?? new Date().getFullYear())} onValidationError={(message) => notify(message, "error")} onChange={(nextPeps) => setState((s) => ({ ...s, peps: nextPeps }))} />}
+              {!needStructure && <PepStep readOnly={readOnly} needStructure={needStructure} milestones={state.milestones} activities={state.activities} peps={state.peps} company={state.project.company} defaultYear={Number(state.project.approvalYear ?? new Date().getFullYear())} onChange={(nextPeps) => setState((s) => ({ ...s, peps: nextPeps }))} />}
             </div>
           )}
           {step === "review" && (

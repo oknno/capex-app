@@ -81,7 +81,6 @@ export function ProjectsPage(props: {
   // Este efeito sincroniza seleção da lista com carregamento de detalhes remotos (SharePoint).
   useEffect(() => {
     if (!list.selectedId) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedFull(null);
       setSelectedFullState("idle");
       return;
