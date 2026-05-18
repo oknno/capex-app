@@ -140,6 +140,7 @@ type CommitProjectStructureArgs = {
   activities: ActivityDraftLocal[];
   peps: PepDraftLocal[];
   createProject: (draft: ProjectDraft) => Promise<number>;
+  shouldRefreshStructureSnapshot?: boolean;
   apis?: Partial<{
     updateProject: typeof updateProject;
     deleteProject: typeof deleteProject;
@@ -157,6 +158,38 @@ type CommitProjectStructureArgs = {
     updatePep: typeof updatePep;
   }>;
 };
+
+type StructureSnapshotV1 = {
+  version: 1;
+  operationalCategory: string;
+  complexity: string;
+  milestones: string[];
+};
+
+function parseStructureSnapshot(raw: string | undefined): StructureSnapshotV1 | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as Partial<StructureSnapshotV1>;
+    if (parsed.version !== 1 || !Array.isArray(parsed.milestones)) return null;
+    return {
+      version: 1,
+      operationalCategory: String(parsed.operationalCategory ?? "").trim(),
+      complexity: String(parsed.complexity ?? "").trim(),
+      milestones: parsed.milestones.map((item) => normalizeText(String(item)).toUpperCase())
+    };
+  } catch {
+    return null;
+  }
+}
+
+function buildStructureSnapshot(args: { normalizedProject: ProjectDraft; milestones: MilestoneDraftLocal[] }): StructureSnapshotV1 {
+  return {
+    version: 1,
+    operationalCategory: normalizeText(args.normalizedProject.operationalCategory),
+    complexity: normalizeText(args.normalizedProject.complexity),
+    milestones: args.milestones.map((item) => normalizeText(item.Title).toUpperCase())
+  };
+}
 
 export async function commitProjectStructure(args: CommitProjectStructureArgs): Promise<{ projectId: number; journal: CommitJournal }> {
   const deps = {
@@ -191,6 +224,16 @@ export async function commitProjectStructure(args: CommitProjectStructureArgs): 
   let activeStep: CommitStepDetails | undefined;
 
   let id = args.projectId;
+  const currentSnapshot = parseStructureSnapshot(args.normalizedProject.structureSnapshot);
+  const shouldPersistSnapshot =
+    args.needStructure &&
+    (!currentSnapshot || Boolean(args.shouldRefreshStructureSnapshot));
+  const nextProjectDraft: ProjectDraft = {
+    ...args.normalizedProject,
+    ...(shouldPersistSnapshot
+      ? { structureSnapshot: JSON.stringify(buildStructureSnapshot({ normalizedProject: args.normalizedProject, milestones: args.milestones })) }
+      : {})
+  };
 
   const setStep = (step: CommitStepDetails): void => {
     activeStep = step;
@@ -303,11 +346,11 @@ export async function commitProjectStructure(args: CommitProjectStructureArgs): 
   try {
     if (!id) {
       setStep({ phase: "commit", action: "create", entity: "project", stage: "create-project" });
-      id = await args.createProject({ ...args.normalizedProject, status: "Rascunho" });
+      id = await args.createProject({ ...nextProjectDraft, status: "Rascunho" });
       journal.createdProjectId = id;
     } else {
       setStep({ phase: "commit", action: "update", entity: "project", stage: "update-project", id });
-      await deps.updateProject(id, { ...args.normalizedProject, status: "Rascunho" });
+      await deps.updateProject(id, { ...nextProjectDraft, status: "Rascunho" });
       trackDiagnostic({ phase: "commit", action: "update", entity: "project", id, status: "success", stage: "update-project" });
     }
 
@@ -316,6 +359,14 @@ export async function commitProjectStructure(args: CommitProjectStructureArgs): 
       deps.getActivitiesBatchByProject(id, { pageSize: 500, maxPages: 20 }),
       deps.getPepsBatchByProject(id, { pageSize: 500, maxPages: 20 })
     ]);
+
+    const snapshotMilestones = currentSnapshot?.milestones ?? [];
+    if (args.needStructure && snapshotMilestones.length > 0) {
+      validateLockedMilestones({
+        milestones: args.milestones,
+        existingMilestones: snapshotMilestones.map((Title, index) => ({ Id: index + 1, Title }))
+      });
+    }
 
     const lockedMilestones = isMilestoneSequenceLocked({
       needStructure: args.needStructure,

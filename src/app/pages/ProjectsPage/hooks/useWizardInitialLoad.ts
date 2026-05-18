@@ -96,6 +96,7 @@ export function useWizardInitialLoad(params: UseWizardInitialLoadParams) {
   const [originalNeedStructure, setOriginalNeedStructure] = useState(() => !isDuplicating && params.mode === "edit" && requiresStructure(params.initial?.budgetBrl));
   const [loadingHeader, setLoadingHeader] = useState(false);
   const [errHeader, setErrHeader] = useState("");
+  const [structureRegeneratedExplicitly, setStructureRegeneratedExplicitly] = useState(false);
 
   const [state, setState] = useState<WizardDraftState>(() => ({
     project: sanitizeProjectForDuplication(params.initial),
@@ -106,7 +107,7 @@ export function useWizardInitialLoad(params: UseWizardInitialLoadParams) {
 
   const needStructure = useMemo(() => requiresStructure(state.project.budgetBrl), [state.project.budgetBrl]);
 
-  const regenerateSuggestedStructure = useCallback((withImpactConfirmation: boolean): { ok: boolean; reason?: string } => {
+  const regenerateSuggestedStructure = useCallback((withImpactConfirmation: boolean, explicit = false): { ok: boolean; reason?: string } => {
     if (!needStructure) return { ok: false, reason: "Estrutura não é obrigatória para este orçamento." };
 
     const operationalCategory = String((state.project as { operationalCategory?: string }).operationalCategory ?? "") as OperationalCategory;
@@ -149,6 +150,7 @@ export function useWizardInitialLoad(params: UseWizardInitialLoadParams) {
 
     setState((prev) => ({ ...prev, milestones, activities }));
     setStructureInitialized(true);
+    if (explicit) setStructureRegeneratedExplicitly(true);
     return { ok: true };
   }, [needStructure, state.activities, state.milestones, state.project]);
 
@@ -286,6 +288,7 @@ export function useWizardInitialLoad(params: UseWizardInitialLoadParams) {
     loadingHeader,
     errHeader,
     needStructure,
-    regenerateSuggestedStructure
+    regenerateSuggestedStructure,
+    structureRegeneratedExplicitly
   };
 }

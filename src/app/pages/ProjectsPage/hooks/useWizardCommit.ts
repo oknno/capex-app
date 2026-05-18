@@ -30,6 +30,7 @@ export function useWizardCommit(params: {
     tone?: "danger" | "neutral";
   }) => Promise<boolean>;
   notify: (message: string, tone?: "success" | "error" | "info") => void;
+  shouldRefreshStructureSnapshot?: boolean;
 }, deps: UseWizardCommitDeps = { commitProjectStructure }) {
   const [committing, setCommitting] = useState(false);
   const commitInFlightRef = useRef(false);
@@ -96,6 +97,7 @@ export function useWizardCommit(params: {
         activities: params.state.activities,
         peps: params.state.peps,
         createProject: params.onSubmitProject,
+        shouldRefreshStructureSnapshot: params.shouldRefreshStructureSnapshot
       });
 
       id = commitResult.projectId;

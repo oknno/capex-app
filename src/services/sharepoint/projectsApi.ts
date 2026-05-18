@@ -42,6 +42,7 @@ export type ProjectRow = {
   roceClassification?: string;
   operationalCategory?: string;
   complexity?: string;
+  structureSnapshot?: string;
 };
 
 export type ProjectDraft = Omit<ProjectRow, "Id">;
@@ -110,7 +111,8 @@ const PROJECT_FIELDS: Array<keyof ProjectRow> = [
   "roceLossDescription",
   "roceClassification",
   "operationalCategory",
-  "complexity"
+  "complexity",
+  "structureSnapshot"
 ];
 
 const PROJECT_DEFAULT_SELECT = PROJECT_FIELDS.join(",");
@@ -158,6 +160,8 @@ const SP_PROJECT_INTERNAL_NAMES: Record<ProjectFieldKey, string> = {
   roceClassification: "roceClassification",
   operationalCategory: "operationalCategory",
   complexity: "complexity"
+  ,
+  structureSnapshot: "structureSnapshot"
 };
 
 function asRecord(value: unknown): SpRecord {
