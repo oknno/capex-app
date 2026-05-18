@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { getProjectById } from "../../../../services/sharepoint/projectsApi";
 import type { ProjectDraft, ProjectRow } from "../../../../services/sharepoint/projectsApi";
@@ -22,6 +22,7 @@ import type {
   WizardDraftState
 } from "../../../../domain/projects/project.validators";
 import { normalizeError } from "../../../../application/errors/appError";
+import { decideStructureRegeneration } from "../../../../domain/projects/structureRegenerationPolicy";
 
 type UseWizardInitialLoadParams = {
   mode: "create" | "edit" | "view" | "duplicate";
@@ -91,7 +92,6 @@ export function useWizardInitialLoad(params: UseWizardInitialLoadParams) {
   const initialProjectId = params.initial?.Id;
 
   const [structureInitialized, setStructureInitialized] = useState(false);
-  const createdStructureHashesRef = useRef<Set<string>>(new Set());
   const [projectId, setProjectId] = useState<number | null>(isDuplicating ? null : initialProjectId ?? null);
   const [originalNeedStructure, setOriginalNeedStructure] = useState(() => !isDuplicating && params.mode === "edit" && requiresStructure(params.initial?.budgetBrl));
   const [loadingHeader, setLoadingHeader] = useState(false);
@@ -106,26 +106,28 @@ export function useWizardInitialLoad(params: UseWizardInitialLoadParams) {
 
   const needStructure = useMemo(() => requiresStructure(state.project.budgetBrl), [state.project.budgetBrl]);
 
-  useEffect(() => {
-    if (params.mode !== "create") return;
-    if (!needStructure) {
-      setStructureInitialized(false);
-      return;
-    }
-    if (structureInitialized) return;
+  const regenerateSuggestedStructure = useCallback((withImpactConfirmation: boolean): { ok: boolean; reason?: string } => {
+    if (!needStructure) return { ok: false, reason: "Estrutura não é obrigatória para este orçamento." };
 
     const operationalCategory = String((state.project as { operationalCategory?: string }).operationalCategory ?? "") as OperationalCategory;
     const complexity = String((state.project as { complexity?: string }).complexity ?? "") as OperationalComplexity;
-    if (!operationalCategory || !complexity) return;
+    if (!operationalCategory || !complexity) return { ok: false, reason: "Preencha categoria operacional e complexidade antes de regenerar." };
+
+    const today = new Date().toISOString().slice(0, 10);
+    const hasCompletedMilestone = state.activities.some((activity) => Boolean(activity.endDate) && String(activity.endDate) < today);
+    const decision = decideStructureRegeneration({
+      hasCompletedMilestone,
+      hasManualConfirmation: withImpactConfirmation
+    });
+
+    if (!decision.allowed) return { ok: false, reason: decision.reason };
 
     const milestoneTitles = buildOperationalMilestones(operationalCategory, complexity);
-    if (milestoneTitles.length === 0) return;
+    if (milestoneTitles.length === 0) return { ok: false, reason: "Não há template para a combinação selecionada." };
 
     const milestones: MilestoneDraftLocal[] = milestoneTitles.map((title) => ({ tempId: uid("ms"), Title: title.toUpperCase() }));
-
     const templateSeedKey = makeStructureTemplateSeedKey(operationalCategory, complexity);
     const activitySeed = buildSuggestedActivitiesByMilestone(templateSeedKey, milestoneTitles);
-
     const activities: ActivityDraftLocal[] = milestones.flatMap((milestone) => {
       const suggestions = activitySeed[milestone.Title] ?? [""];
       return suggestions.map((title) => ({
@@ -142,26 +144,25 @@ export function useWizardInitialLoad(params: UseWizardInitialLoadParams) {
     });
 
     const candidateHash = buildStructureFingerprint({ milestones, activities, project: state.project });
-    if (createdStructureHashesRef.current.has(candidateHash)) {
-      setStructureInitialized(true);
+    const currentHash = buildStructureFingerprint({ milestones: state.milestones, activities: state.activities, project: state.project });
+    if (candidateHash === currentHash) return { ok: true };
+
+    setState((prev) => ({ ...prev, milestones, activities }));
+    setStructureInitialized(true);
+    return { ok: true };
+  }, [needStructure, state.activities, state.milestones, state.project]);
+
+  useEffect(() => {
+    if (params.mode !== "create") return;
+    if (!needStructure) {
+      setStructureInitialized(false);
       return;
     }
+    if (structureInitialized) return;
 
-    setState((prev) => {
-      const currentHash = buildStructureFingerprint({ milestones: prev.milestones, activities: prev.activities, project: prev.project });
-      if (currentHash === candidateHash) {
-        createdStructureHashesRef.current.add(candidateHash);
-        return prev;
-      }
-      createdStructureHashesRef.current.add(candidateHash);
-      return {
-        ...prev,
-        milestones,
-        activities
-      };
-    });
-    setStructureInitialized(true);
-  }, [needStructure, params.mode, state.project, structureInitialized]);
+    const result = regenerateSuggestedStructure(true);
+    if (result.ok) setStructureInitialized(true);
+  }, [params.mode, needStructure, regenerateSuggestedStructure, structureInitialized]);
 
   useEffect(() => {
     if (!initialProjectId || params.mode === "create") return;
@@ -284,6 +285,7 @@ export function useWizardInitialLoad(params: UseWizardInitialLoadParams) {
     originalNeedStructure,
     loadingHeader,
     errHeader,
-    needStructure
+    needStructure,
+    regenerateSuggestedStructure
   };
 }

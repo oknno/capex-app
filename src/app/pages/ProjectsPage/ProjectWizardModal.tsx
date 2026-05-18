@@ -58,7 +58,8 @@ export function ProjectWizardModal(props: {
     originalNeedStructure,
     loadingHeader,
     errHeader,
-    needStructure
+    needStructure,
+    regenerateSuggestedStructure
   } = useWizardInitialLoad({ mode: props.mode, initial: props.initial });
 
   const effectivePeps = useMemo(() => {
@@ -116,6 +117,32 @@ export function ProjectWizardModal(props: {
         resolve
       });
     });
+
+
+  const handleRegenerateStructure = useCallback(async () => {
+    const confirmed = await askConfirm({
+      title: "Regenerar estrutura sugerida?",
+      message: [
+        "A regeneração substitui marcos/atividades atuais por uma nova sugestão de template.",
+        "Impactos:",
+        "• Atividades existentes no rascunho atual serão descartadas",
+        "• PEPs automáticos serão recalculados",
+        "• Use esta ação apenas quando a alteração estrutural for intencional"
+      ].join("\n"),
+      confirmText: "Confirmar regeneração",
+      cancelText: "Cancelar"
+    });
+
+    if (!confirmed) return;
+
+    const result = regenerateSuggestedStructure(true);
+    if (!result.ok) {
+      notify(result.reason ?? "Regeneração bloqueada.", "info");
+      return;
+    }
+
+    notify("Estrutura regenerada com sucesso.", "success");
+  }, [askConfirm, notify, regenerateSuggestedStructure]);
 
   const { committing, commitAll } = useWizardCommit({
     readOnly,
@@ -289,6 +316,11 @@ export function ProjectWizardModal(props: {
           {step === "project" && <ProjectStep draft={state.project} readOnly={readOnly} onChange={patchProject} />}
           {step === "execution" && (
             <div style={{ display: "grid", gap: 12 }}>
+              {needStructure && !readOnly && (
+                <div style={{ marginBottom: 8 }}>
+                  <Button onClick={() => { void handleRegenerateStructure(); }}>Regenerar estrutura sugerida</Button>
+                </div>
+              )}
               {needStructure && <StructureStep readOnly={readOnly} projectStartDate={state.project.startDate} projectEndDate={state.project.endDate} milestones={state.milestones} activities={state.activities} company={state.project.company} onValidationError={(message) => notify(message, "error")} onChange={(next) => setState((s) => ({ ...s, ...next }))} />}
               {!needStructure && <PepStep readOnly={readOnly} needStructure={needStructure} milestones={state.milestones} activities={state.activities} peps={state.peps} company={state.project.company} defaultYear={Number(state.project.approvalYear ?? new Date().getFullYear())} onValidationError={(message) => notify(message, "error")} onChange={(nextPeps) => setState((s) => ({ ...s, peps: nextPeps }))} />}
             </div>
