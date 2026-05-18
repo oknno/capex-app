@@ -69,6 +69,8 @@ function sanitizeProjectForDuplication(project?: ProjectRow): ProjectDraft {
     roceLoss: project?.roceLoss,
     roceLossDescription: project?.roceLossDescription,
     roceClassification: project?.roceClassification,
+    operationalCategory: project?.operationalCategory,
+    complexity: project?.complexity,
   };
 }
 
