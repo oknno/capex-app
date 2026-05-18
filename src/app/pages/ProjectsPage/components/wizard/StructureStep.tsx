@@ -41,8 +41,6 @@ export function StructureStep(props: {
 }) {
   const [formsByMilestone, setFormsByMilestone] = useState<Record<string, ActivityFormState>>({});
   const [isAddingActivityByMilestone, setIsAddingActivityByMilestone] = useState<Record<string, boolean>>({});
-  const [isAddingMilestone, setIsAddingMilestone] = useState(false);
-  const [newMilestoneTitle, setNewMilestoneTitle] = useState("");
 
   const activitiesByMilestone = useMemo(() => {
     const grouped: Record<string, ActivityDraftLocal[]> = {};
@@ -74,27 +72,6 @@ export function StructureStep(props: {
   function toggleActivityForm(milestoneTempId: string, open: boolean) {
     setIsAddingActivityByMilestone((prev) => ({ ...prev, [milestoneTempId]: open }));
     if (!open) clearMilestoneForm(milestoneTempId);
-  }
-
-  function removeMilestone(milestoneTempId: string) {
-    props.onChange({
-      milestones: props.milestones.filter((m) => m.tempId !== milestoneTempId),
-      activities: props.activities.filter((a) => a.milestoneTempId !== milestoneTempId)
-    });
-    setFormsByMilestone((prev) => {
-      const next = { ...prev };
-      delete next[milestoneTempId];
-      return next;
-    });
-    setIsAddingActivityByMilestone((prev) => {
-      const next = { ...prev };
-      delete next[milestoneTempId];
-      return next;
-    });
-  }
-
-  function updateMilestoneTitle(milestoneTempId: string, nextTitle: string) {
-    props.onChange({ milestones: props.milestones.map((milestone) => (milestone.tempId === milestoneTempId ? { ...milestone, Title: nextTitle.toUpperCase() } : milestone)) });
   }
 
   function removeActivity(activityTempId: string) {
@@ -139,14 +116,6 @@ export function StructureStep(props: {
     toggleActivityForm(milestoneTempId, false);
   }
 
-  function addMilestone() {
-    if (!newMilestoneTitle.trim()) return props.onValidationError("Nome do marco é obrigatório.");
-
-    props.onChange({ milestones: [...props.milestones, { tempId: uid("ms"), Title: newMilestoneTitle.trim().toUpperCase() }] });
-    setNewMilestoneTitle("");
-    setIsAddingMilestone(false);
-  }
-
   return (
     <div style={{ padding: 14, display: "grid", gap: 14 }}>
       <SectionTitle title="8. KEY Projects" subtitle="Disponível para projetos com orçamento igual ou superior a R$ 1.000.000,00." />
@@ -168,22 +137,9 @@ export function StructureStep(props: {
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: uiTokens.spacing.sm, flexWrap: "wrap" }}>
                       <div style={{ flex: 1, minWidth: 260 }}>
                         <Field label="Nome do Marco">
-                          <input
-                            value={milestone.Title}
-                            onChange={(e) => updateMilestoneTitle(milestone.tempId, e.target.value)}
-                            placeholder="Ex.: Revamp do Alto-Forno 2"
-                            style={wizardLayoutStyles.input}
-                          />
+                          <div style={wizardLayoutStyles.input}>{milestone.Title}</div>
                         </Field>
                       </div>
-                      <Button
-                        disabled={props.readOnly}
-                        onClick={() => removeMilestone(milestone.tempId)}
-                        aria-label="Remover marco"
-                        title="Remover marco"
-                      >
-                        Remover marco
-                      </Button>
                     </div>
                     <div style={{ fontSize: uiTokens.typography.xs, color: uiTokens.colors.textMuted }}>Atividades ({milestoneActivities.length})</div>
                   </div>
@@ -340,37 +296,6 @@ export function StructureStep(props: {
               );
             })}
           </div>
-        )}
-
-        {isAddingMilestone ? (
-          <div style={{ ...wizardLayoutStyles.cardSubtle, background: uiTokens.colors.surface, marginTop: uiTokens.spacing.md }}>
-            <Field label="Nome do Marco">
-              <input
-                value={newMilestoneTitle}
-                onChange={(e) => setNewMilestoneTitle(e.target.value)}
-                style={wizardLayoutStyles.input}
-                placeholder="Ex.: Revamp do Alto-Forno 2"
-              />
-            </Field>
-            <div style={{ display: "flex", gap: uiTokens.spacing.sm, flexWrap: "wrap" }}>
-              <Button tone="primary" disabled={props.readOnly || !newMilestoneTitle.trim()} onClick={addMilestone}>
-                Salvar Marco
-              </Button>
-              <Button
-                disabled={props.readOnly}
-                onClick={() => {
-                  setIsAddingMilestone(false);
-                  setNewMilestoneTitle("");
-                }}
-              >
-                Cancelar
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <Button disabled={props.readOnly} onClick={() => setIsAddingMilestone(true)} style={{ marginTop: uiTokens.spacing.md }}>
-            Adicionar Marco
-          </Button>
         )}
 
         <div style={{ ...wizardLayoutStyles.cardSubtle, background: uiTokens.colors.surface, marginTop: uiTokens.spacing.md }}>
