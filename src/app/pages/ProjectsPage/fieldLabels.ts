@@ -36,7 +36,9 @@ const PROJECT_FIELD_LABELS: Partial<Record<keyof ProjectDraft | "Id", string>> =
   roceGainDescription: "Descrição do Ganho ROCE",
   roceLoss: "Perda ROCE (BRL)",
   roceLossDescription: "Descrição da Perda ROCE",
-  roceClassification: "Classificação ROCE"
+  roceClassification: "Classificação ROCE",
+  operationalCategory: "Categoria Operacional",
+  complexity: "Complexidade"
 };
 
 export function projectFieldLabel(field: keyof ProjectDraft | "Id", fallback?: string): string {

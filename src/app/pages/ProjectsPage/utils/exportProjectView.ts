@@ -94,6 +94,8 @@ const PROJECT_SECTIONS: ProjectSection[] = [
       { field: "approvalYear" },
       { field: "startDate" },
       { field: "endDate" },
+      { field: "complexity", colSpan: 2 },
+      { field: "operationalCategory", colSpan: 2 },
       { field: "projectFunction", colSpan: 4 }
     ]
   },
