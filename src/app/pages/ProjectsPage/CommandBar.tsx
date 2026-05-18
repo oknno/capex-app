@@ -5,7 +5,7 @@ import { uiTokens } from "../../components/ui/tokens";
 import { UNIT_OPTIONS_BY_CENTER } from "./components/wizard/wizardOptions";
 import { PROJECT_STATUSES } from "../../../application/policies/projectActionPolicies";
 
-type SortBy = "Title" | "Id" | "approvalYear";
+type SortBy = "Title" | "Id" | "approvalYear" | "authorName";
 type SortDir = "asc" | "desc";
 
 const STATUS_OPTIONS = [...PROJECT_STATUSES];
@@ -111,6 +111,7 @@ export type ProjectsFilters = {
   searchTitle: string;
   status: string;
   unit: string;
+  requesterName: string;
   sortBy: SortBy;
   sortDir: SortDir;
 };
@@ -372,6 +373,16 @@ function FilterMenu(props: {
               </select>
             </div>
 
+            <div style={styles.fieldGroup}>
+              <label style={styles.fieldLabel}>Solicitante contém</label>
+              <input
+                value={value.requesterName}
+                onChange={(e) => props.onChange({ requesterName: e.target.value })}
+                placeholder="Ex: Gabriel"
+                style={styles.inputBase}
+              />
+            </div>
+
             <div style={styles.twoColumns}>
               <div style={styles.fieldGroup}>
                 <label style={styles.fieldLabel}>Ordenar por</label>
@@ -383,6 +394,7 @@ function FilterMenu(props: {
                   <option value="Title">Nome (Title)</option>
                   <option value="Id">ID</option>
                   <option value="approvalYear">Ano</option>
+                  <option value="authorName">Solicitante</option>
                 </select>
               </div>
 

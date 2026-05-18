@@ -43,7 +43,7 @@ export function ProjectsPage(props: {
 }) {
   const { onRegisterRefresh, skipInitialLoad, allowedUnits, isAdmin, hasAccess } = props;
   const list = useProjectsList(
-    { searchTitle: "", status: "", unit: "", sortBy: "Id", sortDir: "desc" },
+    { searchTitle: "", status: "", unit: "", requesterName: "", sortBy: "Id", sortDir: "desc" },
     {
       initialItems: props.initialItems,
       initialNextLink: props.initialNextLink,

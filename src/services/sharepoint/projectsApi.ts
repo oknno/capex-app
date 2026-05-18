@@ -43,17 +43,18 @@ export type ProjectRow = {
   operationalCategory?: string;
   complexity?: string;
   structureSnapshot?: string;
+  authorName?: string;
 };
 
 export type ProjectDraft = Omit<ProjectRow, "Id">;
 
 export type ProjectUpdate = Partial<ProjectDraft>;
 
-export type SortBy = "Title" | "Id" | "approvalYear";
+export type SortBy = "Title" | "Id" | "approvalYear" | "authorName";
 export type SortDir = "asc" | "desc";
 
 type SpRecord = Record<string, unknown>;
-type ProjectFieldKey = keyof ProjectDraft | "Id";
+type ProjectFieldKey = keyof ProjectDraft | "Id" | "authorName";
 type ChunkedCursorState = {
   v: 1;
   mode: "chunked";
@@ -112,7 +113,8 @@ const PROJECT_FIELDS: Array<keyof ProjectRow> = [
   "roceClassification",
   "operationalCategory",
   "complexity",
-  "structureSnapshot"
+  "structureSnapshot",
+  "authorName"
 ];
 
 const PROJECT_DEFAULT_SELECT = PROJECT_FIELDS.join(",");
@@ -161,7 +163,8 @@ const SP_PROJECT_INTERNAL_NAMES: Record<ProjectFieldKey, string> = {
   operationalCategory: "operationalCategory",
   complexity: "complexity"
   ,
-  structureSnapshot: "structureSnapshot"
+  structureSnapshot: "structureSnapshot",
+  authorName: "Author"
 };
 
 function asRecord(value: unknown): SpRecord {
@@ -287,7 +290,8 @@ async function getProjectsSelectClause(): Promise<string> {
   const schemaFieldNameIndex = await getProjectsFieldNameIndex();
   if (!schemaFieldNameIndex) return PROJECT_DEFAULT_SELECT;
 
-  const available = PROJECT_FIELDS.map((field) => {
+  const available = PROJECT_FIELDS.flatMap((field) => {
+    if (field === "authorName") return ["Author/Title", "Author/Name", "Author/EMail"];
     if (PROJECT_READ_MANDATORY_FIELDS.has(field)) return field;
     return resolveInternalName(field, schemaFieldNameIndex);
   }).filter((field): field is string => Boolean(field));
@@ -320,6 +324,7 @@ export async function getProjectsPage(args: {
   top?: number;
   nextLink?: string;
   searchTitle?: string;
+  requesterContains?: string;
   statusEquals?: string;
   unitEquals?: string;
   unitIn?: string[];
@@ -375,9 +380,11 @@ export async function getProjectsPage(args: {
   const top = args.top ?? 20;
   const orderBy = args.orderBy ?? "Id";
   const orderDir = args.orderDir ?? "desc";
-  const orderExpr = orderBy === "Id" ? `Id ${orderDir}` : `${orderBy} ${orderDir},Id ${orderDir}`;
+  const orderField = orderBy === "authorName" ? "Author/Title" : orderBy;
+  const orderExpr = orderBy === "Id" ? `Id ${orderDir}` : `${orderField} ${orderDir},Id ${orderDir}`;
   const queryPlan = buildProjectsQueryPlan({
     searchTitle: args.searchTitle,
+    requesterContains: args.requesterContains,
     statusEquals: args.statusEquals,
     unitEquals: args.unitEquals,
     unitIn: args.unitIn,
@@ -468,7 +475,7 @@ function buildProjectsPageUrl(
 ): string {
   return (
     `${spConfig.siteUrl}/_api/web/lists/getbytitle('${encodeURIComponent(spConfig.projectsListTitle)}')/items` +
-    `?$select=${select}&$orderby=${args.orderExpr}&$top=${args.top}` +
+    `?$select=${select}&$expand=Author&$orderby=${args.orderExpr}&$top=${args.top}` +
     (args.filters ? `&$filter=${args.filters}` : "")
   );
 }
@@ -481,8 +488,15 @@ async function fetchProjectById(id: number): Promise<SpRecord> {
 function buildProjectByIdUrl(id: number, select: string): string {
   return (
     `${spConfig.siteUrl}/_api/web/lists/getbytitle('${encodeURIComponent(spConfig.projectsListTitle)}')/items(${id})` +
-    `?$select=${select}`
+    `?$select=${select}&$expand=Author`
   );
+}
+
+
+function readAuthorName(source: SpRecord): string | undefined {
+  const author = readFieldValue(source, "Author");
+  const authorRecord = asRecord(author);
+  return readString(authorRecord, "Title") ?? readString(authorRecord, "Name") ?? readString(authorRecord, "EMail") ?? undefined;
 }
 
 function mapProjectRow(x: SpRecord, schemaFieldNameIndex?: Map<string, string> | null): ProjectRow {
@@ -528,7 +542,8 @@ function mapProjectRow(x: SpRecord, schemaFieldNameIndex?: Map<string, string> |
     roceClassification: readString(x, readByField("roceClassification")),
     operationalCategory: readString(x, readByField("operationalCategory")),
     complexity: readString(x, readByField("complexity")),
-    structureSnapshot: readString(x, readByField("structureSnapshot"))
+    structureSnapshot: readString(x, readByField("structureSnapshot")),
+    authorName: readAuthorName(x)
   };
 }
 
