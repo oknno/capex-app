@@ -1,6 +1,7 @@
 export type SelectOption = { value: string; label: string };
 
 import { COMPANY_CENTER_UNIT_LOCATION_MAP } from "./companyStructure";
+import { OPERATIONAL_CATEGORIES, OPERATIONAL_COMPLEXITIES } from "../../../../../domain/projects/operationalStructureCatalog";
 
 export const EXCHANGE_RATE = 5.4;
 
@@ -93,6 +94,23 @@ export const ROCE_CLASS_OPTIONS: SelectOption[] = [
   { value: "PERDA", label: "PERDA" },
   { value: "AMBOS", label: "AMBOS" }
 ];
+
+function toFriendlyOperationalLabel(value: string) {
+  return value
+    .split("_")
+    .map((chunk) => chunk.charAt(0).toUpperCase() + chunk.slice(1))
+    .join(" ");
+}
+
+export const OPERATIONAL_CATEGORY_OPTIONS: SelectOption[] = OPERATIONAL_CATEGORIES.map((value) => ({
+  value,
+  label: toFriendlyOperationalLabel(value)
+}));
+
+export const OPERATIONAL_COMPLEXITY_OPTIONS: SelectOption[] = OPERATIONAL_COMPLEXITIES.map((value) => ({
+  value,
+  label: toFriendlyOperationalLabel(value)
+}));
 
 const PEP_ELEMENT_OPTIONS_DEFAULT: SelectOption[] = [
   { value: "DESP.ENGENHARIA / DETALHAMENTO PROJETO", label: "DESP.ENGENHARIA / DETALHAMENTO PROJETO" },
