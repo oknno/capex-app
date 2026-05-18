@@ -12,6 +12,8 @@ import {
   INVESTMENT_TYPE_OPTIONS,
   KPI_TYPE_OPTIONS,
   LOCATION_OPTIONS_BY_UNIT,
+  OPERATIONAL_CATEGORY_OPTIONS,
+  OPERATIONAL_COMPLEXITY_OPTIONS,
   PROGRAM_OPTIONS,
   ROCE_AVAILABILITY_OPTIONS,
   ROCE_CLASS_OPTIONS,
@@ -81,6 +83,23 @@ export function ProjectStep(props: { draft: ProjectDraft; readOnly: boolean; onC
           <div style={wizardLayoutStyles.journeyPairGrid}>
             <FieldDate label="Data de Início" value={startDateValue} min={today} disabled={props.readOnly} onChange={(v) => props.onChange({ startDate: v || undefined })} />
             <FieldDate label="Data de Término" value={endDateValue} min={startDateValue || today} disabled={props.readOnly} onChange={(v) => props.onChange({ endDate: v || undefined })} />
+          </div>
+
+          <div style={wizardLayoutStyles.journeyPairGrid}>
+            <FieldSelect
+              label="Categoria operacional"
+              value={(d as { operationalCategory?: string }).operationalCategory ?? ""}
+              options={OPERATIONAL_CATEGORY_OPTIONS}
+              disabled={props.readOnly}
+              onChange={(v) => props.onChange({ operationalCategory: v || undefined } as Partial<ProjectDraft>)}
+            />
+            <FieldSelect
+              label="Complexidade"
+              value={(d as { complexity?: string }).complexity ?? ""}
+              options={OPERATIONAL_COMPLEXITY_OPTIONS}
+              disabled={props.readOnly}
+              onChange={(v) => props.onChange({ complexity: v || undefined } as Partial<ProjectDraft>)}
+            />
           </div>
 
           <FieldText label="Função do Projeto" value={d.projectFunction ?? ""} maxLength={35} disabled={props.readOnly} onChange={(v) => props.onChange({ projectFunction: v.toUpperCase().slice(0, 35) })} />
