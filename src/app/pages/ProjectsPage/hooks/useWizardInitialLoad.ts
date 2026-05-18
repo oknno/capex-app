@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { getProjectById } from "../../../../services/sharepoint/projectsApi";
 import type { ProjectDraft, ProjectRow } from "../../../../services/sharepoint/projectsApi";
@@ -6,6 +6,15 @@ import { getMilestonesByProject } from "../../../../services/sharepoint/mileston
 import { getActivitiesBatchByProject } from "../../../../services/sharepoint/activitiesApi";
 import { getPepsBatchByProject } from "../../../../services/sharepoint/pepsApi";
 import { requiresStructure } from "../../../../domain/projects/project.calculations";
+import {
+  buildOperationalMilestones,
+  type OperationalCategory,
+  type OperationalComplexity
+} from "../../../../domain/projects/operationalStructureCatalog";
+import {
+  buildSuggestedActivitiesByMilestone,
+  makeStructureTemplateSeedKey
+} from "../../../../domain/projects/wizardStructureTemplates";
 import type {
   ActivityDraftLocal,
   MilestoneDraftLocal,
@@ -62,11 +71,27 @@ function sanitizeProjectForDuplication(project?: ProjectRow): ProjectDraft {
   };
 }
 
+function buildStructureFingerprint(draft: Pick<WizardDraftState, "milestones" | "activities" | "project">) {
+  const milestones = draft.milestones.map((milestone) => milestone.Title.trim().toUpperCase()).sort();
+  const activities = draft.activities
+    .map((activity) => `${activity.milestoneTempId}:${activity.Title.trim().toUpperCase()}`)
+    .sort();
+
+  return JSON.stringify({
+    budget: Number(draft.project.budgetBrl ?? 0),
+    category: String((draft.project as { operationalCategory?: string }).operationalCategory ?? "").trim().toLowerCase(),
+    complexity: String((draft.project as { complexity?: string }).complexity ?? "").trim().toLowerCase(),
+    milestones,
+    activities
+  });
+}
+
 export function useWizardInitialLoad(params: UseWizardInitialLoadParams) {
   const isDuplicating = params.mode === "duplicate";
   const initialProjectId = params.initial?.Id;
 
   const [structureInitialized, setStructureInitialized] = useState(false);
+  const createdStructureHashesRef = useRef<Set<string>>(new Set());
   const [projectId, setProjectId] = useState<number | null>(isDuplicating ? null : initialProjectId ?? null);
   const [originalNeedStructure, setOriginalNeedStructure] = useState(() => !isDuplicating && params.mode === "edit" && requiresStructure(params.initial?.budgetBrl));
   const [loadingHeader, setLoadingHeader] = useState(false);
@@ -88,31 +113,55 @@ export function useWizardInitialLoad(params: UseWizardInitialLoadParams) {
       return;
     }
     if (structureInitialized) return;
-    if (state.milestones.length > 0 || state.activities.length > 0) {
+
+    const operationalCategory = String((state.project as { operationalCategory?: string }).operationalCategory ?? "") as OperationalCategory;
+    const complexity = String((state.project as { complexity?: string }).complexity ?? "") as OperationalComplexity;
+    if (!operationalCategory || !complexity) return;
+
+    const milestoneTitles = buildOperationalMilestones(operationalCategory, complexity);
+    if (milestoneTitles.length === 0) return;
+
+    const milestones: MilestoneDraftLocal[] = milestoneTitles.map((title) => ({ tempId: uid("ms"), Title: title.toUpperCase() }));
+
+    const templateSeedKey = makeStructureTemplateSeedKey(operationalCategory, complexity);
+    const activitySeed = buildSuggestedActivitiesByMilestone(templateSeedKey, milestoneTitles);
+
+    const activities: ActivityDraftLocal[] = milestones.flatMap((milestone) => {
+      const suggestions = activitySeed[milestone.Title] ?? [""];
+      return suggestions.map((title) => ({
+        tempId: uid("ac"),
+        Title: title,
+        milestoneTempId: milestone.tempId,
+        amountBrl: undefined,
+        pepElement: undefined,
+        startDate: state.project.startDate,
+        endDate: state.project.endDate,
+        supplier: undefined,
+        activityDescription: undefined
+      }));
+    });
+
+    const candidateHash = buildStructureFingerprint({ milestones, activities, project: state.project });
+    if (createdStructureHashesRef.current.has(candidateHash)) {
       setStructureInitialized(true);
       return;
     }
 
-    const milestoneTempId = uid("ms");
-    setState((prev) => ({
-      ...prev,
-      milestones: [{ tempId: milestoneTempId, Title: "" }],
-      activities: [
-        {
-          tempId: uid("ac"),
-          Title: "",
-          milestoneTempId,
-          amountBrl: undefined,
-          pepElement: undefined,
-          startDate: prev.project.startDate,
-          endDate: prev.project.endDate,
-          supplier: undefined,
-          activityDescription: undefined
-        }
-      ]
-    }));
+    setState((prev) => {
+      const currentHash = buildStructureFingerprint({ milestones: prev.milestones, activities: prev.activities, project: prev.project });
+      if (currentHash === candidateHash) {
+        createdStructureHashesRef.current.add(candidateHash);
+        return prev;
+      }
+      createdStructureHashesRef.current.add(candidateHash);
+      return {
+        ...prev,
+        milestones,
+        activities
+      };
+    });
     setStructureInitialized(true);
-  }, [needStructure, params.mode, state.activities.length, state.milestones.length, structureInitialized]);
+  }, [needStructure, params.mode, state.project, structureInitialized]);
 
   useEffect(() => {
     if (!initialProjectId || params.mode === "create") return;
