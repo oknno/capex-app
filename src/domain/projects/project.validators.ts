@@ -74,6 +74,14 @@ export function validateStructure(state: WizardDraftState) {
 
   if (!need) return;
 
+  if (!String((p as { operationalCategory?: string }).operationalCategory ?? "").trim()) {
+    throw new Error("Projetos ≥ 1M exigem Categoria Operacional.");
+  }
+
+  if (!String((p as { complexity?: string }).complexity ?? "").trim()) {
+    throw new Error("Projetos ≥ 1M exigem Complexidade.");
+  }
+
   if (state.milestones.length === 0) throw new Error("Projetos ≥ 1M exigem Milestones.");
   if (state.activities.length === 0) throw new Error("Projetos ≥ 1M exigem Activities.");
 

@@ -142,9 +142,11 @@ export function ProjectWizardModal(props: {
       { key: "projectUser", label: "Usuário do projeto", filled: String(state.project.projectUser ?? "").trim().length > 0 },
       { key: "businessNeed", label: "Necessidade de negócio", filled: String(state.project.businessNeed ?? "").trim().length > 0 },
       { key: "proposedSolution", label: "Solução proposta", filled: String(state.project.proposedSolution ?? "").trim().length > 0 },
-      { key: "investmentType", label: "Tipo de investimento", filled: String(state.project.investmentType ?? "").trim().length > 0 }
+      { key: "investmentType", label: "Tipo de investimento", filled: String(state.project.investmentType ?? "").trim().length > 0 },
+      { key: "operationalCategory", label: "Categoria operacional", filled: !needStructure || String((state.project as { operationalCategory?: string }).operationalCategory ?? "").trim().length > 0 },
+      { key: "complexity", label: "Complexidade", filled: !needStructure || String((state.project as { complexity?: string }).complexity ?? "").trim().length > 0 }
     ],
-    [state.project]
+    [needStructure, state.project]
   );
 
 
@@ -195,11 +197,23 @@ export function ProjectWizardModal(props: {
     if (currentStep === "execution") validateStructure(draftState);
   }
 
+  const getForwardBlockingMessage = useCallback((_currentStep: StepKey, nextStep: StepKey) => {
+    if (readOnly || summaryOnlyView) return null;
+    if (nextStep === "review") {
+      const blockingPendings = pendingItems.filter((item) => item.section === "project" || item.section === "execution");
+      if (blockingPendings.length > 0) {
+        return `Existem pendências que impedem avançar: ${blockingPendings[0]?.message ?? "revise os campos obrigatórios."}`;
+      }
+    }
+    return null;
+  }, [pendingItems, readOnly, summaryOnlyView]);
+
   const { step, stepOrder, currentStepIndex, transitioning, tryStepChange, goNext, goBack } = useWizardNavigation({
     readOnly,
     summaryOnlyView,
     validateCurrentStep,
-    notify
+    notify,
+    getForwardBlockingMessage
   });
 
   const stepLabel = (k: StepKey) => {

@@ -7,6 +7,7 @@ export function useWizardNavigation(params: {
   summaryOnlyView: boolean;
   validateCurrentStep: (currentStep: StepKey) => void;
   notify: (message: string, tone?: "success" | "error" | "info") => void;
+  getForwardBlockingMessage?: (currentStep: StepKey, nextStep: StepKey) => string | null;
 }) {
   const [step, setStep] = useState<StepKey>(params.summaryOnlyView ? "review" : "project");
   const [transitioning, setTransitioning] = useState(false);
@@ -32,6 +33,12 @@ export function useWizardNavigation(params: {
 
     if (canNavigateBack) {
       setStep(nextStep);
+      return;
+    }
+
+    const blockingMessage = params.getForwardBlockingMessage?.(step, nextStep);
+    if (blockingMessage) {
+      params.notify(blockingMessage, "error");
       return;
     }
 
