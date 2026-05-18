@@ -5,27 +5,27 @@ export type StructureTemplateSeedKey = `${OperationalCategory}:${OperationalComp
 const DEFAULT_ACTIVITY_TEMPLATE = ["Planejamento", "Execução", "Validação"] as const;
 
 const TEMPLATE_SEED_BY_KEY: Record<StructureTemplateSeedKey, readonly string[]> = {
-  "aquisicao_e_instalacao_industrial:baixa": ["Especificação", "Contratação"],
-  "aquisicao_e_instalacao_industrial:media": ["Especificação", "Contratação", "Comissionamento"],
-  "aquisicao_e_instalacao_industrial:alta": ["Especificação", "Contratação", "Instalação", "Comissionamento"],
-  "manutencao_industrial_pesada:baixa": ["Inspeção", "Plano de intervenção"],
-  "manutencao_industrial_pesada:media": ["Inspeção", "Plano de intervenção", "Execução"],
-  "manutencao_industrial_pesada:alta": ["Inspeção", "Plano de intervenção", "Execução", "Partida assistida"],
-  "obras_civis_e_estruturas:baixa": ["Levantamento de campo", "Execução civil"],
-  "obras_civis_e_estruturas:media": ["Levantamento de campo", "Execução civil", "Controle de qualidade"],
-  "obras_civis_e_estruturas:alta": ["Levantamento de campo", "Execução civil", "Controle de qualidade", "Entrega técnica"],
-  "adequacao_normativa_seguranca:baixa": ["Gap assessment", "Ação corretiva"],
-  "adequacao_normativa_seguranca:media": ["Gap assessment", "Ação corretiva", "Teste de conformidade"],
-  "adequacao_normativa_seguranca:alta": ["Gap assessment", "Ação corretiva", "Teste de conformidade", "Validação final"],
-  "automacao_sistemas_digital:baixa": ["Mapeamento", "Configuração"],
-  "automacao_sistemas_digital:media": ["Mapeamento", "Configuração", "Integração"],
-  "automacao_sistemas_digital:alta": ["Mapeamento", "Configuração", "Integração", "Go-live assistido"],
-  "engenharia_e_estudos:baixa": ["Coleta de dados", "Análise técnica"],
-  "engenharia_e_estudos:media": ["Coleta de dados", "Análise técnica", "Consolidação"],
-  "engenharia_e_estudos:alta": ["Coleta de dados", "Análise técnica", "Consolidação", "Revisão interdisciplinar"],
-  "grandes_projetos_complexos:baixa": ["Planejamento executivo", "Liberação"],
-  "grandes_projetos_complexos:media": ["Planejamento executivo", "Liberação", "Coordenação de frentes"],
-  "grandes_projetos_complexos:alta": ["Planejamento executivo", "Liberação", "Coordenação de frentes", "Integração final"]
+  "aquisicao_e_instalacao_industrial:baixa": ["Definição técnica", "Aprovação e liberação"],
+  "aquisicao_e_instalacao_industrial:media": ["Definição técnica", "Aquisição", "Fabricação / entrega"],
+  "aquisicao_e_instalacao_industrial:alta": ["Definição técnica", "Aquisição", "Instalação", "Comissionamento e start-up"],
+  "manutencao_industrial_pesada:baixa": ["Diagnóstico técnico", "Planejamento da intervenção"],
+  "manutencao_industrial_pesada:media": ["Diagnóstico técnico", "Planejamento da intervenção", "Execução da intervenção"],
+  "manutencao_industrial_pesada:alta": ["Diagnóstico técnico", "Planejamento da intervenção", "Execução da intervenção", "Testes e retorno operacional"],
+  "obras_civis_e_infraestrutura_industrial:baixa": ["Levantamento de campo", "Engenharia e projeto"],
+  "obras_civis_e_infraestrutura_industrial:media": ["Levantamento de campo", "Engenharia e projeto", "Execução da obra"],
+  "obras_civis_e_infraestrutura_industrial:alta": ["Levantamento de campo", "Execução da obra", "Inspeção e qualidade", "Entrega da obra"],
+  "adequacao_normativa_seguranca_e_meio_ambiente:baixa": ["Diagnóstico de conformidade", "Solução técnica"],
+  "adequacao_normativa_seguranca_e_meio_ambiente:media": ["Diagnóstico de conformidade", "Solução técnica", "Implantação"],
+  "adequacao_normativa_seguranca_e_meio_ambiente:alta": ["Diagnóstico de conformidade", "Solução técnica", "Validação de conformidade", "Encerramento e evidências"],
+  "automacao_sistemas_e_digitalizacao_industrial:baixa": ["Levantamento de requisitos", "Desenvolvimento / configuração"],
+  "automacao_sistemas_e_digitalizacao_industrial:media": ["Levantamento de requisitos", "Desenvolvimento / configuração", "Integração"],
+  "automacao_sistemas_e_digitalizacao_industrial:alta": ["Levantamento de requisitos", "Desenvolvimento / configuração", "Implantação", "Go-live e estabilização"],
+  "engenharia_estudos_e_viabilidade:baixa": ["Levantamento inicial", "Desenvolvimento técnico"],
+  "engenharia_estudos_e_viabilidade:media": ["Levantamento inicial", "Desenvolvimento técnico", "Análise de viabilidade"],
+  "engenharia_estudos_e_viabilidade:alta": ["Levantamento inicial", "Desenvolvimento técnico", "Revisão e validação", "Entrega técnica"],
+  "infraestrutura_administrativa_ti_e_facilities:baixa": ["Definição da necessidade", "Especificação"],
+  "infraestrutura_administrativa_ti_e_facilities:media": ["Definição da necessidade", "Aquisição / contratação", "Entrega / preparação"],
+  "infraestrutura_administrativa_ti_e_facilities:alta": ["Definição da necessidade", "Aquisição / contratação", "Instalação / configuração", "Liberação para uso"]
 };
 
 export function makeStructureTemplateSeedKey(category: OperationalCategory, complexity: OperationalComplexity): StructureTemplateSeedKey {
