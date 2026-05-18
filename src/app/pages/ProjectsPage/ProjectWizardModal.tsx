@@ -125,11 +125,12 @@ export function ProjectWizardModal(props: {
     const confirmed = await askConfirm({
       title: "Regenerar estrutura sugerida?",
       message: [
+        "Ao avançar para a etapa de execução, a estrutura sugerida será regenerada automaticamente.",
         "A regeneração substitui marcos/atividades atuais por uma nova sugestão de template.",
         "Impactos:",
         "• Atividades existentes no rascunho atual serão descartadas",
         "• PEPs automáticos serão recalculados",
-        "• Use esta ação apenas quando a alteração estrutural for intencional"
+        "• Confirme apenas quando a alteração estrutural for intencional"
       ].join("\n"),
       confirmText: "Confirmar regeneração",
       cancelText: "Cancelar"
@@ -356,11 +357,6 @@ export function ProjectWizardModal(props: {
           {step === "project" && <ProjectStep draft={state.project} readOnly={readOnly} onChange={patchProject} />}
           {step === "execution" && (
             <div style={{ display: "grid", gap: 12 }}>
-              {needStructure && !readOnly && (
-                <div style={{ marginBottom: 8 }}>
-                  <Button onClick={() => { void handleRegenerateStructure(); }}>Regenerar estrutura sugerida</Button>
-                </div>
-              )}
               {needStructure && <StructureStep readOnly={readOnly} projectStartDate={state.project.startDate} projectEndDate={state.project.endDate} milestones={state.milestones} activities={state.activities} company={state.project.company} onValidationError={(message) => notify(message, "error")} onChange={(next) => setState((s) => ({ ...s, ...next }))} />}
               {!needStructure && <PepStep readOnly={readOnly} needStructure={needStructure} milestones={state.milestones} activities={state.activities} peps={state.peps} company={state.project.company} defaultYear={Number(state.project.approvalYear ?? new Date().getFullYear())} onValidationError={(message) => notify(message, "error")} onChange={(nextPeps) => setState((s) => ({ ...s, peps: nextPeps }))} />}
             </div>
