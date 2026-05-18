@@ -59,7 +59,8 @@ export function ProjectWizardModal(props: {
     loadingHeader,
     errHeader,
     needStructure,
-    regenerateSuggestedStructure
+    regenerateSuggestedStructure,
+    structureRegeneratedExplicitly
   } = useWizardInitialLoad({ mode: props.mode, initial: props.initial });
 
   const effectivePeps = useMemo(() => {
@@ -135,7 +136,7 @@ export function ProjectWizardModal(props: {
 
     if (!confirmed) return;
 
-    const result = regenerateSuggestedStructure(true);
+    const result = regenerateSuggestedStructure(true, true);
     if (!result.ok) {
       notify(result.reason ?? "Regeneração bloqueada.", "info");
       return;
@@ -155,7 +156,8 @@ export function ProjectWizardModal(props: {
     onSubmitProject: props.onSubmitProject,
     onClose: props.onClose,
     askConfirm,
-    notify
+    notify,
+    shouldRefreshStructureSnapshot: structureRegeneratedExplicitly
   });
 
   const projectRequiredFields = useMemo(
