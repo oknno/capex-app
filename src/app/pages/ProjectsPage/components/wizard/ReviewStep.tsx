@@ -167,6 +167,8 @@ export function ReviewStep(props: {
         <SummaryField label={projectFieldLabel("approvalYear")} value={project.approvalYear} />
         <SummaryField label={projectFieldLabel("startDate")} value={toDateLabel(project.startDate)} />
         <SummaryField label={projectFieldLabel("endDate")} value={toDateLabel(project.endDate)} />
+        <SummaryField label="Categoria operacional" value={project.operationalCategory} colSpan={2} />
+        <SummaryField label="Complexidade" value={project.complexity} colSpan={2} />
         <SummaryField label={projectFieldLabel("projectFunction")} value={project.projectFunction} colSpan={4} />
       </SummarySection>
 
