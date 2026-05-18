@@ -34,6 +34,8 @@ export type ProjectInput = {
   roceLoss?: number;
   roceLossDescription?: string;
   roceClassification?: string;
+  operationalCategory?: string;
+  complexity?: string;
 };
 
 export type ProjectView = ProjectInput & { Id: number };

@@ -40,6 +40,8 @@ export type ProjectRow = {
   roceLoss?: number;
   roceLossDescription?: string;
   roceClassification?: string;
+  operationalCategory?: string;
+  complexity?: string;
 };
 
 export type ProjectDraft = Omit<ProjectRow, "Id">;
@@ -106,7 +108,9 @@ const PROJECT_FIELDS: Array<keyof ProjectRow> = [
   "roceGainDescription",
   "roceLoss",
   "roceLossDescription",
-  "roceClassification"
+  "roceClassification",
+  "operationalCategory",
+  "complexity"
 ];
 
 const PROJECT_DEFAULT_SELECT = PROJECT_FIELDS.join(",");
@@ -151,7 +155,9 @@ const SP_PROJECT_INTERNAL_NAMES: Record<ProjectFieldKey, string> = {
   roceGainDescription: "roceGainDescription",
   roceLoss: "roceLoss",
   roceLossDescription: "roceLossDescription",
-  roceClassification: "roceClassification"
+  roceClassification: "roceClassification",
+  operationalCategory: "operationalCategory",
+  complexity: "complexity"
 };
 
 function asRecord(value: unknown): SpRecord {
