@@ -7,9 +7,9 @@ import { projectFieldLabel } from "../fieldLabels";
 
 const styles: Record<string, CSSProperties> = {
   tableWrap: { border: `1px solid ${uiTokens.colors.border}`, borderRadius: uiTokens.radius.md, overflow: "hidden", display: "flex", flexDirection: "column", flex: 1, minHeight: 0 },
-  headerRow: { display: "grid", gridTemplateColumns: "90px 1fr 220px 160px", background: uiTokens.colors.surfaceMuted, borderBottom: `1px solid ${uiTokens.colors.border}` },
+  headerRow: { display: "grid", gridTemplateColumns: "90px 1fr 220px 160px 240px", background: uiTokens.colors.surfaceMuted, borderBottom: `1px solid ${uiTokens.colors.border}` },
   body: { overflowY: "auto", flex: 1, minHeight: 0 },
-  row: { display: "grid", gridTemplateColumns: "90px 1fr 220px 160px", cursor: "pointer", borderBottom: `1px solid ${uiTokens.colors.borderMuted}` },
+  row: { display: "grid", gridTemplateColumns: "90px 1fr 220px 160px 240px", cursor: "pointer", borderBottom: `1px solid ${uiTokens.colors.borderMuted}` },
 };
 
 export function ProjectsTableSection(props: {
@@ -30,6 +30,7 @@ export function ProjectsTableSection(props: {
           <CellHeader>{projectFieldLabel("Title")}</CellHeader>
           <CellHeader>Unidade</CellHeader>
           <CellHeader>Status</CellHeader>
+          <CellHeader>Solicitante</CellHeader>
         </div>
 
         <div style={styles.body}>
@@ -41,6 +42,7 @@ export function ProjectsTableSection(props: {
                 <Cell>{project.Title}</Cell>
                 <Cell>{project.unit ?? "-"}</Cell>
                 <Cell>{project.status ?? "-"}</Cell>
+                <Cell>{project.authorName ?? "-"}</Cell>
               </div>
             );
           })}

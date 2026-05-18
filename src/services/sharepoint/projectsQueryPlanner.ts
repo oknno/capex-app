@@ -1,10 +1,11 @@
-export type QuerySortBy = "Title" | "Id" | "approvalYear";
+export type QuerySortBy = "Title" | "Id" | "approvalYear" | "authorName";
 export type QuerySortDir = "asc" | "desc";
 
 export type ProjectQueryComparable = {
   Id: number;
   Title: string;
   approvalYear?: number;
+  authorName?: string;
 };
 
 export class UnitFilterLimitError extends Error {
@@ -36,11 +37,13 @@ export function chunkArray<T>(items: T[], chunkSize: number): T[][] {
 
 function buildProjectsBaseFilters(args: {
   searchTitle?: string;
+  requesterContains?: string;
   statusEquals?: string;
   unitEquals?: string;
 }): string[] {
   const filters: string[] = [];
   if (args.searchTitle?.trim()) filters.push(`substringof('${escapeODataString(args.searchTitle.trim())}',Title)`);
+  if (args.requesterContains?.trim()) filters.push(`substringof('${escapeODataString(args.requesterContains.trim())}',Author/Title)`);
   if (args.statusEquals?.trim()) filters.push(`status eq '${escapeODataString(args.statusEquals.trim())}'`);
   if (args.unitEquals?.trim()) filters.push(`unit eq '${escapeODataString(args.unitEquals.trim())}'`);
   return filters;
@@ -48,6 +51,7 @@ function buildProjectsBaseFilters(args: {
 
 export function buildProjectsQueryPlan(args: {
   searchTitle?: string;
+  requesterContains?: string;
   statusEquals?: string;
   unitEquals?: string;
   unitIn?: string[];
@@ -100,7 +104,13 @@ function compareProjects(a: ProjectQueryComparable, b: ProjectQueryComparable, o
   };
 
   const primaryRaw =
-    orderBy === "Title" ? compareString(a.Title, b.Title) : orderBy === "approvalYear" ? compareNumber(a.approvalYear, b.approvalYear) : a.Id - b.Id;
+    orderBy === "Title"
+      ? compareString(a.Title, b.Title)
+      : orderBy === "approvalYear"
+        ? compareNumber(a.approvalYear, b.approvalYear)
+        : orderBy === "authorName"
+          ? compareString(a.authorName, b.authorName)
+          : a.Id - b.Id;
   if (primaryRaw !== 0) return primaryRaw * direction;
 
   const idRaw = a.Id - b.Id;

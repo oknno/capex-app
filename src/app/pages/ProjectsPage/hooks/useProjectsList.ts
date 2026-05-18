@@ -20,7 +20,7 @@ type UseProjectsListOptions = {
 };
 
 const PAGE_SIZE = 15;
-const DEFAULT_FILTERS: ProjectsFilters = { searchTitle: "", status: "", unit: "", sortBy: "Id", sortDir: "desc" };
+const DEFAULT_FILTERS: ProjectsFilters = { searchTitle: "", status: "", unit: "", requesterName: "", sortBy: "Id", sortDir: "desc" };
 
 export function useProjectsList(
   initialFilters: ProjectsFilters,
@@ -44,6 +44,7 @@ export function useProjectsList(
       const res = await deps.getProjectsPage({
         top: PAGE_SIZE,
         searchTitle: filters.searchTitle,
+        requesterContains: filters.requesterName || undefined,
         statusEquals: filters.status || undefined,
         unitEquals: filters.unit || undefined,
         unitIn: options.isAdmin ? undefined : options.allowedUnits,
