@@ -60,6 +60,36 @@ export type RollbackResult = {
   summary: RollbackSummary;
 };
 
+
+export class ProjectStructureMilestonesImmutableError extends Error {
+  readonly userMessage: string;
+
+  constructor(message = "Os marcos deste projeto não podem ser alterados. Mantenha os mesmos marcos (título e ordem) e edite apenas atividades e PEPs.") {
+    super(message);
+    this.name = "ProjectStructureMilestonesImmutableError";
+    this.userMessage = message;
+  }
+}
+
+function isMilestoneSequenceLocked(args: { needStructure: boolean; existingMilestonesCount: number }): boolean {
+  return args.needStructure && args.existingMilestonesCount > 0;
+}
+
+function validateLockedMilestones(args: { milestones: MilestoneDraftLocal[]; existingMilestones: Array<{ Id: number; Title?: string }> }): void {
+  const desired = args.milestones.map((m) => normalizeText(m.Title).toUpperCase());
+  const existing = args.existingMilestones.map((m) => normalizeText(m.Title).toUpperCase());
+
+  if (desired.length !== existing.length) {
+    throw new ProjectStructureMilestonesImmutableError();
+  }
+
+  for (let index = 0; index < existing.length; index += 1) {
+    if (desired[index] !== existing[index]) {
+      throw new ProjectStructureMilestonesImmutableError();
+    }
+  }
+}
+
 export class CommitProjectStructureError extends Error {
   readonly journal: CommitJournal;
   readonly rollback: RollbackResult;
@@ -68,6 +98,7 @@ export class CommitProjectStructureError extends Error {
   readonly details?: {
     rollbackPartialSummary?: RollbackSummary;
   };
+  readonly userMessage: string;
 
   constructor(message: string, args: { journal: CommitJournal; rollback: RollbackResult; cause: unknown; failedStep?: CommitStepDetails }) {
     super(message);
@@ -79,6 +110,9 @@ export class CommitProjectStructureError extends Error {
     this.details = args.rollback.status === "partial"
       ? { rollbackPartialSummary: args.rollback.summary }
       : undefined;
+    this.userMessage = args.cause instanceof ProjectStructureMilestonesImmutableError
+      ? args.cause.userMessage
+      : "Erro ao persistir estrutura do projeto.";
   }
 }
 
@@ -283,6 +317,20 @@ export async function commitProjectStructure(args: CommitProjectStructureArgs): 
       deps.getPepsBatchByProject(id, { pageSize: 500, maxPages: 20 })
     ]);
 
+    const lockedMilestones = isMilestoneSequenceLocked({
+      needStructure: args.needStructure,
+      existingMilestonesCount: existingMilestones.length
+    });
+
+    if (lockedMilestones) {
+      validateLockedMilestones({ milestones: args.milestones, existingMilestones });
+      for (let index = 0; index < args.milestones.length; index += 1) {
+        const milestone = args.milestones[index];
+        const existingMilestone = existingMilestones[index];
+        milestoneIdMap.set(milestone.tempId, existingMilestone.Id);
+      }
+    }
+
     if (!args.needStructure) {
       for (const activity of args.activities) {
         const existingActivityId = parseExistingId(activity.tempId, "ac");
@@ -345,30 +393,37 @@ export async function commitProjectStructure(args: CommitProjectStructureArgs): 
     }
 
     const desiredMilestoneIds = new Set<number>();
-    for (const milestone of args.milestones) {
-      const existingMilestoneId = parseExistingId(milestone.tempId, "ms");
-      const title = milestone.Title.trim().toUpperCase();
 
-      if (existingMilestoneId) {
-        desiredMilestoneIds.add(existingMilestoneId);
-        const existingMilestone = existingMilestones.find((item) => item.Id === existingMilestoneId);
-        if (!existingMilestone || normalizeText(existingMilestone.Title).toUpperCase() !== title) {
-          setStep({ phase: "commit", action: "update", entity: "milestone", stage: "upsert-milestones", id: existingMilestoneId });
-          await deps.updateMilestone(existingMilestoneId, {
+    if (lockedMilestones) {
+      for (const existingMilestone of existingMilestones) {
+        desiredMilestoneIds.add(existingMilestone.Id);
+      }
+    } else {
+      for (const milestone of args.milestones) {
+        const existingMilestoneId = parseExistingId(milestone.tempId, "ms");
+        const title = milestone.Title.trim().toUpperCase();
+
+        if (existingMilestoneId) {
+          desiredMilestoneIds.add(existingMilestoneId);
+          const existingMilestone = existingMilestones.find((item) => item.Id === existingMilestoneId);
+          if (!existingMilestone || normalizeText(existingMilestone.Title).toUpperCase() !== title) {
+            setStep({ phase: "commit", action: "update", entity: "milestone", stage: "upsert-milestones", id: existingMilestoneId });
+            await deps.updateMilestone(existingMilestoneId, {
+              Title: title,
+              projectsIdId: id
+            });
+            trackDiagnostic({ phase: "commit", action: "update", entity: "milestone", id: existingMilestoneId, status: "success", stage: "upsert-milestones" });
+          }
+          milestoneIdMap.set(milestone.tempId, existingMilestoneId);
+        } else {
+          const createdMilestoneId = await deps.createMilestone({
             Title: title,
             projectsIdId: id
           });
-          trackDiagnostic({ phase: "commit", action: "update", entity: "milestone", id: existingMilestoneId, status: "success", stage: "upsert-milestones" });
+          journal.milestoneIds.push(createdMilestoneId);
+          desiredMilestoneIds.add(createdMilestoneId);
+          milestoneIdMap.set(milestone.tempId, createdMilestoneId);
         }
-        milestoneIdMap.set(milestone.tempId, existingMilestoneId);
-      } else {
-        const createdMilestoneId = await deps.createMilestone({
-          Title: title,
-          projectsIdId: id
-        });
-        journal.milestoneIds.push(createdMilestoneId);
-        desiredMilestoneIds.add(createdMilestoneId);
-        milestoneIdMap.set(milestone.tempId, createdMilestoneId);
       }
     }
 

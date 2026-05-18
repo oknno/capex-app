@@ -96,7 +96,7 @@ test("criação completa persiste projeto, milestones, atividades e PEPs", async
   assert.equal(calls.some((c) => c.name === "createPep"), true);
 });
 
-test("atualização com limpeza remove órfãos de milestones, atividades e PEPs", async () => {
+test("atualização com estrutura ativa limpa órfãos apenas de atividades e PEPs", async () => {
   const { deps, calls } = makeDeps({
     getMilestonesByProject: async () => [{ Id: 1, Title: "M1" }, { Id: 2, Title: "Órfão" }],
     getActivitiesBatchByProject: async () => [{ Id: 11 }, { Id: 12 }],
@@ -107,7 +107,7 @@ test("atualização com limpeza remove órfãos de milestones, atividades e PEPs
     projectId: 9,
     normalizedProject: makeDraft(),
     needStructure: true,
-    milestones: [{ tempId: "ms_1", Title: "M1" }],
+    milestones: [{ tempId: "ms_1", Title: "M1" }, { tempId: "ms_2", Title: "Órfão" }],
     activities: [{ tempId: "ac_11", Title: "A1", milestoneTempId: "ms_1" }],
     peps: [{ tempId: "pp_21", Title: "PEP 21", year: 2026, amountBrl: 50, activityTempId: "ac_11" }],
     createProject: async () => 9,
@@ -116,10 +116,10 @@ test("atualização com limpeza remove órfãos de milestones, atividades e PEPs
 
   assert.deepEqual(calls.filter((c) => c.name === "deletePep").map((c) => c.args[0]), [22]);
   assert.deepEqual(calls.filter((c) => c.name === "deleteActivity").map((c) => c.args[0]), [12]);
-  assert.deepEqual(calls.filter((c) => c.name === "deleteMilestone").map((c) => c.args[0]), [2]);
+  assert.deepEqual(calls.filter((c) => c.name === "deleteMilestone").map((c) => c.args[0]), []);
   assert.equal(result.journal.diagnostics.some((d) => d.stage === "cleanup-peps" && d.status === "success"), true);
   assert.equal(result.journal.diagnostics.some((d) => d.stage === "cleanup-activities" && d.status === "success"), true);
-  assert.equal(result.journal.diagnostics.some((d) => d.stage === "cleanup-milestones" && d.status === "success"), true);
+  assert.equal(result.journal.diagnostics.some((d) => d.stage === "cleanup-milestones"), false);
 });
 
 test("transição KEY→não-KEY com purge remove estrutura e mantém somente PEPs desejados", async () => {
@@ -147,6 +147,83 @@ test("transição KEY→não-KEY com purge remove estrutura e mantém somente PE
   assert.equal(calls.some((c) => c.name === "updatePep" && c.args[0] === 21), true);
 });
 
+
+test("estrutura ativa bloqueia inclusão de marcos", async () => {
+  const { deps, calls } = makeDeps({
+    getMilestonesByProject: async () => [{ Id: 1, Title: "M1" }]
+  });
+
+  await assert.rejects(
+    commitProjectStructure({
+      projectId: 9,
+      normalizedProject: makeDraft(),
+      needStructure: true,
+      milestones: [{ tempId: "ms_1", Title: "M1" }, { tempId: "ms_tmp_2", Title: "M2" }],
+      activities: [],
+      peps: [],
+      createProject: async () => 9,
+      apis: deps
+    }),
+    (error) => {
+      assert.equal(error instanceof CommitProjectStructureError, true);
+      assert.equal(error.userMessage.includes("marcos"), true);
+      return true;
+    }
+  );
+
+  assert.equal(calls.some((c) => c.name === "createMilestone" || c.name === "updateMilestone" || c.name === "deleteMilestone"), false);
+});
+
+test("estrutura ativa bloqueia renomeação e reordenação de marcos", async () => {
+  const { deps } = makeDeps({
+    getMilestonesByProject: async () => [{ Id: 1, Title: "M1" }, { Id: 2, Title: "M2" }]
+  });
+
+  await assert.rejects(
+    commitProjectStructure({
+      projectId: 9,
+      normalizedProject: makeDraft(),
+      needStructure: true,
+      milestones: [{ tempId: "ms_2", Title: "M2" }, { tempId: "ms_1", Title: "M1 RENOMEADO" }],
+      activities: [],
+      peps: [],
+      createProject: async () => 9,
+      apis: deps
+    }),
+    (error) => {
+      assert.equal(error instanceof CommitProjectStructureError, true);
+      assert.equal(error.userMessage.includes("edite apenas atividades e PEPs"), true);
+      return true;
+    }
+  );
+});
+
+test("estrutura ativa permite operações apenas em atividades e PEPs", async () => {
+  const { deps, calls } = makeDeps({
+    getMilestonesByProject: async () => [{ Id: 1, Title: "M1" }, { Id: 2, Title: "M2" }],
+    getActivitiesBatchByProject: async () => [{ Id: 11 }, { Id: 12 }],
+    getPepsBatchByProject: async () => [{ Id: 21 }, { Id: 22 }]
+  });
+
+  await commitProjectStructure({
+    projectId: 9,
+    normalizedProject: makeDraft(),
+    needStructure: true,
+    milestones: [{ tempId: "ms_a", Title: "M1" }, { tempId: "ms_b", Title: "M2" }],
+    activities: [
+      { tempId: "ac_11", Title: "A1", milestoneTempId: "ms_a" },
+      { tempId: "ac_tmp_2", Title: "A2", milestoneTempId: "ms_b" }
+    ],
+    peps: [{ tempId: "pp_21", Title: "PEP 21", year: 2026, amountBrl: 200, activityTempId: "ac_11" }],
+    createProject: async () => 9,
+    apis: deps
+  });
+
+  assert.equal(calls.some((c) => c.name === "createMilestone" || c.name === "updateMilestone" || c.name === "deleteMilestone"), false);
+  assert.equal(calls.some((c) => c.name === "createActivity"), true);
+  assert.deepEqual(calls.filter((c) => c.name === "deleteActivity").map((c) => c.args[0]), [12]);
+  assert.deepEqual(calls.filter((c) => c.name === "deletePep").map((c) => c.args[0]), [22]);
+});
 test("erro em etapa intermediária retorna CommitProjectStructureError com journal e failedStep", async () => {
   const { deps } = makeDeps({
     updateActivity: async () => {

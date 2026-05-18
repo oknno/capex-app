@@ -106,7 +106,7 @@ export function useWizardCommit(params: {
     } catch (error: unknown) {
       if (error instanceof CommitProjectStructureError) {
         console.error(error);
-        params.notify("Não foi possível salvar o rascunho. Tente novamente.", "error");
+        params.notify(error.userMessage, "error");
       } else {
         const appError = normalizeError(error, "Não foi possível concluir o commit.");
         params.notify(appError.userMessage, "error");
