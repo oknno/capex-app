@@ -7,9 +7,10 @@ import { projectFieldLabel } from "../fieldLabels";
 
 const styles: Record<string, CSSProperties> = {
   tableWrap: { border: `1px solid ${uiTokens.colors.border}`, borderRadius: uiTokens.radius.md, overflow: "hidden", display: "flex", flexDirection: "column", flex: 1, minHeight: 0 },
-  headerRow: { display: "grid", gridTemplateColumns: "80px minmax(280px, 1.8fr) minmax(200px, 1fr) 130px minmax(180px, 0.8fr)", background: uiTokens.colors.surfaceMuted, borderBottom: `1px solid ${uiTokens.colors.border}` },
-  body: { overflowY: "auto", flex: 1, minHeight: 0 },
-  row: { display: "grid", gridTemplateColumns: "80px minmax(280px, 1.8fr) minmax(200px, 1fr) 130px minmax(180px, 0.8fr)", cursor: "pointer", borderBottom: `1px solid ${uiTokens.colors.borderMuted}` },
+  scroller: { overflowX: "auto", overflowY: "hidden", flex: 1, minHeight: 0 },
+  headerRow: { display: "grid", gridTemplateColumns: "70px 260px 260px 150px 260px", minWidth: 1000, background: uiTokens.colors.surfaceMuted, borderBottom: `1px solid ${uiTokens.colors.border}` },
+  body: { overflowY: "auto", minWidth: 1000, minHeight: 0, flex: 1 },
+  row: { display: "grid", gridTemplateColumns: "70px 260px 260px 150px 260px", minWidth: 1000, cursor: "pointer", borderBottom: `1px solid ${uiTokens.colors.borderMuted}` },
 };
 
 export function ProjectsTableSection(props: {
@@ -25,6 +26,7 @@ export function ProjectsTableSection(props: {
       <div style={{ marginTop: 10 }} />
 
       <div style={styles.tableWrap}>
+        <div style={styles.scroller}>
         <div style={styles.headerRow}>
           <CellHeader>ID</CellHeader>
           <CellHeader>{projectFieldLabel("Title")}</CellHeader>
@@ -41,7 +43,7 @@ export function ProjectsTableSection(props: {
                 <Cell>{project.Id}</Cell>
                 <Cell title={project.Title}>{project.Title}</Cell>
                 <Cell title={project.unit ?? "-"}>{project.unit ?? "-"}</Cell>
-                <Cell>{project.status ?? "-"}</Cell>
+                <Cell title={project.status ?? "-"}>{project.status ?? "-"}</Cell>
                 <Cell title={project.authorName ?? "-"}>{project.authorName ?? "-"}</Cell>
               </div>
             );
@@ -49,6 +51,7 @@ export function ProjectsTableSection(props: {
 
           {!props.items.length && props.state !== "loading" && <div style={{ padding: 12 }}><StateMessage state="empty" message="Nenhum item encontrado." /></div>}
           {props.state === "loading" && <div style={{ padding: 12 }}><StateMessage state="loading" message="Carregando lista..." /></div>}
+        </div>
         </div>
       </div>
     </>
