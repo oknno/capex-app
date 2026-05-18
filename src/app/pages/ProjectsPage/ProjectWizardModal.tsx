@@ -61,7 +61,8 @@ export function ProjectWizardModal(props: {
     errHeader,
     needStructure,
     regenerateSuggestedStructure,
-    structureRegeneratedExplicitly
+    structureRegeneratedExplicitly,
+    structureInitialized
   } = useWizardInitialLoad({ mode: props.mode, initial: props.initial });
 
   const effectivePeps = useMemo(() => {
@@ -271,10 +272,12 @@ export function ProjectWizardModal(props: {
       const currentOperationalCategory = String((state.project as { operationalCategory?: string }).operationalCategory ?? "").trim();
       const currentComplexity = String((state.project as { complexity?: string }).complexity ?? "").trim();
       const lastSeed = lastStructureSeedRef.current;
-      const shouldRegenerateOnAdvance =
-        Boolean(currentOperationalCategory) &&
-        Boolean(currentComplexity) &&
-        (!!lastSeed && (lastSeed.operationalCategory !== currentOperationalCategory || lastSeed.complexity !== currentComplexity));
+      const requiredStructureFieldsFilled = Boolean(currentOperationalCategory) && Boolean(currentComplexity);
+      const seedChanged =
+        Boolean(lastSeed) &&
+        (lastSeed?.operationalCategory !== currentOperationalCategory || lastSeed?.complexity !== currentComplexity);
+      const shouldInitializeStructureOnAdvance = requiredStructureFieldsFilled && !structureInitialized;
+      const shouldRegenerateOnAdvance = shouldInitializeStructureOnAdvance || (requiredStructureFieldsFilled && seedChanged);
 
       if (shouldRegenerateOnAdvance) {
         await handleRegenerateStructure();
@@ -282,7 +285,7 @@ export function ProjectWizardModal(props: {
     }
 
     goNext();
-  }, [currentStepIndex, goNext, handleRegenerateStructure, needStructure, readOnly, state.project, stepOrder]);
+  }, [currentStepIndex, goNext, handleRegenerateStructure, needStructure, readOnly, state.project, stepOrder, structureInitialized]);
 
   const stepLabel = (k: StepKey) => {
     if (k === "project") return "Toda a informação do projeto";

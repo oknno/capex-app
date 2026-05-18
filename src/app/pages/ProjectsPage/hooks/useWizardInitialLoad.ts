@@ -291,6 +291,7 @@ export function useWizardInitialLoad(params: UseWizardInitialLoadParams) {
     errHeader,
     needStructure,
     regenerateSuggestedStructure,
-    structureRegeneratedExplicitly
+    structureRegeneratedExplicitly,
+    structureInitialized
   };
 }
