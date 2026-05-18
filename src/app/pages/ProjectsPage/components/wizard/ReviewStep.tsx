@@ -175,7 +175,7 @@ export function ReviewStep(props: {
       <SummarySection title="2. Origem e Programa" subtitle="Vínculo da verba com iniciativa e projeto de referência." columns={3}>
         <SummaryField label="Origem da verba" value={project.fundingSource} />
         <SummaryField label="Programa" value={project.program} />
-        <SummaryField label="Projeto de origem" value={project.sourceProjectCode} />
+        {["REMANEJAMENTO", "CARRY OVER"].includes(project.fundingSource ?? "") && <SummaryField label="Projeto" value={project.sourceProjectCode} />}
       </SummarySection>
 
       <SummarySection title="3. Informação Operacional" subtitle="Estrutura organizacional e responsáveis pela execução." columns={2}>

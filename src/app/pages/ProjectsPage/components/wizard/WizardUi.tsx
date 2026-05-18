@@ -47,27 +47,30 @@ export function SectionTitle(props: { title: string; subtitle?: string }) {
   return <Section title={props.title} subtitle={props.subtitle} />;
 }
 
-function FieldInput(props: { label: string; value: FieldValue; placeholder?: string; disabled?: boolean; onChange: (v: string) => void; inputMode?: "numeric" | "text"; type?: "text" | "number" | "date"; min?: string; max?: string; maxLength?: number; step?: string }) {
+function FieldInput(props: { label: string; value: FieldValue; placeholder?: string; helperText?: string; disabled?: boolean; onChange: (v: string) => void; inputMode?: "numeric" | "text"; type?: "text" | "number" | "date"; min?: string; max?: string; maxLength?: number; step?: string }) {
   return (
     <Field label={props.label}>
-      <input
-        value={String(props.value ?? "")}
-        placeholder={props.placeholder}
-        disabled={props.disabled}
-        inputMode={props.inputMode}
-        type={props.type ?? "text"}
-        min={props.min}
-        max={props.max}
-        maxLength={props.maxLength}
-        step={props.step}
-        onChange={(e) => props.onChange(e.target.value)}
-        style={styles.input}
-      />
+      <>
+        <input
+          value={String(props.value ?? "")}
+          placeholder={props.placeholder}
+          disabled={props.disabled}
+          inputMode={props.inputMode}
+          type={props.type ?? "text"}
+          min={props.min}
+          max={props.max}
+          maxLength={props.maxLength}
+          step={props.step}
+          onChange={(e) => props.onChange(e.target.value)}
+          style={styles.input}
+        />
+        {props.helperText ? <small style={styles.helperText}>{props.helperText}</small> : null}
+      </>
     </Field>
   );
 }
 
-export function FieldText(props: { label: string; value: FieldValue; placeholder?: string; disabled?: boolean; maxLength?: number; onChange: (v: string) => void }) {
+export function FieldText(props: { label: string; value: FieldValue; placeholder?: string; helperText?: string; disabled?: boolean; maxLength?: number; onChange: (v: string) => void }) {
   return <FieldInput {...props} />;
 }
 
@@ -120,6 +123,10 @@ const styles: Record<string, CSSProperties> = {
     background: uiTokens.colors.surface
   },
   input: wizardLayoutStyles.input,
+  helperText: {
+    color: uiTokens.colors.textMuted,
+    fontSize: uiTokens.typography.xs
+  }
 };
 
 export function FieldDate(props: { label: string; value: FieldValue; disabled?: boolean; min?: string; max?: string; onChange: (v: string) => void }) {
