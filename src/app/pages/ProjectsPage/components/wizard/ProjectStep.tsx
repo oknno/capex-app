@@ -115,7 +115,7 @@ export function ProjectStep(props: { draft: ProjectDraft; readOnly: boolean; onC
             <FieldSelect label="Origem da Verba" value={d.fundingSource ?? ""} options={FUNDING_SOURCE_OPTIONS} disabled={props.readOnly} onChange={(v) => props.onChange({ fundingSource: v || undefined })} />
             <FieldSelect label="Programa" value={d.program ?? ""} options={programOptions} disabled={props.readOnly} onChange={(v) => props.onChange({ program: v || undefined })} />
           </div>
-          {d.fundingSource === "REMANEJAMENTO" && (
+          {["REMANEJAMENTO", "CARRY OVER"].includes(d.fundingSource ?? "") && (
             <FieldText
               label="Projeto de Origem"
               value={d.sourceProjectCode ?? ""}
