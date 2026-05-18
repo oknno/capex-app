@@ -146,6 +146,139 @@ const ACTIVITY_TEMPLATES_BY_CATEGORY_AND_MILESTONE: Partial<Record<OperationalCa
       { title: "Encerrar serviço/projeto", placeholder: "Encerrar serviço/projeto" }
     ]
   },
+
+  automacao_sistemas_e_digitalizacao_industrial: {
+    "LEVANTAMENTO DE REQUISITOS": [
+      { title: "Mapear necessidade da área", placeholder: "Mapear necessidade da área" },
+      { title: "Definir requisitos funcionais", placeholder: "Definir requisitos funcionais" },
+      { title: "Definir requisitos técnicos", placeholder: "Definir requisitos técnicos" },
+      { title: "Identificar usuários envolvidos", placeholder: "Identificar usuários envolvidos" },
+      { title: "Validar critérios de sucesso", placeholder: "Validar critérios de sucesso" }
+    ],
+    "DESENVOLVIMENTO / CONFIGURAÇÃO": [
+      { title: "Desenvolver lógica, telas ou funcionalidades", placeholder: "Desenvolver lógica, telas ou funcionalidades" },
+      { title: "Configurar sistema/equipamento", placeholder: "Configurar sistema/equipamento" },
+      { title: "Parametrizar regras de operação", placeholder: "Parametrizar regras de operação" },
+      { title: "Preparar ambiente de teste", placeholder: "Preparar ambiente de teste" },
+      { title: "Documentar configurações", placeholder: "Documentar configurações" }
+    ],
+    "INTEGRAÇÃO": [
+      { title: "Integrar com PLC, supervisório, banco de dados ou sistema corporativo", placeholder: "Integrar com PLC, supervisório, banco de dados ou sistema corporativo" },
+      { title: "Validar comunicação entre sistemas", placeholder: "Validar comunicação entre sistemas" },
+      { title: "Testar troca de dados", placeholder: "Testar troca de dados" },
+      { title: "Corrigir falhas de integração", placeholder: "Corrigir falhas de integração" },
+      { title: "Registrar evidências de teste", placeholder: "Registrar evidências de teste" }
+    ],
+    "IMPLANTAÇÃO": [
+      { title: "Instalar solução em ambiente produtivo", placeholder: "Instalar solução em ambiente produtivo" },
+      { title: "Configurar equipamentos em campo", placeholder: "Configurar equipamentos em campo" },
+      { title: "Migrar dados, se aplicável", placeholder: "Migrar dados, se aplicável" },
+      { title: "Preparar usuários", placeholder: "Preparar usuários" },
+      { title: "Registrar pendências de implantação", placeholder: "Registrar pendências de implantação" }
+    ],
+    "HOMOLOGAÇÃO": [
+      { title: "Executar testes com usuários-chave", placeholder: "Executar testes com usuários-chave" },
+      { title: "Validar regras de negócio/processo", placeholder: "Validar regras de negócio/processo" },
+      { title: "Confirmar aderência aos requisitos aprovados", placeholder: "Confirmar aderência aos requisitos aprovados" },
+      { title: "Registrar falhas ou ajustes necessários", placeholder: "Registrar falhas ou ajustes necessários" },
+      { title: "Obter aceite da área usuária", placeholder: "Obter aceite da área usuária" }
+    ],
+    "GO-LIVE E ESTABILIZAÇÃO": [
+      { title: "Liberar solução para uso oficial", placeholder: "Liberar solução para uso oficial" },
+      { title: "Acompanhar operação inicial", placeholder: "Acompanhar operação inicial" },
+      { title: "Monitorar falhas pós-implantação", placeholder: "Monitorar falhas pós-implantação" },
+      { title: "Corrigir problemas críticos", placeholder: "Corrigir problemas críticos" },
+      { title: "Formalizar encerramento da implantação", placeholder: "Formalizar encerramento da implantação" }
+    ]
+  },
+  engenharia_estudos_e_viabilidade: {
+    "LEVANTAMENTO INICIAL": [
+      { title: "Identificar problema ou oportunidade", placeholder: "Identificar problema ou oportunidade" },
+      { title: "Levantar dados técnicos existentes", placeholder: "Levantar dados técnicos existentes" },
+      { title: "Coletar informações operacionais", placeholder: "Coletar informações operacionais" },
+      { title: "Realizar visita técnica", placeholder: "Realizar visita técnica" },
+      { title: "Definir premissas iniciais", placeholder: "Definir premissas iniciais" }
+    ],
+    "DESENVOLVIMENTO TÉCNICO": [
+      { title: "Desenvolver alternativas técnicas", placeholder: "Desenvolver alternativas técnicas" },
+      { title: "Elaborar desenhos preliminares", placeholder: "Elaborar desenhos preliminares" },
+      { title: "Elaborar memoriais técnicos", placeholder: "Elaborar memoriais técnicos" },
+      { title: "Estimar recursos necessários", placeholder: "Estimar recursos necessários" },
+      { title: "Consolidar solução técnica preliminar", placeholder: "Consolidar solução técnica preliminar" }
+    ],
+    "ANÁLISE DE VIABILIDADE": [
+      { title: "Estimar CAPEX preliminar", placeholder: "Estimar CAPEX preliminar" },
+      { title: "Avaliar benefícios esperados", placeholder: "Avaliar benefícios esperados" },
+      { title: "Avaliar riscos técnicos", placeholder: "Avaliar riscos técnicos" },
+      { title: "Comparar alternativas", placeholder: "Comparar alternativas" },
+      { title: "Definir recomendação técnica", placeholder: "Definir recomendação técnica" }
+    ],
+    "REVISÃO E VALIDAÇÃO": [
+      { title: "Revisar premissas do estudo", placeholder: "Revisar premissas do estudo" },
+      { title: "Validar alternativa recomendada", placeholder: "Validar alternativa recomendada" },
+      { title: "Revisar estimativas de custo", placeholder: "Revisar estimativas de custo" },
+      { title: "Ajustar documentação técnica", placeholder: "Ajustar documentação técnica" },
+      { title: "Validar com áreas envolvidas", placeholder: "Validar com áreas envolvidas" }
+    ],
+    "APROVAÇÃO": [
+      { title: "Apresentar estudo técnico", placeholder: "Apresentar estudo técnico" },
+      { title: "Submeter recomendação à liderança", placeholder: "Submeter recomendação à liderança" },
+      { title: "Validar continuidade do projeto", placeholder: "Validar continuidade do projeto" },
+      { title: "Registrar decisão", placeholder: "Registrar decisão" },
+      { title: "Liberar próxima fase ou arquivamento", placeholder: "Liberar próxima fase ou arquivamento" }
+    ],
+    "ENTREGA TÉCNICA": [
+      { title: "Entregar relatório final", placeholder: "Entregar relatório final" },
+      { title: "Entregar desenhos/memoriais", placeholder: "Entregar desenhos/memoriais" },
+      { title: "Arquivar documentação técnica", placeholder: "Arquivar documentação técnica" },
+      { title: "Registrar recomendações", placeholder: "Registrar recomendações" },
+      { title: "Encerrar estudo no sistema", placeholder: "Encerrar estudo no sistema" }
+    ]
+  },
+  infraestrutura_administrativa_ti_e_facilities: {
+    "DEFINIÇÃO DA NECESSIDADE": [
+      { title: "Identificar demanda da área solicitante", placeholder: "Identificar demanda da área solicitante" },
+      { title: "Descrever problema ou necessidade", placeholder: "Descrever problema ou necessidade" },
+      { title: "Validar objetivo do investimento", placeholder: "Validar objetivo do investimento" },
+      { title: "Confirmar público usuário", placeholder: "Confirmar público usuário" },
+      { title: "Registrar justificativa do investimento", placeholder: "Registrar justificativa do investimento" }
+    ],
+    "ESPECIFICAÇÃO": [
+      { title: "Definir características técnicas dos itens", placeholder: "Definir características técnicas dos itens" },
+      { title: "Validar padrão corporativo", placeholder: "Validar padrão corporativo" },
+      { title: "Verificar requisitos de TI, rede, energia ou infraestrutura", placeholder: "Verificar requisitos de TI, rede, energia ou infraestrutura" },
+      { title: "Estimar custo preliminar", placeholder: "Estimar custo preliminar" },
+      { title: "Validar especificação com área responsável", placeholder: "Validar especificação com área responsável" }
+    ],
+    "AQUISIÇÃO / CONTRATAÇÃO": [
+      { title: "Solicitar cotações", placeholder: "Solicitar cotações" },
+      { title: "Equalizar propostas", placeholder: "Equalizar propostas" },
+      { title: "Definir fornecedor", placeholder: "Definir fornecedor" },
+      { title: "Emitir pedido de compra", placeholder: "Emitir pedido de compra" },
+      { title: "Confirmar prazo de entrega", placeholder: "Confirmar prazo de entrega" }
+    ],
+    "ENTREGA / PREPARAÇÃO": [
+      { title: "Acompanhar entrega dos itens", placeholder: "Acompanhar entrega dos itens" },
+      { title: "Conferir material recebido", placeholder: "Conferir material recebido" },
+      { title: "Preparar local de instalação", placeholder: "Preparar local de instalação" },
+      { title: "Validar infraestrutura necessária", placeholder: "Validar infraestrutura necessária" },
+      { title: "Planejar instalação com usuário final", placeholder: "Planejar instalação com usuário final" }
+    ],
+    "INSTALAÇÃO / CONFIGURAÇÃO": [
+      { title: "Instalar equipamentos, mobiliário ou infraestrutura", placeholder: "Instalar equipamentos, mobiliário ou infraestrutura" },
+      { title: "Configurar rede, acessos ou dispositivos", placeholder: "Configurar rede, acessos ou dispositivos" },
+      { title: "Realizar testes de funcionamento", placeholder: "Realizar testes de funcionamento" },
+      { title: "Corrigir falhas identificadas", placeholder: "Corrigir falhas identificadas" },
+      { title: "Validar operação com usuário", placeholder: "Validar operação com usuário" }
+    ],
+    "LIBERAÇÃO PARA USO": [
+      { title: "Obter aceite da área usuária", placeholder: "Obter aceite da área usuária" },
+      { title: "Atualizar controle patrimonial", placeholder: "Atualizar controle patrimonial" },
+      { title: "Entregar documentação/garantia", placeholder: "Entregar documentação/garantia" },
+      { title: "Formalizar liberação para uso", placeholder: "Formalizar liberação para uso" },
+      { title: "Encerrar projeto no sistema", placeholder: "Encerrar projeto no sistema" }
+    ]
+  },
   adequacao_normativa_seguranca_e_meio_ambiente: {
     "DIAGNÓSTICO DE CONFORMIDADE": [
       { title: "Identificar requisito legal/normativo", placeholder: "Identificar requisito legal/normativo" },
