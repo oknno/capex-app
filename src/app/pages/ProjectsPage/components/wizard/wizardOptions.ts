@@ -8,12 +8,12 @@ export const EXCHANGE_RATE = 5.4;
 export const FUNDING_SOURCE_OPTIONS: SelectOption[] = [
   { value: "BUDGET", label: "BUDGET" },
   { value: "EXTRA", label: "EXTRA" },
-  { value: "REMANEJAMENTO", label: "REMANEJAMENTO" }
+  { value: "REMANEJAMENTO", label: "REMANEJAMENTO" },
+  { value: "CARRY OVER", label: "CARRY OVER" }
 ];
 
 export const PROGRAM_OPTIONS: SelectOption[] = [
-  { value: "ACELERAAI", label: "ACELERAAI" },
-  { value: "INOVACAO", label: "INOVAÇÃO" },
+  { value: "ACELERAAI", label: "ACELERA.AI" },
   { value: "REGULAR", label: "REGULAR" }
 ];
 
@@ -205,4 +205,12 @@ export function buildYearOptions(range = 5): SelectOption[] {
 
 export function todayIsoDate() {
   return new Date().toISOString().slice(0, 10);
+}
+
+
+export function ensureProgramOption(options: SelectOption[], value?: string): SelectOption[] {
+  const current = String(value ?? "").trim();
+  if (!current) return options;
+  if (options.some((option) => option.value === current)) return options;
+  return [...options, { value: current, label: current }];
 }
