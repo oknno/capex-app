@@ -75,7 +75,7 @@ export function GanttPreview(props: {
     .filter((activity) => activity.startDate && activity.endDate)
     .map((activity) => ({
       milestoneTitle: props.milestones.find((milestone) => milestone.tempId === activity.milestoneTempId)?.Title ?? "MARCO",
-      activityTitle: activity.Title || "ATIVIDADE",
+      activityTitle: activity.Title || activity.placeholder || "ATIVIDADE",
       startDate: activity.startDate as string,
       endDate: activity.endDate as string
     })), [props.activities, props.milestones]);

@@ -153,7 +153,7 @@ export function StructureStep(props: {
                           <input
                             value={activity.Title}
                             onChange={(e) => updateActivity(activity.tempId, { Title: e.target.value.toUpperCase() })}
-                            placeholder="Ex.: Montagem da nova linha de lingotamento"
+                            placeholder={activity.placeholder ?? "Ex.: Montagem da nova linha de lingotamento"}
                             style={wizardLayoutStyles.input}
                           />
                         </Field>
@@ -215,7 +215,7 @@ export function StructureStep(props: {
                         <textarea
                           value={activity.activityDescription ?? ""}
                           onChange={(e) => updateActivity(activity.tempId, { activityDescription: e.target.value })}
-                          placeholder={activity.placeholder ?? activity.Title}
+                          placeholder=""
                           style={{ ...wizardLayoutStyles.input, ...wizardLayoutStyles.textareaReadable }}
                         />
                       </Field>
