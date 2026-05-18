@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { ProjectDraft, ProjectRow } from "../../../services/sharepoint/projectsApi";
 
@@ -40,6 +40,7 @@ export function ProjectWizardModal(props: {
   const readOnly = props.mode === "view";
   const summaryOnlyView = readOnly;
   const { notify } = useToast();
+  const lastStructureSeedRef = useRef<{ operationalCategory: string; complexity: string } | null>(null);
   const [confirmState, setConfirmState] = useState<{
     message: string;
     title: string;
@@ -143,7 +144,44 @@ export function ProjectWizardModal(props: {
     }
 
     notify("Estrutura regenerada com sucesso.", "success");
-  }, [askConfirm, notify, regenerateSuggestedStructure]);
+    lastStructureSeedRef.current = {
+      operationalCategory: String((state.project as { operationalCategory?: string }).operationalCategory ?? "").trim(),
+      complexity: String((state.project as { complexity?: string }).complexity ?? "").trim()
+    };
+  }, [askConfirm, notify, regenerateSuggestedStructure, state.project]);
+
+  const handleAdvance = useCallback(async () => {
+    const nextStep = stepOrder[currentStepIndex + 1];
+    if (nextStep === "execution" && needStructure && !readOnly) {
+      const currentOperationalCategory = String((state.project as { operationalCategory?: string }).operationalCategory ?? "").trim();
+      const currentComplexity = String((state.project as { complexity?: string }).complexity ?? "").trim();
+      const lastSeed = lastStructureSeedRef.current;
+      const shouldRegenerateOnAdvance =
+        Boolean(currentOperationalCategory) &&
+        Boolean(currentComplexity) &&
+        (!!lastSeed && (lastSeed.operationalCategory !== currentOperationalCategory || lastSeed.complexity !== currentComplexity));
+
+      if (shouldRegenerateOnAdvance) {
+        await handleRegenerateStructure();
+      }
+    }
+
+    goNext();
+  }, [currentStepIndex, goNext, handleRegenerateStructure, needStructure, readOnly, state.project, stepOrder]);
+
+  useEffect(() => {
+    const currentOperationalCategory = String((state.project as { operationalCategory?: string }).operationalCategory ?? "").trim();
+    const currentComplexity = String((state.project as { complexity?: string }).complexity ?? "").trim();
+    const lastSeed = lastStructureSeedRef.current;
+    if (
+      lastSeed &&
+      (lastSeed.operationalCategory.length > 0 || lastSeed.complexity.length > 0 || (!currentOperationalCategory && !currentComplexity))
+    ) return;
+    lastStructureSeedRef.current = {
+      operationalCategory: currentOperationalCategory,
+      complexity: currentComplexity
+    };
+  }, [state.project]);
 
   const { committing, commitAll } = useWizardCommit({
     readOnly,
@@ -357,7 +395,7 @@ export function ProjectWizardModal(props: {
           <StateMessage state={footerAlert.state} message={footerAlert.message} />
           <div style={{ display: "flex", gap: 8 }}>
             <Button onClick={goBack} disabled={step === "project"}>Voltar</Button>
-            {!readOnly && step !== "review" && <Button tone="primary" onClick={goNext} disabled={transitioning}>{transitioning ? "Validando..." : nextCtaLabel}</Button>}
+            {!readOnly && step !== "review" && <Button tone="primary" onClick={() => { void handleAdvance(); }} disabled={transitioning}>{transitioning ? "Validando..." : nextCtaLabel}</Button>}
             {!readOnly && step === "review" && <Button tone="primary" onClick={commitAll} disabled={committing}>{committing ? "Salvando..." : "Salvar rascunho"}</Button>}
           </div>
         </div>
