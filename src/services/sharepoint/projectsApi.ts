@@ -525,7 +525,10 @@ function mapProjectRow(x: SpRecord, schemaFieldNameIndex?: Map<string, string> |
     roceGainDescription: readString(x, readByField("roceGainDescription")),
     roceLoss: readNumber(x, readByField("roceLoss")),
     roceLossDescription: readString(x, readByField("roceLossDescription")),
-    roceClassification: readString(x, readByField("roceClassification"))
+    roceClassification: readString(x, readByField("roceClassification")),
+    operationalCategory: readString(x, readByField("operationalCategory")),
+    complexity: readString(x, readByField("complexity")),
+    structureSnapshot: readString(x, readByField("structureSnapshot"))
   };
 }
 
