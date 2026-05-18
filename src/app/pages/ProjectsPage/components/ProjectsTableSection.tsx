@@ -7,10 +7,10 @@ import { projectFieldLabel } from "../fieldLabels";
 
 const styles: Record<string, CSSProperties> = {
   tableWrap: { border: `1px solid ${uiTokens.colors.border}`, borderRadius: uiTokens.radius.md, overflow: "hidden", display: "flex", flexDirection: "column", flex: 1, minHeight: 0 },
-  scroller: { overflowX: "auto", overflowY: "hidden", flex: 1, minHeight: 0 },
-  headerRow: { display: "grid", gridTemplateColumns: "70px 260px 260px 150px 260px", minWidth: 1000, background: uiTokens.colors.surfaceMuted, borderBottom: `1px solid ${uiTokens.colors.border}` },
-  body: { overflowY: "auto", minWidth: 1000, minHeight: 0, flex: 1 },
-  row: { display: "grid", gridTemplateColumns: "70px 260px 260px 150px 260px", minWidth: 1000, cursor: "pointer", borderBottom: `1px solid ${uiTokens.colors.borderMuted}` },
+  scroller: { overflowX: "auto", overflowY: "auto", flex: 1, minHeight: 0, maxHeight: 520 },
+  headerRow: { display: "grid", gridTemplateColumns: "70px 360px 260px 150px 260px", minWidth: 1100, background: uiTokens.colors.surfaceMuted, borderBottom: `1px solid ${uiTokens.colors.border}`, position: "sticky", top: 0, zIndex: 1 },
+  body: { minWidth: 1100, minHeight: 0 },
+  row: { display: "grid", gridTemplateColumns: "70px 360px 260px 150px 260px", minWidth: 1100, cursor: "pointer", borderBottom: `1px solid ${uiTokens.colors.borderMuted}` },
 };
 
 export function ProjectsTableSection(props: {
