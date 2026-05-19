@@ -161,14 +161,14 @@ export function GanttPreview(props: {
         return (
           <div key={`${milestoneGroup.milestoneName}_${milestoneGroup.startDateMin}_${milestoneGroup.endDateMax}`} style={{ display: "grid", gap: uiTokens.spacing.xs }}>
             <div>
-              <div style={{ display: "flex", alignItems: "center", gap: uiTokens.spacing.xs, fontSize: 14, color: "#ef3e23", marginBottom: 6 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: uiTokens.spacing.xs, fontSize: 14, color: uiTokens.colors.text, marginBottom: 6 }}>
                 <span style={{ minWidth: 0, flex: 1, fontWeight: 700, fontSize: 14 }}>{milestoneGroup.milestoneName}</span>
                 <span style={{ marginLeft: "auto", textAlign: "right", fontWeight: 400, color: milestoneSchedule.isInvalid ? uiTokens.colors.danger : uiTokens.colors.textMuted }}>
                   {milestoneSchedule.label}
                 </span>
               </div>
               <div style={{ position: "relative", height: 9, borderRadius: 999, background: uiTokens.colors.borderMuted, overflow: "hidden" }}>
-                <div style={{ position: "absolute", left: `${milestoneBar.left}%`, width: `${milestoneBar.width}%`, top: 0, bottom: 0, background: milestoneSchedule.isInvalid ? uiTokens.colors.danger : "#ef3e23", borderRadius: 999 }} />
+                <div style={{ position: "absolute", left: `${milestoneBar.left}%`, width: `${milestoneBar.width}%`, top: 0, bottom: 0, background: milestoneSchedule.isInvalid ? uiTokens.colors.danger : uiTokens.colors.accentWarning, borderRadius: 999 }} />
               </div>
             </div>
             {milestoneGroup.activities.map((item) => {
@@ -190,12 +190,12 @@ export function GanttPreview(props: {
 
               return (
                 <div key={`${item.milestoneTitle}_${item.activityTitle}_${item.startDate}_${item.endDate}`}>
-                  <div style={{ display: "flex", alignItems: "center", gap: uiTokens.spacing.xs, fontSize: 14, color: "#3d3d3d", marginBottom: 5, paddingLeft: uiTokens.spacing.xl + 4 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: uiTokens.spacing.xs, fontSize: 14, color: uiTokens.colors.text, marginBottom: 5, paddingLeft: uiTokens.spacing.xl + 4 }}>
                     <span style={{ minWidth: 0, flex: 1, fontSize: 14, fontWeight: 400 }}>{item.activityTitle}</span>
                     <span style={{ marginLeft: "auto", textAlign: "right", fontWeight: 400, color: invalidRange ? uiTokens.colors.danger : uiTokens.colors.textMuted }}>{activityScheduleLabel}</span>
                   </div>
                   <div style={{ position: "relative", height: 7, borderRadius: 999, background: uiTokens.colors.borderMuted, overflow: "hidden", marginLeft: uiTokens.spacing.xl + 4 }}>
-                    <div style={{ position: "absolute", left: `${activityBar.left}%`, width: `${activityBar.width}%`, top: 0, bottom: 0, background: invalidRange ? uiTokens.colors.danger : "#3d3d3d", borderRadius: 999 }} />
+                    <div style={{ position: "absolute", left: `${activityBar.left}%`, width: `${activityBar.width}%`, top: 0, bottom: 0, background: invalidRange ? uiTokens.colors.danger : uiTokens.colors.text, borderRadius: 999 }} />
                   </div>
                 </div>
               );
