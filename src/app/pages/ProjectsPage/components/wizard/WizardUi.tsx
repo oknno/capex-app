@@ -135,13 +135,17 @@ export function FieldDate(props: { label: string; value: FieldValue; placeholder
   return <FieldInput {...props} type="date" placeholder={props.placeholder ?? "dd/mm/aaaa"} />;
 }
 
-export function FieldSelect(props: { label: string; value: FieldValue; disabled?: boolean; options: Array<{ value: string; label: string }>; placeholder?: string; onChange: (v: string) => void }) {
+export function FieldSelect(props: { label: string; value: FieldValue; disabled?: boolean; options: Array<{ value: string; label: string; description?: string }>; placeholder?: string; onChange: (v: string) => void }) {
+  const selectedOption = props.options.find((option) => option.value === String(props.value ?? ""));
   return (
     <Field label={props.label}>
-      <select value={String(props.value ?? "")} disabled={props.disabled} onChange={(e) => props.onChange(e.target.value)} style={styles.input}>
-        <option value="">{props.placeholder ?? "Selecione..."}</option>
-        {props.options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-      </select>
+      <>
+        <select value={String(props.value ?? "")} disabled={props.disabled} onChange={(e) => props.onChange(e.target.value)} style={styles.input}>
+          <option value="">{props.placeholder ?? "Selecione..."}</option>
+          {props.options.map((option) => <option key={option.value} value={option.value} title={option.description}>{option.label}</option>)}
+        </select>
+        {selectedOption?.description ? <small style={styles.helperText}>{selectedOption.description}</small> : null}
+      </>
     </Field>
   );
 }

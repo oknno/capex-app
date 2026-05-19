@@ -1,4 +1,4 @@
-export type SelectOption = { value: string; label: string };
+export type SelectOption = { value: string; label: string; description?: string };
 
 import { COMPANY_CENTER_UNIT_LOCATION_MAP } from "./companyStructure";
 import { OPERATIONAL_CATEGORIES, OPERATIONAL_COMPLEXITIES } from "../../../../../domain/projects/operationalStructureCatalog";
@@ -51,32 +51,32 @@ export const LOCATION_OPTIONS_BY_UNIT: Record<string, SelectOption[]> = Object.v
 }, {});
 
 export const CATEGORY_OPTIONS: SelectOption[] = [
-  { value: "I1", label: "Cat 1 - Segurança" },
-  { value: "I2", label: "Cat 2 - Crescimento" },
-  { value: "I3", label: "Cat 3 - Modificações" },
-  { value: "I4", label: "Cat 4 - Manutenção" },
-  { value: "I5", label: "Cat 5 - Renovações" },
-  { value: "I6", label: "Cat 6 - Meio Ambiente" },
-  { value: "I7", label: "Cat 7 - Informatização" },
-  { value: "I8", label: "Cat 8 - Pesquisa e Desenvolvimento" },
-  { value: "I9", label: "Cat 9 - SPA e Requisitos Legais Crescimento" },
-  { value: "J1", label: "Cat 10 - SPA e Req. Legais Manut. e Meio Ambiente" },
-  { value: "J2", label: "Cat 11 - Cilindros de Laminadores" },
-  { value: "J3", label: "Cat 12 - Energia" }
+  { value: "I1", label: "Cat 1 - Segurança", description: "Investimentos voltados à melhoria da segurança ocupacional, higiene do trabalho, segurança industrial ou atendimento a requisitos legais relacionados à segurança." },
+  { value: "I2", label: "Cat 2 - Crescimento", description: "Investimentos para produzir novos produtos, entrar em novos mercados ou aumentar a capacidade de ativos existentes. Pode incluir projetos greenfield, brownfield, debottlenecking e expansão." },
+  { value: "I3", label: "Cat 3 - Modificações", description: "Investimentos para redução de custos, aumento de qualidade, melhoria de produtividade, aumento de capacidade específica ou adequações em ativos existentes." },
+  { value: "I4", label: "Cat 4 - Manutenção", description: "Investimentos de reposição ou renovação destinados a manter o nível operacional dos ativos, substituindo ou recuperando equipamentos, instalações ou componentes obsoletos." },
+  { value: "I5", label: "Cat 5 - Renovações", description: "Grandes reformas, reconstruções ou renovações relevantes de ativos industriais, normalmente associadas à extensão de vida útil, confiabilidade e continuidade operacional." },
+  { value: "I6", label: "Cat 6 - Meio Ambiente", description: "Investimentos voltados à melhoria ambiental ou atendimento a requisitos legais ambientais. Ex.: tratamento de efluentes, controle de emissões, resíduos e adequações ambientais." },
+  { value: "I7", label: "Cat 7 - Informatização", description: "Investimentos de TI, sistemas, infraestrutura digital, cloud, segurança cibernética, renovação de software/hardware e soluções digitais corporativas." },
+  { value: "I8", label: "Cat 8 - Pesquisa e Desenvolvimento", description: "Investimentos em estudos, pilotos, pesquisas, desenvolvimento tecnológico, testes e iniciativas de inovação técnica ou operacional." },
+  { value: "I9", label: "Cat 9 - SPA e Requisitos Legais Crescimento", description: "Investimentos de crescimento necessários para atendimento de acordos comerciais, compromissos de venda/compra ou obrigações legais relacionadas a expansão/crescimento." },
+  { value: "J1", label: "Cat 10 - SPA e Req. Legais Manut. e Meio Ambiente", description: "Investimentos de manutenção ou meio ambiente necessários para atendimento de acordos comerciais, compromissos contratuais ou obrigações legais." },
+  { value: "J2", label: "Cat 11 - Cilindros de Laminadores", description: "Investimentos para aquisição ou reposição de cilindros de laminação, controlados e acompanhados como envelope específico quando aplicável." },
+  { value: "J3", label: "Cat 12 - Energia", description: "Investimentos ligados a energia, eficiência energética, infraestrutura energética, redução de consumo, mudança de matriz energética ou melhoria de desempenho energético." }
 ];
 export const INVESTMENT_TYPE_OPTIONS: SelectOption[] = [
-  { value: "CILINDROS_E_DISCOS", label: "CILINDROS E DISCOS" },
-  { value: "ESTRATEGICOS", label: "ESTRATÉGICOS" },
-  { value: "NORMATIVO", label: "NORMATIVO" },
-  { value: "RELINES_GRANDES_REFORMAS", label: "RELINES (GRANDES REFORMAS)" }
+  { value: "CILINDROS_E_DISCOS", label: "CILINDROS E DISCOS", description: "Investimentos voltados à aquisição ou reposição de cilindros de laminação e discos utilizados nos processos produtivos, essenciais para conformação do aço e manutenção da qualidade dimensional dos produtos." },
+  { value: "ESTRATEGICOS", label: "ESTRATÉGICOS", description: "Projetos de maior relevância para o negócio, normalmente ligados a crescimento, expansão de capacidade, novos produtos, redução estrutural de custos ou ganhos significativos de competitividade." },
+  { value: "NORMATIVO", label: "NORMATIVO", description: "Investimentos necessários para manter a capacidade produtiva, atender requisitos obrigatórios, preservar continuidade operacional ou cumprir exigências técnicas, legais, normativas ou corporativas." },
+  { value: "RELINES_GRANDES_REFORMAS", label: "RELINES (GRANDES REFORMAS)", description: "Reformas estruturais de grande porte em equipamentos críticos, como altos-fornos, convertedores ou fornos de reaquecimento, visando prolongar a vida útil dos ativos e manter a confiabilidade operacional." }
 ];
 
 export const ASSET_TYPE_OPTIONS: SelectOption[] = [
-  { value: "01", label: "01 - EDIFICAÇÕES/BENFEITORIAS EM IMÓVEIS PRÓPRIOS" },
-  { value: "02", label: "02 - EDIFICAÇÕES/BENFEITORIAS EM IMÓVEIS TERCEIROS" },
-  { value: "03", label: "03 - MÁQUINAS/EQUIPAMENTOS/INSTALAÇÃO" },
-  { value: "06", label: "06 - VEÍCULOS" },
-  { value: "99", label: "99 - INFORMÁTICA (HARDWARE/SOFTWARE)" }
+  { value: "01", label: "01 - EDIFICAÇÕES/BENFEITORIAS EM IMÓVEIS PRÓPRIOS", description: "Investimentos em construções, reformas, melhorias ou benfeitorias realizadas em imóveis próprios da empresa." },
+  { value: "02", label: "02 - EDIFICAÇÕES/BENFEITORIAS EM IMÓVEIS TERCEIROS", description: "Investimentos em construções, reformas, melhorias ou benfeitorias realizadas em imóveis de terceiros utilizados pela empresa." },
+  { value: "03", label: "03 - MÁQUINAS/EQUIPAMENTOS/INSTALAÇÃO", description: "Investimentos em máquinas, equipamentos industriais, instalações produtivas, sistemas físicos de produção e ativos diretamente ligados à operação." },
+  { value: "06", label: "06 - VEÍCULOS", description: "Investimentos em aquisição, substituição ou adequação de veículos utilizados nas operações, logística, manutenção, apoio ou atividades administrativas." },
+  { value: "99", label: "99 - INFORMÁTICA (HARDWARE/SOFTWARE)", description: "Investimentos em hardware, software, infraestrutura de TI, sistemas, equipamentos de informática, licenças, redes ou soluções digitais corporativas." }
 ];
 export const KPI_TYPE_OPTIONS: SelectOption[] = [
   { value: "PRODUTIVIDADE", label: "PRODUTIVIDADE" },
@@ -104,12 +104,26 @@ function toFriendlyOperationalLabel(value: string) {
 
 export const OPERATIONAL_CATEGORY_OPTIONS: SelectOption[] = OPERATIONAL_CATEGORIES.map((value) => ({
   value,
-  label: toFriendlyOperationalLabel(value)
+  label: toFriendlyOperationalLabel(value),
+  description: ({
+    AQUISICAO_E_INSTALACAO_INDUSTRIAL: "Use para compra, substituição ou instalação de equipamentos industriais ligados diretamente à operação produtiva. Ex.: máquinas, bombas, compressores, pontes rolantes, sistemas industriais e utilidades de produção.",
+    MANUTENCAO_INDUSTRIAL_PESADA: "Use para reforma, recuperação, overhaul ou intervenção relevante em ativos industriais existentes. Ex.: reforma de ponte rolante, recuperação de forno, substituição crítica de componentes ou grandes paradas de manutenção.",
+    OBRAS_CIVIS_E_INFRAESTRUTURA_INDUSTRIAL: "Use para construção, adequação ou recuperação de infraestrutura física industrial. Ex.: fundações, bases de equipamentos, pisos industriais, galpões, estruturas metálicas e edificações industriais.",
+    ADEQUACAO_NORMATIVA_SEGURANCA_E_MEIO_AMBIENTE: "Use para projetos necessários ao atendimento de normas, requisitos legais, segurança operacional, compliance ou meio ambiente. Ex.: NR-12, proteções, contenção ambiental, licenças e mitigação de riscos.",
+    AUTOMACAO_SISTEMAS_E_DIGITALIZACAO_INDUSTRIAL: "Use para automação, controle, sensores, PLC, supervisório, integração de sistemas industriais, coleta automática de dados e digitalização de processos produtivos.",
+    ENGENHARIA_ESTUDOS_E_VIABILIDADE: "Use para estudos técnicos, engenharia conceitual, engenharia básica/detalhada ou análise de viabilidade. Ex.: FEL, estudo de capacidade, análise técnica de alternativas e engenharia para futura implantação.",
+    INFRAESTRUTURA_ADMINISTRATIVA_TI_E_FACILITIES: "Use para infraestrutura administrativa, TI corporativa, audiovisual, mobiliário, salas, equipamentos de apoio e facilities. Ex.: notebooks, TVs, monitores, salas de reunião, rede administrativa e mobiliário."
+  } as Record<string, string>)[value]
 }));
 
 export const OPERATIONAL_COMPLEXITY_OPTIONS: SelectOption[] = OPERATIONAL_COMPLEXITIES.map((value) => ({
   value,
-  label: toFriendlyOperationalLabel(value)
+  label: toFriendlyOperationalLabel(value),
+  description: ({
+    BAIXA: "Use para projetos simples, com baixo risco, poucas etapas, baixa dependência entre áreas e necessidade reduzida de acompanhamento. O sistema gera 2 marcos e 1 atividade por marco.",
+    MEDIA: "Use para projetos com planejamento, contratação, instalação ou coordenação entre áreas, mas sem alta criticidade operacional. O sistema gera 4 marcos e 2 atividades por marco.",
+    ALTA: "Use para projetos críticos, com múltiplas etapas, fornecedores, interfaces técnicas, parada operacional, risco de segurança/compliance ou alta necessidade de governança. O sistema gera 6 marcos e 3 atividades por marco."
+  } as Record<string, string>)[value]
 }));
 
 const PEP_ELEMENT_OPTIONS_DEFAULT: SelectOption[] = [
