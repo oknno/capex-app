@@ -36,6 +36,31 @@ function normalizePepElementSelection(value: string) {
   return value === PEP_NOT_APPLICABLE_VALUE || !value ? undefined : value;
 }
 
+function formatDatePtBr(value?: string) {
+  if (!value) return undefined;
+  const [year, month, day] = value.split("-");
+  if (!year || !month || !day) return value;
+  return `${day}/${month}/${year}`;
+}
+
+function formatAmountBrl(value?: number) {
+  if (typeof value !== "number") return "Valor não informado";
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
+}
+
+function activitySummary(activity: ActivityDraftLocal) {
+  const title = activity.Title?.trim() || activity.placeholder?.trim() || "Atividade sem título";
+  const start = formatDatePtBr(activity.startDate);
+  const end = formatDatePtBr(activity.endDate);
+  const period = start && end ? `${start} a ${end}` : start ? `Início: ${start}` : end ? `Término: ${end}` : "Período não informado";
+  const pep = activity.pepElement?.trim() || "PEP não vinculado";
+  return { title, period, value: formatAmountBrl(activity.amountBrl), pep };
+}
+
+function hasActivityValidationIssue(activity: ActivityDraftLocal) {
+  return !activity.Title?.trim() || !activity.pepElement;
+}
+
 export function StructureStep(props: {
   readOnly: boolean;
   projectStartDate?: string;
@@ -48,6 +73,7 @@ export function StructureStep(props: {
 }) {
   const [formsByMilestone, setFormsByMilestone] = useState<Record<string, ActivityFormState>>({});
   const [isAddingActivityByMilestone, setIsAddingActivityByMilestone] = useState<Record<string, boolean>>({});
+  const [expandedActivities, setExpandedActivities] = useState<Record<string, boolean>>({});
 
   const activitiesByMilestone = useMemo(() => {
     const grouped: Record<string, ActivityDraftLocal[]> = {};
@@ -82,7 +108,12 @@ export function StructureStep(props: {
   }
 
   function removeActivity(activityTempId: string) {
+    setExpandedActivities((prev) => { const next = { ...prev }; delete next[activityTempId]; return next; });
     props.onChange({ activities: props.activities.filter((a) => a.tempId !== activityTempId) });
+  }
+
+  function setActivityExpanded(activityTempId: string, expanded: boolean) {
+    setExpandedActivities((prev) => ({ ...prev, [activityTempId]: expanded }));
   }
 
   function updateActivity(activityTempId: string, patch: Partial<ActivityDraftLocal>) {
@@ -150,9 +181,18 @@ export function StructureStep(props: {
                     <div style={{ fontSize: uiTokens.typography.xs, color: uiTokens.colors.textMuted }}>Atividades ({milestoneActivities.length})</div>
                   </div>
 
-                  {milestoneActivities.map((activity) => (
-                    <div key={activity.tempId} style={{ ...wizardLayoutStyles.cardSubtle, background: uiTokens.colors.surface }}>
-                      <div style={{ fontWeight: 600, marginBottom: uiTokens.spacing.sm }}>Atividade</div>
+                  {milestoneActivities.map((activity) => {
+                    const isExpanded = expandedActivities[activity.tempId] ?? false;
+                    const summary = activitySummary(activity);
+                    const hasIssue = hasActivityValidationIssue(activity);
+
+                    return (
+                    <div key={activity.tempId} style={{ ...wizardLayoutStyles.cardSubtle, background: uiTokens.colors.surface, border: hasIssue ? `1px solid ${uiTokens.colors.danger}` : undefined }}>
+                      {isExpanded ? (<>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: uiTokens.spacing.sm, marginBottom: uiTokens.spacing.sm }}>
+                        <div style={{ fontWeight: 600 }}>Atividade</div>
+                        <button type="button" onClick={() => setActivityExpanded(activity.tempId, false)} style={{ border: "none", background: "transparent", color: uiTokens.colors.textMuted, textDecoration: "underline", cursor: "pointer", padding: 0 }}>Ocultar detalhes</button>
+                      </div>
 
                       <div style={wizardLayoutStyles.journeyPairGrid}>
                         <Field label="Título da Atividade">
@@ -226,11 +266,23 @@ export function StructureStep(props: {
                         />
                       </Field>
 
-                      <div style={{ display: "flex", justifyContent: "flex-end", gap: uiTokens.spacing.sm, flexWrap: "wrap" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", gap: uiTokens.spacing.sm, flexWrap: "wrap" }}>
                         <Button disabled={props.readOnly} onClick={() => removeActivity(activity.tempId)}>Remover atividade</Button>
                       </div>
+                      </>) : (
+                        <div style={{ display: "grid", gap: uiTokens.spacing.xs }}>
+                          <div style={{ fontSize: 13, color: uiTokens.colors.textMuted }}>Atividade: <strong style={{ color: uiTokens.colors.textStrong }}>{summary.title}</strong></div>
+                          <div style={{ fontSize: 13, color: uiTokens.colors.textMuted }}>Período: {summary.period}</div>
+                          <div style={{ fontSize: 13, color: uiTokens.colors.textMuted }}>Valor: {summary.value}</div>
+                          <div style={{ fontSize: 13, color: uiTokens.colors.textMuted }}>PEP: {summary.pep}</div>
+                          {hasIssue ? <div style={{ fontSize: 12, color: uiTokens.colors.danger }}>Campos obrigatórios pendentes. Edite os detalhes.</div> : null}
+                          <div>
+                            <button type="button" onClick={() => setActivityExpanded(activity.tempId, true)} style={{ border: "none", background: "transparent", color: uiTokens.colors.textMuted, textDecoration: "underline", cursor: "pointer", padding: 0 }}>Editar detalhes</button>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  ))}
+                  );})}
 
                   {isAddingActivity ? (
                     <div style={{ ...wizardLayoutStyles.cardSubtle, background: uiTokens.colors.surface }}>
