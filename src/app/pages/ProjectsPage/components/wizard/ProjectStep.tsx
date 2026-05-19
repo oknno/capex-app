@@ -232,20 +232,6 @@ export function ProjectStep(props: { draft: ProjectDraft; readOnly: boolean; onC
           {hasRoce && (
             <>
               <div style={wizardLayoutStyles.journeyPairGrid}>
-                <FieldNumber label="Ganho (R$)" value={d.roceGain ?? ""} disabled={props.readOnly} onChange={(v) => {
-                  const clean = onlyIntegerOrEmpty(v);
-                  if (clean === null) return;
-                  props.onChange({ roceGain: clean === "" ? undefined : Number(clean) });
-                }} />
-              </div>
-
-              <div style={wizardLayoutStyles.journeyPairGrid}>
-                <FieldNumber label="Perda (R$)" value={d.roceLoss ?? ""} disabled={props.readOnly} onChange={(v) => {
-                  const clean = onlyIntegerOrEmpty(v);
-                  if (clean === null) return;
-                  props.onChange({ roceLoss: clean === "" ? undefined : Number(clean) });
-                }} />
-
                 <FieldSelect
                   label="Classificação ROCE"
                   value={d.roceClassification ?? ""}
@@ -253,6 +239,20 @@ export function ProjectStep(props: { draft: ProjectDraft; readOnly: boolean; onC
                   disabled={props.readOnly}
                   onChange={(v) => props.onChange({ roceClassification: v || undefined })}
                 />
+              </div>
+
+              <div style={wizardLayoutStyles.journeyPairGrid}>
+                <FieldNumber label="Ganho (R$)" value={d.roceGain ?? ""} disabled={props.readOnly} onChange={(v) => {
+                  const clean = onlyIntegerOrEmpty(v);
+                  if (clean === null) return;
+                  props.onChange({ roceGain: clean === "" ? undefined : Number(clean) });
+                }} />
+
+                <FieldNumber label="Perda (R$)" value={d.roceLoss ?? ""} disabled={props.readOnly} onChange={(v) => {
+                  const clean = onlyIntegerOrEmpty(v);
+                  if (clean === null) return;
+                  props.onChange({ roceLoss: clean === "" ? undefined : Number(clean) });
+                }} />
               </div>
 
               <div style={wizardLayoutStyles.journeyPairGrid}>
