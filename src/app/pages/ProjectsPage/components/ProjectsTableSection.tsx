@@ -8,9 +8,9 @@ import { projectFieldLabel } from "../fieldLabels";
 const styles: Record<string, CSSProperties> = {
   tableWrap: { border: `1px solid ${uiTokens.colors.border}`, borderRadius: uiTokens.radius.md, overflow: "hidden", display: "flex", flexDirection: "column", flex: 1, minHeight: 0 },
   scroller: { overflowX: "auto", overflowY: "auto", flex: 1, minHeight: 0, maxHeight: 520 },
-  headerRow: { display: "grid", gridTemplateColumns: "70px 330px 260px 150px 260px", minWidth: 1070, background: uiTokens.colors.surfaceMuted, borderBottom: `1px solid ${uiTokens.colors.border}`, position: "sticky", top: 0, zIndex: 1 },
-  body: { minWidth: 1070, minHeight: 0 },
-  row: { display: "grid", gridTemplateColumns: "70px 330px 260px 150px 260px", minWidth: 1070, cursor: "pointer", borderBottom: `1px solid ${uiTokens.colors.borderMuted}` },
+  headerRow: { display: "grid", gridTemplateColumns: "72px minmax(260px, 1.55fr) minmax(210px, 1.15fr) minmax(130px, 0.8fr) minmax(190px, 1fr)", minWidth: 0, background: uiTokens.colors.surfaceMuted, borderBottom: `1px solid ${uiTokens.colors.border}`, position: "sticky", top: 0, zIndex: 1 },
+  body: { minWidth: 0, minHeight: 0 },
+  row: { display: "grid", gridTemplateColumns: "72px minmax(260px, 1.55fr) minmax(210px, 1.15fr) minmax(130px, 0.8fr) minmax(190px, 1fr)", minWidth: 0, cursor: "pointer", borderBottom: `1px solid ${uiTokens.colors.borderMuted}` },
 };
 
 export function ProjectsTableSection(props: {
