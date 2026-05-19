@@ -28,12 +28,49 @@ function toDateLabel(value?: string) {
   return new Date(`${value}T00:00:00`).toLocaleDateString("pt-BR");
 }
 
+const DAY_IN_MS = 86400000;
+
+function getDurationInDays(startDate: string, endDate: string) {
+  const start = new Date(`${startDate}T00:00:00`).getTime();
+  const end = new Date(`${endDate}T00:00:00`).getTime();
+  const diff = end - start;
+
+  if (Number.isNaN(start) || Number.isNaN(end) || diff < 0) {
+    return null;
+  }
+
+  return Math.floor(diff / DAY_IN_MS) + 1;
+}
+
+function toScheduleLabel(startDate: string, endDate: string) {
+  const duration = getDurationInDays(startDate, endDate);
+
+  if (!duration) {
+    return {
+      label: `${toDateLabel(startDate)} a ${toDateLabel(endDate)} · duração inválida`,
+      isInvalid: true,
+    };
+  }
+
+  const dateLabel = startDate === endDate
+    ? toDateLabel(startDate)
+    : `${toDateLabel(startDate)} a ${toDateLabel(endDate)}`;
+
+  return {
+    label: `${dateLabel} · ${duration} ${duration === 1 ? "dia" : "dias"}`,
+    isInvalid: false,
+  };
+}
+
 function getBarPosition(startDate: string, endDate: string, bounds: GanttBounds) {
   const total = Math.max(bounds.max - bounds.min, 1);
   const start = new Date(`${startDate}T00:00:00`).getTime();
   const end = new Date(`${endDate}T00:00:00`).getTime();
+  if (Number.isNaN(start) || Number.isNaN(end) || end < start) {
+    return { left: 0, width: 100 };
+  }
   const left = ((start - bounds.min) / total) * 100;
-  const width = (Math.max(end - start, 86400000) / total) * 100;
+  const width = (Math.max(end - start, DAY_IN_MS) / total) * 100;
 
   return {
     left,
@@ -106,28 +143,32 @@ export function GanttPreview(props: {
       </div>
       {milestoneGroups.map((milestoneGroup) => {
         const milestoneBar = getBarPosition(milestoneGroup.startDateMin, milestoneGroup.endDateMax, ganttBounds);
+        const milestoneSchedule = toScheduleLabel(milestoneGroup.startDateMin, milestoneGroup.endDateMax);
         return (
           <div key={`${milestoneGroup.milestoneName}_${milestoneGroup.startDateMin}_${milestoneGroup.endDateMax}`} style={{ display: "grid", gap: uiTokens.spacing.xs }}>
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: uiTokens.spacing.xs, fontSize: 12, color: uiTokens.colors.text, marginBottom: 4 }}>
-                <span style={{ minWidth: 0, flex: 1 }}><strong>[MARCO]</strong> {milestoneGroup.milestoneName}</span>
-                <span style={{ marginLeft: "auto", textAlign: "right" }}>{toDateLabel(milestoneGroup.startDateMin)} - {toDateLabel(milestoneGroup.endDateMax)}</span>
+                <span style={{ minWidth: 0, flex: 1, fontWeight: uiTokens.typography.titleWeight }}><strong>[MARCO]</strong> {milestoneGroup.milestoneName}</span>
+                <span style={{ marginLeft: "auto", textAlign: "right", color: milestoneSchedule.isInvalid ? uiTokens.colors.danger : uiTokens.colors.textMuted }}>
+                  {milestoneSchedule.label}
+                </span>
               </div>
-              <div style={{ position: "relative", height: 14, borderRadius: 999, background: uiTokens.colors.border, overflow: "hidden" }}>
-                <div style={{ position: "absolute", left: `${milestoneBar.left}%`, width: `${milestoneBar.width}%`, top: 0, bottom: 0, background: uiTokens.colors.accentWarning, borderRadius: 999 }} />
+              <div style={{ position: "relative", height: 16, borderRadius: 999, background: uiTokens.colors.borderMuted, overflow: "hidden" }}>
+                <div style={{ position: "absolute", left: `${milestoneBar.left}%`, width: `${milestoneBar.width}%`, top: 0, bottom: 0, background: milestoneSchedule.isInvalid ? uiTokens.colors.danger : uiTokens.colors.accent, borderRadius: 999 }} />
               </div>
             </div>
             {milestoneGroup.activities.map((item) => {
               const activityBar = getBarPosition(item.startDate, item.endDate, ganttBounds);
+              const activitySchedule = toScheduleLabel(item.startDate, item.endDate);
 
               return (
                 <div key={`${item.milestoneTitle}_${item.activityTitle}_${item.startDate}_${item.endDate}`}>
-                  <div style={{ display: "flex", alignItems: "center", gap: uiTokens.spacing.xs, fontSize: 12, color: uiTokens.colors.text, marginBottom: 4 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: uiTokens.spacing.xs, fontSize: 11, color: uiTokens.colors.text, marginBottom: 4, paddingLeft: uiTokens.spacing.lg }}>
                     <span style={{ minWidth: 0, flex: 1 }}><strong>[ATIVIDADE]</strong> {item.activityTitle}</span>
-                    <span style={{ marginLeft: "auto", textAlign: "right" }}>{toDateLabel(item.startDate)} - {toDateLabel(item.endDate)}</span>
+                    <span style={{ marginLeft: "auto", textAlign: "right", color: activitySchedule.isInvalid ? uiTokens.colors.danger : uiTokens.colors.textMuted }}>{activitySchedule.label}</span>
                   </div>
-                  <div style={{ position: "relative", height: 14, borderRadius: 999, background: uiTokens.colors.border, overflow: "hidden" }}>
-                    <div style={{ position: "absolute", left: `${activityBar.left}%`, width: `${activityBar.width}%`, top: 0, bottom: 0, background: uiTokens.colors.accentAlt, borderRadius: 999 }} />
+                  <div style={{ position: "relative", height: 8, borderRadius: 999, background: uiTokens.colors.borderMuted, overflow: "hidden", marginLeft: uiTokens.spacing.lg }}>
+                    <div style={{ position: "absolute", left: `${activityBar.left}%`, width: `${activityBar.width}%`, top: 0, bottom: 0, background: activitySchedule.isInvalid ? uiTokens.colors.danger : uiTokens.colors.accentSoft, borderRadius: 999, border: `1px solid ${activitySchedule.isInvalid ? uiTokens.colors.danger : uiTokens.colors.borderStrong}` }} />
                   </div>
                 </div>
               );
