@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { type CSSProperties } from "react";
 
 import { Badge } from "../../../../components/ui/Badge";
 import { Field } from "../../../../components/ui/Field";
@@ -140,53 +140,10 @@ export function FieldSelect(props: { label: string; value: FieldValue; disabled?
     <Field label={props.label}>
       <select value={String(props.value ?? "")} disabled={props.disabled} onChange={(e) => props.onChange(e.target.value)} style={styles.input}>
         <option value="">{props.placeholder ?? "Selecione..."}</option>
-        {props.options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+        {props.options.map((option) => <option key={option.value} value={option.value} title={option.description}>{option.label}</option>)}
       </select>
     </Field>
   );
 }
 
-export function FieldSelectWithOptionTooltip(props: { label: string; value: FieldValue; disabled?: boolean; options: Array<{ value: string; label: string; description?: string }>; placeholder?: string; onChange: (v: string) => void }) {
-  const [open, setOpen] = useState(false);
-  const [hoveredDescription, setHoveredDescription] = useState<string | null>(null);
-  const rootRef = useRef<HTMLDivElement | null>(null);
-  const selectedLabel = props.options.find((option) => option.value === String(props.value ?? ""))?.label;
-
-  useEffect(() => {
-    if (!open) setHoveredDescription(null);
-  }, [open]);
-
-  useEffect(() => {
-    const onClickOutside = (event: MouseEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", onClickOutside);
-    return () => document.removeEventListener("mousedown", onClickOutside);
-  }, []);
-
-  return (
-    <Field label={props.label}>
-      <div ref={rootRef} style={{ position: "relative" }}>
-        <button type="button" disabled={props.disabled} onClick={() => setOpen((v) => !v)} style={{ ...styles.input, textAlign: "left", cursor: props.disabled ? "not-allowed" : "pointer" }}>
-          {selectedLabel ?? props.placeholder ?? "Selecione..."}
-        </button>
-        {open && !props.disabled ? (
-          <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 20, background: uiTokens.colors.surface, border: `1px solid ${uiTokens.colors.border}`, borderRadius: 8, maxHeight: 220, overflowY: "auto", boxShadow: "0 10px 25px rgba(0,0,0,0.2)" }}>
-            <button type="button" onMouseEnter={() => setHoveredDescription(null)} onClick={() => { props.onChange(""); setOpen(false); }} style={optionButtonStyles}>
-              {props.placeholder ?? "Selecione..."}
-            </button>
-            {props.options.map((option) => (
-              <button key={option.value} type="button" onMouseEnter={() => setHoveredDescription(option.description ?? null)} onMouseLeave={() => setHoveredDescription(null)} onClick={() => { props.onChange(option.value); setOpen(false); }} style={optionButtonStyles}>
-                {option.label}
-              </button>
-            ))}
-          </div>
-        ) : null}
-        {open && hoveredDescription ? <div style={tooltipStyles}>{hoveredDescription}</div> : null}
-      </div>
-    </Field>
-  );
-}
-
-const optionButtonStyles: CSSProperties = { width: "100%", textAlign: "left", background: "transparent", border: "none", padding: "10px 12px", cursor: "pointer" };
-const tooltipStyles: CSSProperties = { position: "absolute", top: "calc(100% + 8px)", left: "102%", width: "min(420px, 90vw)", background: "#2b2f36", color: "#f5f7fa", padding: "10px 12px", borderRadius: 8, zIndex: 30, boxShadow: "0 10px 20px rgba(0,0,0,0.25)", fontSize: 12, lineHeight: 1.35 };
+export const FieldSelectWithOptionTooltip = FieldSelect;
