@@ -42,7 +42,6 @@ export type ProjectRow = {
   roceClassification?: string;
   operationalCategory?: string;
   complexity?: string;
-  structureSnapshot?: string;
   authorName?: string;
 };
 
@@ -113,7 +112,6 @@ const PROJECT_FIELDS: Array<keyof ProjectRow> = [
   "roceClassification",
   "operationalCategory",
   "complexity",
-  "structureSnapshot",
   "authorName"
 ];
 
@@ -161,9 +159,7 @@ const SP_PROJECT_INTERNAL_NAMES: Record<ProjectFieldKey, string> = {
   roceLossDescription: "roceLossDescription",
   roceClassification: "roceClassification",
   operationalCategory: "operationalCategory",
-  complexity: "complexity"
-  ,
-  structureSnapshot: "structureSnapshot",
+  complexity: "complexity",
   authorName: "Author"
 };
 
@@ -542,7 +538,6 @@ function mapProjectRow(x: SpRecord, schemaFieldNameIndex?: Map<string, string> |
     roceClassification: readString(x, readByField("roceClassification")),
     operationalCategory: readString(x, readByField("operationalCategory")),
     complexity: readString(x, readByField("complexity")),
-    structureSnapshot: readString(x, readByField("structureSnapshot")),
     authorName: readAuthorName(x)
   };
 }

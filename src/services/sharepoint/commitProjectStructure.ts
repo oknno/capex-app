@@ -61,35 +61,6 @@ export type RollbackResult = {
 };
 
 
-export class ProjectStructureMilestonesImmutableError extends Error {
-  readonly userMessage: string;
-
-  constructor(message = "Os marcos deste projeto não podem ser alterados. Mantenha os mesmos marcos (título e ordem) e edite apenas atividades e PEPs.") {
-    super(message);
-    this.name = "ProjectStructureMilestonesImmutableError";
-    this.userMessage = message;
-  }
-}
-
-function isMilestoneSequenceLocked(args: { needStructure: boolean; existingMilestonesCount: number }): boolean {
-  return args.needStructure && args.existingMilestonesCount > 0;
-}
-
-function validateLockedMilestones(args: { milestones: MilestoneDraftLocal[]; existingMilestones: Array<{ Id: number; Title?: string }> }): void {
-  const desired = args.milestones.map((m) => normalizeText(m.Title).toUpperCase());
-  const existing = args.existingMilestones.map((m) => normalizeText(m.Title).toUpperCase());
-
-  if (desired.length !== existing.length) {
-    throw new ProjectStructureMilestonesImmutableError();
-  }
-
-  for (let index = 0; index < existing.length; index += 1) {
-    if (desired[index] !== existing[index]) {
-      throw new ProjectStructureMilestonesImmutableError();
-    }
-  }
-}
-
 export class CommitProjectStructureError extends Error {
   readonly journal: CommitJournal;
   readonly rollback: RollbackResult;
@@ -110,9 +81,7 @@ export class CommitProjectStructureError extends Error {
     this.details = args.rollback.status === "partial"
       ? { rollbackPartialSummary: args.rollback.summary }
       : undefined;
-    this.userMessage = args.cause instanceof ProjectStructureMilestonesImmutableError
-      ? args.cause.userMessage
-      : "Erro ao persistir estrutura do projeto.";
+    this.userMessage = "Erro ao persistir estrutura do projeto.";
   }
 }
 
@@ -140,7 +109,6 @@ type CommitProjectStructureArgs = {
   activities: ActivityDraftLocal[];
   peps: PepDraftLocal[];
   createProject: (draft: ProjectDraft) => Promise<number>;
-  shouldRefreshStructureSnapshot?: boolean;
   apis?: Partial<{
     updateProject: typeof updateProject;
     deleteProject: typeof deleteProject;
@@ -158,38 +126,6 @@ type CommitProjectStructureArgs = {
     updatePep: typeof updatePep;
   }>;
 };
-
-type StructureSnapshotV1 = {
-  version: 1;
-  operationalCategory: string;
-  complexity: string;
-  milestones: string[];
-};
-
-function parseStructureSnapshot(raw: string | undefined): StructureSnapshotV1 | null {
-  if (!raw) return null;
-  try {
-    const parsed = JSON.parse(raw) as Partial<StructureSnapshotV1>;
-    if (parsed.version !== 1 || !Array.isArray(parsed.milestones)) return null;
-    return {
-      version: 1,
-      operationalCategory: String(parsed.operationalCategory ?? "").trim(),
-      complexity: String(parsed.complexity ?? "").trim(),
-      milestones: parsed.milestones.map((item) => normalizeText(String(item)).toUpperCase())
-    };
-  } catch {
-    return null;
-  }
-}
-
-function buildStructureSnapshot(args: { normalizedProject: ProjectDraft; milestones: MilestoneDraftLocal[] }): StructureSnapshotV1 {
-  return {
-    version: 1,
-    operationalCategory: normalizeText(args.normalizedProject.operationalCategory),
-    complexity: normalizeText(args.normalizedProject.complexity),
-    milestones: args.milestones.map((item) => normalizeText(item.Title).toUpperCase())
-  };
-}
 
 export async function commitProjectStructure(args: CommitProjectStructureArgs): Promise<{ projectId: number; journal: CommitJournal }> {
   const deps = {
@@ -224,15 +160,8 @@ export async function commitProjectStructure(args: CommitProjectStructureArgs): 
   let activeStep: CommitStepDetails | undefined;
 
   let id = args.projectId;
-  const currentSnapshot = parseStructureSnapshot(args.normalizedProject.structureSnapshot);
-  const shouldPersistSnapshot =
-    args.needStructure &&
-    (!currentSnapshot || Boolean(args.shouldRefreshStructureSnapshot));
   const nextProjectDraft: ProjectDraft = {
-    ...args.normalizedProject,
-    ...(shouldPersistSnapshot
-      ? { structureSnapshot: JSON.stringify(buildStructureSnapshot({ normalizedProject: args.normalizedProject, milestones: args.milestones })) }
-      : {})
+    ...args.normalizedProject
   };
 
   const setStep = (step: CommitStepDetails): void => {
@@ -360,28 +289,6 @@ export async function commitProjectStructure(args: CommitProjectStructureArgs): 
       deps.getPepsBatchByProject(id, { pageSize: 500, maxPages: 20 })
     ]);
 
-    const snapshotMilestones = currentSnapshot?.milestones ?? [];
-    if (args.needStructure && snapshotMilestones.length > 0) {
-      validateLockedMilestones({
-        milestones: args.milestones,
-        existingMilestones: snapshotMilestones.map((Title, index) => ({ Id: index + 1, Title }))
-      });
-    }
-
-    const lockedMilestones = isMilestoneSequenceLocked({
-      needStructure: args.needStructure,
-      existingMilestonesCount: existingMilestones.length
-    });
-
-    if (lockedMilestones) {
-      validateLockedMilestones({ milestones: args.milestones, existingMilestones });
-      for (let index = 0; index < args.milestones.length; index += 1) {
-        const milestone = args.milestones[index];
-        const existingMilestone = existingMilestones[index];
-        milestoneIdMap.set(milestone.tempId, existingMilestone.Id);
-      }
-    }
-
     if (!args.needStructure) {
       for (const activity of args.activities) {
         const existingActivityId = parseExistingId(activity.tempId, "ac");
@@ -445,36 +352,30 @@ export async function commitProjectStructure(args: CommitProjectStructureArgs): 
 
     const desiredMilestoneIds = new Set<number>();
 
-    if (lockedMilestones) {
-      for (const existingMilestone of existingMilestones) {
-        desiredMilestoneIds.add(existingMilestone.Id);
-      }
-    } else {
-      for (const milestone of args.milestones) {
-        const existingMilestoneId = parseExistingId(milestone.tempId, "ms");
-        const title = milestone.Title.trim().toUpperCase();
+    for (const milestone of args.milestones) {
+      const existingMilestoneId = parseExistingId(milestone.tempId, "ms");
+      const title = milestone.Title.trim().toUpperCase();
 
-        if (existingMilestoneId) {
-          desiredMilestoneIds.add(existingMilestoneId);
-          const existingMilestone = existingMilestones.find((item) => item.Id === existingMilestoneId);
-          if (!existingMilestone || normalizeText(existingMilestone.Title).toUpperCase() !== title) {
-            setStep({ phase: "commit", action: "update", entity: "milestone", stage: "upsert-milestones", id: existingMilestoneId });
-            await deps.updateMilestone(existingMilestoneId, {
-              Title: title,
-              projectsIdId: id
-            });
-            trackDiagnostic({ phase: "commit", action: "update", entity: "milestone", id: existingMilestoneId, status: "success", stage: "upsert-milestones" });
-          }
-          milestoneIdMap.set(milestone.tempId, existingMilestoneId);
-        } else {
-          const createdMilestoneId = await deps.createMilestone({
+      if (existingMilestoneId) {
+        desiredMilestoneIds.add(existingMilestoneId);
+        const existingMilestone = existingMilestones.find((item) => item.Id === existingMilestoneId);
+        if (!existingMilestone || normalizeText(existingMilestone.Title).toUpperCase() !== title) {
+          setStep({ phase: "commit", action: "update", entity: "milestone", stage: "upsert-milestones", id: existingMilestoneId });
+          await deps.updateMilestone(existingMilestoneId, {
             Title: title,
             projectsIdId: id
           });
-          journal.milestoneIds.push(createdMilestoneId);
-          desiredMilestoneIds.add(createdMilestoneId);
-          milestoneIdMap.set(milestone.tempId, createdMilestoneId);
+          trackDiagnostic({ phase: "commit", action: "update", entity: "milestone", id: existingMilestoneId, status: "success", stage: "upsert-milestones" });
         }
+        milestoneIdMap.set(milestone.tempId, existingMilestoneId);
+      } else {
+        const createdMilestoneId = await deps.createMilestone({
+          Title: title,
+          projectsIdId: id
+        });
+        journal.milestoneIds.push(createdMilestoneId);
+        desiredMilestoneIds.add(createdMilestoneId);
+        milestoneIdMap.set(milestone.tempId, createdMilestoneId);
       }
     }
 

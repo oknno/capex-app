@@ -148,57 +148,45 @@ test("transição KEY→não-KEY com purge remove estrutura e mantém somente PE
 });
 
 
-test("estrutura ativa bloqueia inclusão de marcos", async () => {
+test("estrutura ativa permite inclusão de marcos", async () => {
   const { deps, calls } = makeDeps({
     getMilestonesByProject: async () => [{ Id: 1, Title: "M1" }]
   });
 
-  await assert.rejects(
-    commitProjectStructure({
-      projectId: 9,
-      normalizedProject: makeDraft(),
-      needStructure: true,
-      milestones: [{ tempId: "ms_1", Title: "M1" }, { tempId: "ms_tmp_2", Title: "M2" }],
-      activities: [],
-      peps: [],
-      createProject: async () => 9,
-      apis: deps
-    }),
-    (error) => {
-      assert.equal(error instanceof CommitProjectStructureError, true);
-      assert.equal(error.userMessage.includes("marcos"), true);
-      return true;
-    }
-  );
+  await commitProjectStructure({
+    projectId: 9,
+    normalizedProject: makeDraft(),
+    needStructure: true,
+    milestones: [{ tempId: "ms_1", Title: "M1" }, { tempId: "ms_tmp_2", Title: "M2" }],
+    activities: [],
+    peps: [],
+    createProject: async () => 9,
+    apis: deps
+  });
 
-  assert.equal(calls.some((c) => c.name === "createMilestone" || c.name === "updateMilestone" || c.name === "deleteMilestone"), false);
+  assert.equal(calls.some((c) => c.name === "createMilestone"), true);
 });
 
-test("estrutura ativa bloqueia renomeação e reordenação de marcos", async () => {
-  const { deps } = makeDeps({
+test("estrutura ativa permite renomeação e reordenação de marcos", async () => {
+  const { deps, calls } = makeDeps({
     getMilestonesByProject: async () => [{ Id: 1, Title: "M1" }, { Id: 2, Title: "M2" }]
   });
 
-  await assert.rejects(
-    commitProjectStructure({
-      projectId: 9,
-      normalizedProject: makeDraft(),
-      needStructure: true,
-      milestones: [{ tempId: "ms_2", Title: "M2" }, { tempId: "ms_1", Title: "M1 RENOMEADO" }],
-      activities: [],
-      peps: [],
-      createProject: async () => 9,
-      apis: deps
-    }),
-    (error) => {
-      assert.equal(error instanceof CommitProjectStructureError, true);
-      assert.equal(error.userMessage.includes("edite apenas atividades e PEPs"), true);
-      return true;
-    }
-  );
+  await commitProjectStructure({
+    projectId: 9,
+    normalizedProject: makeDraft(),
+    needStructure: true,
+    milestones: [{ tempId: "ms_2", Title: "M2" }, { tempId: "ms_1", Title: "M1 RENOMEADO" }],
+    activities: [],
+    peps: [],
+    createProject: async () => 9,
+    apis: deps
+  });
+
+  assert.equal(calls.some((c) => c.name === "updateMilestone"), true);
 });
 
-test("estrutura ativa permite operações apenas em atividades e PEPs", async () => {
+test("estrutura ativa permite operações em marcos, atividades e PEPs", async () => {
   const { deps, calls } = makeDeps({
     getMilestonesByProject: async () => [{ Id: 1, Title: "M1" }, { Id: 2, Title: "M2" }],
     getActivitiesBatchByProject: async () => [{ Id: 11 }, { Id: 12 }],
@@ -219,7 +207,7 @@ test("estrutura ativa permite operações apenas em atividades e PEPs", async ()
     apis: deps
   });
 
-  assert.equal(calls.some((c) => c.name === "createMilestone" || c.name === "updateMilestone" || c.name === "deleteMilestone"), false);
+  assert.equal(calls.some((c) => c.name === "createMilestone"), true);
   assert.equal(calls.some((c) => c.name === "createActivity"), true);
   assert.deepEqual(calls.filter((c) => c.name === "deleteActivity").map((c) => c.args[0]), [12]);
   assert.deepEqual(calls.filter((c) => c.name === "deletePep").map((c) => c.args[0]), [22]);
