@@ -25,7 +25,9 @@ type MilestoneGroup = {
 
 function toDateLabel(value?: string) {
   if (!value) return "—";
-  return new Date(`${value}T00:00:00`).toLocaleDateString("pt-BR");
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString("pt-BR");
 }
 
 const DAY_IN_MS = 86400000;
@@ -40,6 +42,17 @@ function getDurationInDays(startDate: string, endDate: string) {
   }
 
   return Math.floor(diff / DAY_IN_MS) + 1;
+}
+
+function hasInvalidDateRange(startDate?: string, endDate?: string) {
+  if (!startDate || !endDate) return false;
+  const start = new Date(`${startDate}T00:00:00`).getTime();
+  const end = new Date(`${endDate}T00:00:00`).getTime();
+  return Number.isNaN(start) || Number.isNaN(end) || end < start;
+}
+
+function isSamePeriod(startA?: string, endA?: string, startB?: string, endB?: string) {
+  return Boolean(startA && endA && startB && endB && startA === startB && endA === endB);
 }
 
 function toScheduleLabel(startDate: string, endDate: string) {
@@ -109,18 +122,19 @@ export function GanttPreview(props: {
   emptyMessage?: string;
 }) {
   const ganttItems = useMemo<GanttItem[]>(() => props.activities
-    .filter((activity) => activity.startDate && activity.endDate)
     .map((activity) => ({
       milestoneTitle: props.milestones.find((milestone) => milestone.tempId === activity.milestoneTempId)?.Title ?? "MARCO",
       activityTitle: activity.Title || activity.placeholder || "ATIVIDADE",
-      startDate: activity.startDate as string,
-      endDate: activity.endDate as string
+      startDate: activity.startDate ?? "",
+      endDate: activity.endDate ?? ""
     })), [props.activities, props.milestones]);
 
   const ganttBounds = useMemo<GanttBounds | null>(() => {
     if (ganttItems.length === 0) return null;
-    const starts = ganttItems.map((item) => new Date(`${item.startDate}T00:00:00`).getTime());
-    const ends = ganttItems.map((item) => new Date(`${item.endDate}T00:00:00`).getTime());
+    const validItems = ganttItems.filter((item) => item.startDate && item.endDate && !hasInvalidDateRange(item.startDate, item.endDate));
+    if (validItems.length === 0) return null;
+    const starts = validItems.map((item) => new Date(`${item.startDate}T00:00:00`).getTime());
+    const ends = validItems.map((item) => new Date(`${item.endDate}T00:00:00`).getTime());
 
     return {
       min: Math.min(...starts),
@@ -131,7 +145,7 @@ export function GanttPreview(props: {
   const milestoneGroups = useMemo(() => groupByMilestone(ganttItems), [ganttItems]);
 
   if (!ganttBounds || ganttItems.length === 0) {
-    return <StateMessage state="empty" message={props.emptyMessage ?? "Sem atividades com início e término para exibir cronograma."} />;
+    return <StateMessage state="empty" message={props.emptyMessage ?? "Sem atividades válidas para exibir cronograma."} />;
   }
 
   const ganttRangeLabel = `${new Date(ganttBounds.min).toLocaleDateString("pt-BR")} - ${new Date(ganttBounds.max).toLocaleDateString("pt-BR")}`;
@@ -154,21 +168,34 @@ export function GanttPreview(props: {
                 </span>
               </div>
               <div style={{ position: "relative", height: 16, borderRadius: 999, background: uiTokens.colors.borderMuted, overflow: "hidden" }}>
-                <div style={{ position: "absolute", left: `${milestoneBar.left}%`, width: `${milestoneBar.width}%`, top: 0, bottom: 0, background: milestoneSchedule.isInvalid ? uiTokens.colors.danger : uiTokens.colors.accent, borderRadius: 999 }} />
+                <div style={{ position: "absolute", left: `${milestoneBar.left}%`, width: `${milestoneBar.width}%`, top: 0, bottom: 0, background: milestoneSchedule.isInvalid ? uiTokens.colors.danger : uiTokens.colors.borderStrong, borderRadius: 999 }} />
               </div>
             </div>
             {milestoneGroup.activities.map((item) => {
-              const activityBar = getBarPosition(item.startDate, item.endDate, ganttBounds);
-              const activitySchedule = toScheduleLabel(item.startDate, item.endDate);
+              const hasMissingPeriod = !item.startDate || !item.endDate;
+              const invalidRange = hasInvalidDateRange(item.startDate, item.endDate);
+              const activitySchedule = hasMissingPeriod
+                ? { label: "Período incompleto", isInvalid: false }
+                : toScheduleLabel(item.startDate, item.endDate);
+              const samePeriodAsMilestone = isSamePeriod(item.startDate, item.endDate, milestoneGroup.startDateMin, milestoneGroup.endDateMax);
+              const durationOnly = activitySchedule.label.split(" · ")[1] ?? activitySchedule.label;
+              const activityScheduleLabel = hasMissingPeriod
+                ? activitySchedule.label
+                : samePeriodAsMilestone
+                  ? durationOnly
+                  : activitySchedule.label;
+              const activityBar = hasMissingPeriod || invalidRange
+                ? { left: 0, width: 100 }
+                : getBarPosition(item.startDate, item.endDate, ganttBounds);
 
               return (
                 <div key={`${item.milestoneTitle}_${item.activityTitle}_${item.startDate}_${item.endDate}`}>
-                  <div style={{ display: "flex", alignItems: "center", gap: uiTokens.spacing.xs, fontSize: 11, color: uiTokens.colors.text, marginBottom: 4, paddingLeft: uiTokens.spacing.lg }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: uiTokens.spacing.xs, fontSize: 10.5, color: uiTokens.colors.textMuted, marginBottom: 4, paddingLeft: uiTokens.spacing.xl }}>
                     <span style={{ minWidth: 0, flex: 1 }}><strong>[ATIVIDADE]</strong> {item.activityTitle}</span>
-                    <span style={{ marginLeft: "auto", textAlign: "right", color: activitySchedule.isInvalid ? uiTokens.colors.danger : uiTokens.colors.textMuted }}>{activitySchedule.label}</span>
+                    <span style={{ marginLeft: "auto", textAlign: "right", color: invalidRange ? uiTokens.colors.danger : uiTokens.colors.textMuted }}>{activityScheduleLabel}</span>
                   </div>
-                  <div style={{ position: "relative", height: 8, borderRadius: 999, background: uiTokens.colors.borderMuted, overflow: "hidden", marginLeft: uiTokens.spacing.lg }}>
-                    <div style={{ position: "absolute", left: `${activityBar.left}%`, width: `${activityBar.width}%`, top: 0, bottom: 0, background: activitySchedule.isInvalid ? uiTokens.colors.danger : uiTokens.colors.accentSoft, borderRadius: 999, border: `1px solid ${activitySchedule.isInvalid ? uiTokens.colors.danger : uiTokens.colors.borderStrong}` }} />
+                  <div style={{ position: "relative", height: 6, borderRadius: 999, background: uiTokens.colors.borderMuted, overflow: "hidden", marginLeft: uiTokens.spacing.xl }}>
+                    <div style={{ position: "absolute", left: `${activityBar.left}%`, width: `${activityBar.width}%`, top: 0, bottom: 0, background: invalidRange ? uiTokens.colors.danger : uiTokens.colors.borderMuted, borderRadius: 999, border: `1px solid ${invalidRange ? uiTokens.colors.danger : uiTokens.colors.borderStrong}` }} />
                   </div>
                 </div>
               );
