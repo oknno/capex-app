@@ -11,6 +11,7 @@ import {
   type OperationalCategory,
   type OperationalComplexity
 } from "../../../../domain/projects/operationalStructureCatalog";
+import { normalizeOperationalCategory, normalizeOperationalComplexity } from "../../../../domain/projects/operationalValueNormalizer";
 import {
   buildSuggestedActivitiesByMilestone,
   makeStructureTemplateSeedKey
@@ -34,9 +35,9 @@ function uid(prefix: string) {
 }
 
 function getActivityLimitByComplexity(complexity: OperationalComplexity): number {
-  if (complexity === "baixa") return 1;
-  if (complexity === "media") return 2;
-  if (complexity === "alta") return 3;
+  if (complexity === "BAIXA") return 1;
+  if (complexity === "MEDIA") return 2;
+  if (complexity === "ALTA") return 3;
   return 1;
 }
 
@@ -76,8 +77,8 @@ function sanitizeProjectForDuplication(project?: ProjectRow): ProjectDraft {
     roceLoss: project?.roceLoss,
     roceLossDescription: project?.roceLossDescription,
     roceClassification: project?.roceClassification,
-    operationalCategory: project?.operationalCategory,
-    complexity: project?.complexity,
+    operationalCategory: normalizeOperationalCategory(project?.operationalCategory),
+    complexity: normalizeOperationalComplexity(project?.complexity),
   };
 }
 
@@ -89,8 +90,8 @@ function buildStructureFingerprint(draft: Pick<WizardDraftState, "milestones" | 
 
   return JSON.stringify({
     budget: Number(draft.project.budgetBrl ?? 0),
-    category: String((draft.project as { operationalCategory?: string }).operationalCategory ?? "").trim().toLowerCase(),
-    complexity: String((draft.project as { complexity?: string }).complexity ?? "").trim().toLowerCase(),
+    category: normalizeOperationalCategory((draft.project as { operationalCategory?: string }).operationalCategory) ?? "",
+    complexity: normalizeOperationalComplexity((draft.project as { complexity?: string }).complexity) ?? "",
     milestones,
     activities
   });
@@ -119,8 +120,8 @@ export function useWizardInitialLoad(params: UseWizardInitialLoadParams) {
   const regenerateSuggestedStructure = useCallback((withImpactConfirmation: boolean, explicit = false): { ok: boolean; reason?: string } => {
     if (!needStructure) return { ok: false, reason: "Estrutura não é obrigatória para este orçamento." };
 
-    const operationalCategory = String((state.project as { operationalCategory?: string }).operationalCategory ?? "") as OperationalCategory;
-    const complexity = String((state.project as { complexity?: string }).complexity ?? "") as OperationalComplexity;
+    const operationalCategory = normalizeOperationalCategory((state.project as { operationalCategory?: string }).operationalCategory) as OperationalCategory;
+    const complexity = normalizeOperationalComplexity((state.project as { complexity?: string }).complexity) as OperationalComplexity;
     if (!operationalCategory || !complexity) return { ok: false, reason: "Preencha categoria operacional e complexidade antes de regenerar." };
 
     const today = new Date().toISOString().slice(0, 10);

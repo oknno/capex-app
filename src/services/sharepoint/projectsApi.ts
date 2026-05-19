@@ -2,6 +2,7 @@ import { spConfig } from "./spConfig.ts";
 import { spGetJson, spPostJson, spPatchJson, getDigest } from "./spHttp.ts";
 import { getListFieldsCached } from "./listSchemaCache.ts";
 import { buildProjectsQueryPlan, mergeProjectChunkResults } from "./projectsQueryPlanner.ts";
+import { normalizeOperationalCategory, normalizeOperationalComplexity } from "../../domain/projects/operationalValueNormalizer";
 
 export type ProjectRow = {
   Id: number;
@@ -257,6 +258,8 @@ function buildRawProjectPayload(source: ProjectUpdate): Record<string, unknown> 
     const value = source[key];
     if (value !== undefined) payload[key] = value;
   });
+  payload.operationalCategory = normalizeOperationalCategory(payload.operationalCategory as string | undefined);
+  payload.complexity = normalizeOperationalComplexity(payload.complexity as string | undefined);
   return payload;
 }
 
@@ -536,8 +539,8 @@ function mapProjectRow(x: SpRecord, schemaFieldNameIndex?: Map<string, string> |
     roceLoss: readNumber(x, readByField("roceLoss")),
     roceLossDescription: readString(x, readByField("roceLossDescription")),
     roceClassification: readString(x, readByField("roceClassification")),
-    operationalCategory: readString(x, readByField("operationalCategory")),
-    complexity: readString(x, readByField("complexity")),
+    operationalCategory: normalizeOperationalCategory(readString(x, readByField("operationalCategory"))),
+    complexity: normalizeOperationalComplexity(readString(x, readByField("complexity"))),
     authorName: readAuthorName(x)
   };
 }

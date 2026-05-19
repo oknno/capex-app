@@ -1,7 +1,6 @@
 export type SelectOption = { value: string; label: string; description?: string };
 
 import { COMPANY_CENTER_UNIT_LOCATION_MAP } from "./companyStructure";
-import { OPERATIONAL_CATEGORIES, OPERATIONAL_COMPLEXITIES } from "../../../../../domain/projects/operationalStructureCatalog";
 
 export const EXCHANGE_RATE = 5.4;
 
@@ -95,36 +94,61 @@ export const ROCE_CLASS_OPTIONS: SelectOption[] = [
   { value: "AMBOS", label: "AMBOS" }
 ];
 
-function toFriendlyOperationalLabel(value: string) {
-  return value
-    .split("_")
-    .join(" ")
-    .toUpperCase();
-}
+export const OPERATIONAL_CATEGORY_OPTIONS: SelectOption[] = [
+  {
+    value: "AQUISICAO E INSTALACAO INDUSTRIAL",
+    label: "AQUISICAO E INSTALACAO INDUSTRIAL",
+    description: "Use para compra, substituição ou instalação de equipamentos industriais ligados diretamente à operação produtiva. Ex.: máquinas, bombas, compressores, pontes rolantes, sistemas industriais e utilidades de produção."
+  },
+  {
+    value: "MANUTENCAO INDUSTRIAL PESADA",
+    label: "MANUTENCAO INDUSTRIAL PESADA",
+    description: "Use para reforma, recuperação, overhaul ou intervenção relevante em ativos industriais existentes. Ex.: reforma de ponte rolante, recuperação de forno, substituição crítica de componentes ou grandes paradas de manutenção."
+  },
+  {
+    value: "OBRAS CIVIS E INFRAESTRUTURA INDUSTRIAL",
+    label: "OBRAS CIVIS E INFRAESTRUTURA INDUSTRIAL",
+    description: "Use para construção, adequação ou recuperação de infraestrutura física industrial. Ex.: fundações, bases de equipamentos, pisos industriais, galpões, estruturas metálicas e edificações industriais."
+  },
+  {
+    value: "ADEQUACAO NORMATIVA SEGURANCA E MEIO AMBIENTE",
+    label: "ADEQUACAO NORMATIVA SEGURANCA E MEIO AMBIENTE",
+    description: "Use para projetos necessários ao atendimento de normas, requisitos legais, segurança operacional, compliance ou meio ambiente. Ex.: NR-12, proteções, contenção ambiental, licenças e mitigação de riscos."
+  },
+  {
+    value: "AUTOMACAO SISTEMAS E DIGITALIZACAO INDUSTRIAL",
+    label: "AUTOMACAO SISTEMAS E DIGITALIZACAO INDUSTRIAL",
+    description: "Use para automação, controle, sensores, PLC, supervisório, integração de sistemas industriais, coleta automática de dados e digitalização de processos produtivos."
+  },
+  {
+    value: "ENGENHARIA ESTUDOS E VIABILIDADE",
+    label: "ENGENHARIA ESTUDOS E VIABILIDADE",
+    description: "Use para estudos técnicos, engenharia conceitual, engenharia básica/detalhada ou análise de viabilidade. Ex.: FEL, estudo de capacidade, análise técnica de alternativas e engenharia para futura implantação."
+  },
+  {
+    value: "INFRAESTRUTURA ADMINISTRATIVA TI E FACILITIES",
+    label: "INFRAESTRUTURA ADMINISTRATIVA TI E FACILITIES",
+    description: "Use para infraestrutura administrativa, TI corporativa, audiovisual, mobiliário, salas, equipamentos de apoio e facilities. Ex.: notebooks, TVs, monitores, salas de reunião, rede administrativa e mobiliário."
+  }
+];
 
-export const OPERATIONAL_CATEGORY_OPTIONS: SelectOption[] = OPERATIONAL_CATEGORIES.map((value) => ({
-  value,
-  label: toFriendlyOperationalLabel(value),
-  description: ({
-    AQUISICAO_E_INSTALACAO_INDUSTRIAL: "Use para compra, substituição ou instalação de equipamentos industriais ligados diretamente à operação produtiva. Ex.: máquinas, bombas, compressores, pontes rolantes, sistemas industriais e utilidades de produção.",
-    MANUTENCAO_INDUSTRIAL_PESADA: "Use para reforma, recuperação, overhaul ou intervenção relevante em ativos industriais existentes. Ex.: reforma de ponte rolante, recuperação de forno, substituição crítica de componentes ou grandes paradas de manutenção.",
-    OBRAS_CIVIS_E_INFRAESTRUTURA_INDUSTRIAL: "Use para construção, adequação ou recuperação de infraestrutura física industrial. Ex.: fundações, bases de equipamentos, pisos industriais, galpões, estruturas metálicas e edificações industriais.",
-    ADEQUACAO_NORMATIVA_SEGURANCA_E_MEIO_AMBIENTE: "Use para projetos necessários ao atendimento de normas, requisitos legais, segurança operacional, compliance ou meio ambiente. Ex.: NR-12, proteções, contenção ambiental, licenças e mitigação de riscos.",
-    AUTOMACAO_SISTEMAS_E_DIGITALIZACAO_INDUSTRIAL: "Use para automação, controle, sensores, PLC, supervisório, integração de sistemas industriais, coleta automática de dados e digitalização de processos produtivos.",
-    ENGENHARIA_ESTUDOS_E_VIABILIDADE: "Use para estudos técnicos, engenharia conceitual, engenharia básica/detalhada ou análise de viabilidade. Ex.: FEL, estudo de capacidade, análise técnica de alternativas e engenharia para futura implantação.",
-    INFRAESTRUTURA_ADMINISTRATIVA_TI_E_FACILITIES: "Use para infraestrutura administrativa, TI corporativa, audiovisual, mobiliário, salas, equipamentos de apoio e facilities. Ex.: notebooks, TVs, monitores, salas de reunião, rede administrativa e mobiliário."
-  } as Record<string, string>)[value]
-}));
-
-export const OPERATIONAL_COMPLEXITY_OPTIONS: SelectOption[] = OPERATIONAL_COMPLEXITIES.map((value) => ({
-  value,
-  label: toFriendlyOperationalLabel(value),
-  description: ({
-    BAIXA: "Use para projetos simples, com baixo risco, poucas etapas, baixa dependência entre áreas e necessidade reduzida de acompanhamento. O sistema gera 2 marcos e 1 atividade por marco.",
-    MEDIA: "Use para projetos com planejamento, contratação, instalação ou coordenação entre áreas, mas sem alta criticidade operacional. O sistema gera 4 marcos e 2 atividades por marco.",
-    ALTA: "Use para projetos críticos, com múltiplas etapas, fornecedores, interfaces técnicas, parada operacional, risco de segurança/compliance ou alta necessidade de governança. O sistema gera 6 marcos e 3 atividades por marco."
-  } as Record<string, string>)[value]
-}));
+export const OPERATIONAL_COMPLEXITY_OPTIONS: SelectOption[] = [
+  {
+    value: "BAIXA",
+    label: "BAIXA",
+    description: "Use para projetos simples, com baixo risco, poucas etapas, baixa dependência entre áreas e necessidade reduzida de acompanhamento. O sistema gera 2 marcos e 1 atividade por marco."
+  },
+  {
+    value: "MEDIA",
+    label: "MEDIA",
+    description: "Use para projetos com planejamento, contratação, instalação ou coordenação entre áreas, mas sem alta criticidade operacional. O sistema gera 4 marcos e 2 atividades por marco."
+  },
+  {
+    value: "ALTA",
+    label: "ALTA",
+    description: "Use para projetos críticos, com múltiplas etapas, fornecedores, interfaces técnicas, parada operacional, risco de segurança/compliance ou alta necessidade de governança. O sistema gera 6 marcos e 3 atividades por marco."
+  }
+];
 
 const PEP_ELEMENT_OPTIONS_DEFAULT: SelectOption[] = [
   { value: "DESP.ENGENHARIA / DETALHAMENTO PROJETO", label: "DESP.ENGENHARIA / DETALHAMENTO PROJETO" },

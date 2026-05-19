@@ -1,4 +1,5 @@
 import type { OperationalCategory, OperationalComplexity } from "./operationalStructureCatalog";
+import { normalizeOperationalCategory } from "./operationalValueNormalizer";
 
 export type StructureTemplateSeedKey = `${OperationalCategory}:${OperationalComplexity}`;
 
@@ -13,7 +14,7 @@ const DEFAULT_ACTIVITY_TEMPLATE: readonly ActivityTemplateItem[] = [
   { title: "Validação", placeholder: "Validação" }
 ] as const;
 
-const ACTIVITY_TEMPLATES_BY_CATEGORY_AND_MILESTONE: Partial<Record<OperationalCategory, Record<string, readonly ActivityTemplateItem[]>>> = {
+const ACTIVITY_TEMPLATES_BY_CATEGORY_AND_MILESTONE: Record<string, Record<string, readonly ActivityTemplateItem[]>> = {
   aquisicao_e_instalacao_industrial: {
     "DEFINIÇÃO TÉCNICA": [
       { title: "Levantar necessidade operacional", placeholder: "Levantar necessidade operacional" },
@@ -331,7 +332,9 @@ export function makeStructureTemplateSeedKey(category: OperationalCategory, comp
 
 export function buildSuggestedActivitiesByMilestone(seedKey: StructureTemplateSeedKey, milestoneTitles: readonly string[]) {
   const [category] = seedKey.split(":") as [OperationalCategory, OperationalComplexity];
-  const categoryMap = ACTIVITY_TEMPLATES_BY_CATEGORY_AND_MILESTONE[category] ?? {};
+  const normalizedCategory = normalizeOperationalCategory(category) ?? category;
+  const legacyCategory = normalizedCategory.toLowerCase().replace(/\s+/g, "_");
+  const categoryMap = ACTIVITY_TEMPLATES_BY_CATEGORY_AND_MILESTONE[legacyCategory] ?? {};
 
   return milestoneTitles.reduce<Record<string, ActivityTemplateItem[]>>((acc, milestoneTitle) => {
     const key = milestoneTitle.toUpperCase();
