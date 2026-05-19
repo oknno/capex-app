@@ -352,7 +352,7 @@ function FilterMenu(props: {
                 onChange={(e) => props.onChange({ status: e.target.value })}
                 style={styles.select}
               >
-                <option value="">Todos</option>
+                <option value="">Selecione o status...</option>
                 {STATUS_OPTIONS.map((status) => (
                   <option key={status} value={status}>{status}</option>
                 ))}
@@ -366,7 +366,7 @@ function FilterMenu(props: {
                 onChange={(e) => props.onChange({ unit: e.target.value })}
                 style={styles.select}
               >
-                <option value="">Todas</option>
+                <option value="">Selecione a unidade...</option>
                 {props.unitOptions.map((unit) => (
                   <option key={unit} value={unit}>{unit}</option>
                 ))}

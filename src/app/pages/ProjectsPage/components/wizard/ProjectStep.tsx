@@ -83,8 +83,8 @@ export function ProjectStep(props: { draft: ProjectDraft; readOnly: boolean; onC
           </div>
 
           <div style={wizardLayoutStyles.journeyPairGrid}>
-            <FieldDate label="Data de Início" value={startDateValue} min={today} disabled={props.readOnly} onChange={(v) => props.onChange({ startDate: v || undefined })} />
-            <FieldDate label="Data de Término" value={endDateValue} min={startDateValue || today} disabled={props.readOnly} onChange={(v) => props.onChange({ endDate: v || undefined })} />
+            <FieldDate label="Data de Início" value={startDateValue} placeholder="dd/mm/aaaa" min={today} disabled={props.readOnly} onChange={(v) => props.onChange({ startDate: v || undefined })} />
+            <FieldDate label="Data de Término" value={endDateValue} placeholder="dd/mm/aaaa" min={startDateValue || today} disabled={props.readOnly} onChange={(v) => props.onChange({ endDate: v || undefined })} />
           </div>
 
           <div style={wizardLayoutStyles.journeyPairGrid}>
@@ -104,7 +104,7 @@ export function ProjectStep(props: { draft: ProjectDraft; readOnly: boolean; onC
             />
           </div>
 
-          <FieldText label="Função do Projeto" value={d.projectFunction ?? ""} maxLength={35} disabled={props.readOnly} onChange={(v) => props.onChange({ projectFunction: v.toUpperCase().slice(0, 35) })} />
+          <FieldText label="Função do Projeto" value={d.projectFunction ?? ""} maxLength={35} placeholder="Ex.: Aumentar capacidade produtiva" disabled={props.readOnly} onChange={(v) => props.onChange({ projectFunction: v.toUpperCase().slice(0, 35) })} />
         </div>
       </div>
 
@@ -143,7 +143,7 @@ export function ProjectStep(props: { draft: ProjectDraft; readOnly: boolean; onC
           </div>
 
           <div style={wizardLayoutStyles.journeyPairGrid}>
-            <FieldText label="C. Custo Depreciação" value={d.depreciationCostCenter ?? ""} disabled={props.readOnly} onChange={(v) => props.onChange({ depreciationCostCenter: v.toUpperCase() })} />
+            <FieldText label="C. Custo Depreciação" value={d.depreciationCostCenter ?? ""} placeholder="Ex.: CC-1234" disabled={props.readOnly} onChange={(v) => props.onChange({ depreciationCostCenter: v.toUpperCase() })} />
             <FieldSelect label="Categoria" value={d.category ?? ""} options={CATEGORY_OPTIONS} disabled={props.readOnly} onChange={(v) => props.onChange({ category: v || undefined })} />
           </div>
 
@@ -153,8 +153,8 @@ export function ProjectStep(props: { draft: ProjectDraft; readOnly: boolean; onC
           </div>
 
           <div style={wizardLayoutStyles.journeyPairGrid}>
-            <FieldText label="Usuário do Projeto" value={d.projectUser ?? ""} disabled={props.readOnly} onChange={(v) => props.onChange({ projectUser: v.toUpperCase() })} />
-            <FieldText label="Líder do Projeto" value={d.projectLeader ?? ""} disabled={props.readOnly} onChange={(v) => props.onChange({ projectLeader: v.toUpperCase() })} />
+            <FieldText label="Usuário do Projeto" value={d.projectUser ?? ""} placeholder="Ex.: JOÃO SILVA" disabled={props.readOnly} onChange={(v) => props.onChange({ projectUser: v.toUpperCase() })} />
+            <FieldText label="Líder do Projeto" value={d.projectLeader ?? ""} placeholder="Ex.: MARIA SOUZA" disabled={props.readOnly} onChange={(v) => props.onChange({ projectLeader: v.toUpperCase() })} />
           </div>
         </div>
       </div>
@@ -165,6 +165,7 @@ export function ProjectStep(props: { draft: ProjectDraft; readOnly: boolean; onC
           <Field label="Necessidade do Negócio">
             <textarea
               value={d.businessNeed ?? ""}
+              placeholder="Descreva a necessidade do negócio e o problema atual"
               disabled={props.readOnly}
               rows={4}
               onChange={(e) => props.onChange({ businessNeed: e.target.value })}
@@ -178,6 +179,7 @@ export function ProjectStep(props: { draft: ProjectDraft; readOnly: boolean; onC
           <Field label="Solução da Proposta">
             <textarea
               value={d.proposedSolution ?? ""}
+              placeholder="Descreva a solução proposta e o resultado esperado"
               disabled={props.readOnly}
               rows={4}
               onChange={(e) => props.onChange({ proposedSolution: e.target.value })}
@@ -202,7 +204,7 @@ export function ProjectStep(props: { draft: ProjectDraft; readOnly: boolean; onC
             <FieldText label="KPI Esperado" value={d.kpiExpected ?? ""} disabled={props.readOnly} onChange={(v) => props.onChange({ kpiExpected: v })} />
           </div>
           <Field label="Descrição do KPI">
-            <textarea value={d.kpiDescription ?? ""} disabled={props.readOnly} rows={3} onChange={(e) => props.onChange({ kpiDescription: e.target.value })} style={{ ...wizardLayoutStyles.input, ...wizardLayoutStyles.textareaReadable }} />
+            <textarea value={d.kpiDescription ?? ""} disabled={props.readOnly} rows={3} placeholder="Explique como o KPI será medido" onChange={(e) => props.onChange({ kpiDescription: e.target.value })} style={{ ...wizardLayoutStyles.input, ...wizardLayoutStyles.textareaReadable }} />
           </Field>
         </div>
       </div>
@@ -255,10 +257,10 @@ export function ProjectStep(props: { draft: ProjectDraft; readOnly: boolean; onC
 
               <div style={wizardLayoutStyles.journeyPairGrid}>
                 <Field label="Descrição do ganho">
-                  <textarea value={d.roceGainDescription ?? ""} disabled={props.readOnly} rows={3} onChange={(e) => props.onChange({ roceGainDescription: e.target.value })} style={{ ...wizardLayoutStyles.input, ...wizardLayoutStyles.textareaReadable }} />
+                  <textarea value={d.roceGainDescription ?? ""} disabled={props.readOnly} rows={3} placeholder="Detalhe a origem do ganho projetado" onChange={(e) => props.onChange({ roceGainDescription: e.target.value })} style={{ ...wizardLayoutStyles.input, ...wizardLayoutStyles.textareaReadable }} />
                 </Field>
                 <Field label="Descrição da perda">
-                  <textarea value={d.roceLossDescription ?? ""} disabled={props.readOnly} rows={3} onChange={(e) => props.onChange({ roceLossDescription: e.target.value })} style={{ ...wizardLayoutStyles.input, ...wizardLayoutStyles.textareaReadable }} />
+                  <textarea value={d.roceLossDescription ?? ""} disabled={props.readOnly} rows={3} placeholder="Detalhe riscos e perdas potenciais" onChange={(e) => props.onChange({ roceLossDescription: e.target.value })} style={{ ...wizardLayoutStyles.input, ...wizardLayoutStyles.textareaReadable }} />
                 </Field>
               </div>
             </>
