@@ -33,12 +33,12 @@ export function ProjectSummarySection(props: {
           </div>
 
           <div style={styles.fieldGrid}>
-            <Field label={projectFieldLabel("budgetBrl")} layout="inline">{fmtMoney(props.selectedFull.budgetBrl)}</Field>
-            <Field label={projectFieldLabel("projectLeader")} layout="inline">{String(props.selectedFull.projectLeader ?? "-")}</Field>
-            <Field label="Início / Fim" layout="inline">{`${fmtDate(props.selectedFull.startDate)}  →  ${fmtDate(props.selectedFull.endDate)}`}</Field>
-            <Field label={projectFieldLabel("unit")} layout="inline">{String(props.selectedFull.unit ?? "-")}</Field>
-            <Field label={projectFieldLabel("fundingSource")} layout="inline">{String(props.selectedFull.fundingSource ?? "-")}</Field>
-            <Field label="Programa" layout="inline">{String(props.selectedFull.program ?? "-")}</Field>
+            <Field label={projectFieldLabel("budgetBrl")} layout="stack">{fmtMoney(props.selectedFull.budgetBrl)}</Field>
+            <Field label={projectFieldLabel("projectLeader")} layout="stack">{String(props.selectedFull.projectLeader ?? "-")}</Field>
+            <Field label="Início / Fim" layout="stack">{`${fmtDate(props.selectedFull.startDate)}  →  ${fmtDate(props.selectedFull.endDate)}`}</Field>
+            <Field label={projectFieldLabel("unit")} layout="stack">{String(props.selectedFull.unit ?? "-")}</Field>
+            <Field label={projectFieldLabel("fundingSource")} layout="stack">{String(props.selectedFull.fundingSource ?? "-")}</Field>
+            <Field label="Programa" layout="stack">{String(props.selectedFull.program ?? "-")}</Field>
           </div>
 
           <div style={styles.longTextWrap}>
