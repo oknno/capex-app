@@ -68,9 +68,9 @@ function StatusBadge({ status }: { status: string }) {
 const styles = {
   summaryHeader: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
   summaryTitle: { fontWeight: 800, color: uiTokens.colors.textStrong },
-  summaryContent: { display: "grid", gap: 12 },
-  summaryTitleRow: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 },
-  projectTitle: { fontWeight: 800, color: uiTokens.colors.textStrong, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
+  summaryContent: { display: "grid", gap: 12, minWidth: 0 },
+  summaryTitleRow: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, minWidth: 0 },
+  projectTitle: { fontWeight: 800, color: uiTokens.colors.textStrong, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0, flex: 1 },
   sapCodeText: { fontSize: 14, color: uiTokens.colors.text, fontWeight: 600 },
   fieldGrid: { borderTop: `1px solid ${uiTokens.colors.borderMuted}`, paddingTop: 12, display: "grid", gap: 10, gridTemplateColumns: "repeat(2, minmax(0, 1fr))" },
   longTextWrap: { borderTop: `1px solid ${uiTokens.colors.borderMuted}`, paddingTop: 12, display: "grid", gap: 12 },
