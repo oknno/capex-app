@@ -194,7 +194,7 @@ export function GanttPreview(props: {
                     <span style={{ minWidth: 0, flex: 1, fontSize: 14, fontWeight: 400 }}>{item.activityTitle}</span>
                     <span style={{ marginLeft: "auto", textAlign: "right", fontWeight: 400, color: invalidRange ? uiTokens.colors.danger : uiTokens.colors.textMuted }}>{activityScheduleLabel}</span>
                   </div>
-                  <div style={{ position: "relative", height: 7, borderRadius: 999, background: uiTokens.colors.borderMuted, overflow: "hidden", marginLeft: uiTokens.spacing.xl + 4 }}>
+                  <div style={{ position: "relative", height: 7, borderRadius: 999, background: uiTokens.colors.borderMuted, overflow: "hidden" }}>
                     <div style={{ position: "absolute", left: `${activityBar.left}%`, width: `${activityBar.width}%`, top: 0, bottom: 0, background: invalidRange ? uiTokens.colors.danger : uiTokens.colors.text, borderRadius: 999 }} />
                   </div>
                 </div>
