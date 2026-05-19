@@ -227,6 +227,7 @@ export function StructureStep(props: {
                         <Field label="Início da Atividade">
                           <input
                             type="date"
+                            placeholder="dd/mm/aaaa"
                             min={props.projectStartDate}
                             max={props.projectEndDate}
                             value={activity.startDate ?? ""}
@@ -237,6 +238,7 @@ export function StructureStep(props: {
                         <Field label="Término da Atividade">
                           <input
                             type="date"
+                            placeholder="dd/mm/aaaa"
                             min={(activity.startDate ?? "") || props.projectStartDate}
                             max={props.projectEndDate}
                             value={activity.endDate ?? ""}
@@ -266,7 +268,7 @@ export function StructureStep(props: {
                         <textarea
                           value={activity.activityDescription ?? ""}
                           onChange={(e) => updateActivity(activity.tempId, { activityDescription: e.target.value })}
-                          placeholder=""
+                          placeholder="Descreva a atividade e os principais entregáveis"
                           style={{ ...wizardLayoutStyles.input, ...wizardLayoutStyles.textareaReadable }}
                         />
                       </Field>
@@ -317,10 +319,10 @@ export function StructureStep(props: {
 
                       <div style={wizardLayoutStyles.journeyPairGrid}>
                         <Field label="Início da Atividade">
-                          <input type="date" min={props.projectStartDate} max={props.projectEndDate} value={form.acStartDate} onChange={(e) => setFormField(milestone.tempId, { acStartDate: e.target.value })} style={wizardLayoutStyles.input} />
+                          <input type="date" placeholder="dd/mm/aaaa" min={props.projectStartDate} max={props.projectEndDate} value={form.acStartDate} onChange={(e) => setFormField(milestone.tempId, { acStartDate: e.target.value })} style={wizardLayoutStyles.input} />
                         </Field>
                         <Field label="Término da Atividade">
-                          <input type="date" min={form.acStartDate || props.projectStartDate} max={props.projectEndDate} value={form.acEndDate} onChange={(e) => setFormField(milestone.tempId, { acEndDate: e.target.value })} style={wizardLayoutStyles.input} />
+                          <input type="date" placeholder="dd/mm/aaaa" min={form.acStartDate || props.projectStartDate} max={props.projectEndDate} value={form.acEndDate} onChange={(e) => setFormField(milestone.tempId, { acEndDate: e.target.value })} style={wizardLayoutStyles.input} />
                         </Field>
                       </div>
 

@@ -48,12 +48,14 @@ export function SectionTitle(props: { title: string; subtitle?: string }) {
 }
 
 function FieldInput(props: { label: string; value: FieldValue; placeholder?: string; helperText?: string; disabled?: boolean; onChange: (v: string) => void; inputMode?: "numeric" | "text"; type?: "text" | "number" | "date"; min?: string; max?: string; maxLength?: number; step?: string }) {
+  const resolvedPlaceholder = props.placeholder ?? (props.type === "date" ? "dd/mm/aaaa" : props.type === "number" ? "Digite um valor" : "Digite aqui");
+
   return (
     <Field label={props.label}>
       <>
         <input
           value={String(props.value ?? "")}
-          placeholder={props.placeholder}
+          placeholder={resolvedPlaceholder}
           disabled={props.disabled}
           inputMode={props.inputMode}
           type={props.type ?? "text"}
@@ -129,8 +131,8 @@ const styles: Record<string, CSSProperties> = {
   }
 };
 
-export function FieldDate(props: { label: string; value: FieldValue; disabled?: boolean; min?: string; max?: string; onChange: (v: string) => void }) {
-  return <FieldInput {...props} type="date" />;
+export function FieldDate(props: { label: string; value: FieldValue; placeholder?: string; disabled?: boolean; min?: string; max?: string; onChange: (v: string) => void }) {
+  return <FieldInput {...props} type="date" placeholder={props.placeholder ?? "dd/mm/aaaa"} />;
 }
 
 export function FieldSelect(props: { label: string; value: FieldValue; disabled?: boolean; options: Array<{ value: string; label: string }>; placeholder?: string; onChange: (v: string) => void }) {
