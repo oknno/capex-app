@@ -23,5 +23,5 @@ export const projectsPageStyles: Record<string, CSSProperties> = {
   listCard: { display: "flex", flexDirection: "column", overflow: "hidden", minHeight: 0, padding: uiTokens.spacing.sm },
   footerRow: { display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10 },
   helperText: { fontSize: uiTokens.typography.xs, color: uiTokens.colors.textMuted },
-  summaryCard: { overflow: "auto", minHeight: 0, padding: uiTokens.spacing.md },
+  summaryCard: { overflow: "hidden", minHeight: 0, padding: uiTokens.spacing.md },
 };
