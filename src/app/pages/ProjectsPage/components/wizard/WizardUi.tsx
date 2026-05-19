@@ -136,14 +136,16 @@ export function FieldDate(props: { label: string; value: FieldValue; placeholder
 }
 
 export function FieldSelect(props: { label: string; value: FieldValue; disabled?: boolean; options: Array<{ value: string; label: string; description?: string }>; placeholder?: string; onChange: (v: string) => void }) {
+  const selectedValue = String(props.value ?? "");
+  const selectedOption = props.options.find((option) => option.value === selectedValue);
+
   return (
     <Field label={props.label}>
-      <select value={String(props.value ?? "")} disabled={props.disabled} onChange={(e) => props.onChange(e.target.value)} style={styles.input}>
+      <select value={selectedValue} disabled={props.disabled} onChange={(e) => props.onChange(e.target.value)} style={styles.input}>
         <option value="">{props.placeholder ?? "Selecione..."}</option>
         {props.options.map((option) => <option key={option.value} value={option.value} title={option.description}>{option.label}</option>)}
       </select>
+      {selectedOption?.description ? <div style={styles.helperText}>{selectedOption.description}</div> : null}
     </Field>
   );
 }
-
-export const FieldSelectWithOptionTooltip = FieldSelect;
