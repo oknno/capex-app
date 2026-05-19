@@ -58,7 +58,11 @@ function activitySummary(activity: ActivityDraftLocal) {
 }
 
 function hasActivityValidationIssue(activity: ActivityDraftLocal) {
-  return !activity.Title?.trim() || !activity.pepElement;
+  if (!activity.Title?.trim()) return true;
+  if (!activity.startDate) return true;
+  if (!activity.endDate) return true;
+  if (activity.endDate < activity.startDate) return true;
+  return false;
 }
 
 export function StructureStep(props: {
@@ -127,7 +131,8 @@ export function StructureStep(props: {
 
     if (!milestoneTitle.trim()) return props.onValidationError("Nome do marco é obrigatório.");
     if (!form.acTitle.trim()) return props.onValidationError("Título da atividade é obrigatório.");
-    if (!form.acPepElement) return props.onValidationError("Selecione o elemento PEP da atividade.");
+    if (!form.acStartDate) return props.onValidationError("Início da atividade é obrigatório.");
+    if (!form.acEndDate) return props.onValidationError("Término da atividade é obrigatório.");
     if (props.projectStartDate && form.acStartDate && form.acStartDate < props.projectStartDate) return props.onValidationError("Início da atividade não pode ser antes do início do projeto.");
     if (form.acStartDate && form.acEndDate && form.acEndDate < form.acStartDate) return props.onValidationError("Término da atividade não pode ser antes do início.");
     if (props.projectEndDate && form.acEndDate && form.acEndDate > props.projectEndDate) return props.onValidationError("Término da atividade não pode ser após término do projeto.");
@@ -165,7 +170,7 @@ export function StructureStep(props: {
             {props.milestones.map((milestone) => {
               const form = getForm(milestone.tempId);
               const milestoneActivities = activitiesByMilestone[milestone.tempId] ?? [];
-              const canAddActivity = Boolean(form.acTitle.trim() && form.acPepElement);
+              const canAddActivity = Boolean(form.acTitle.trim() && form.acStartDate && form.acEndDate);
               const isAddingActivity = isAddingActivityByMilestone[milestone.tempId] ?? false;
 
               return (
