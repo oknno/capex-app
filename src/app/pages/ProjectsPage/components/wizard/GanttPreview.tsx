@@ -152,7 +152,7 @@ export function GanttPreview(props: {
 
   return (
     <div style={{ display: "grid", gap: uiTokens.spacing.sm }}>
-      <div style={{ fontSize: 12, color: uiTokens.colors.textMuted }}>
+      <div style={{ fontSize: uiTokens.typography.xs, color: uiTokens.colors.textMuted }}>
         Período do cronograma: {ganttRangeLabel}
       </div>
       {milestoneGroups.map((milestoneGroup) => {
@@ -161,14 +161,14 @@ export function GanttPreview(props: {
         return (
           <div key={`${milestoneGroup.milestoneName}_${milestoneGroup.startDateMin}_${milestoneGroup.endDateMax}`} style={{ display: "grid", gap: uiTokens.spacing.xs }}>
             <div>
-              <div style={{ display: "flex", alignItems: "center", gap: uiTokens.spacing.xs, fontSize: 12, color: uiTokens.colors.textStrong, marginBottom: 4 }}>
-                <span style={{ minWidth: 0, flex: 1, fontWeight: uiTokens.typography.titleWeight, letterSpacing: 0.2 }}>{milestoneGroup.milestoneName}</span>
+              <div style={{ display: "flex", alignItems: "center", gap: uiTokens.spacing.xs, fontSize: 13, color: uiTokens.colors.textStrong, marginBottom: 6 }}>
+                <span style={{ minWidth: 0, flex: 1, fontWeight: uiTokens.typography.titleWeight, fontSize: 15, letterSpacing: 0.15 }}>{milestoneGroup.milestoneName}</span>
                 <span style={{ marginLeft: "auto", textAlign: "right", color: milestoneSchedule.isInvalid ? uiTokens.colors.danger : uiTokens.colors.textMuted }}>
                   {milestoneSchedule.label}
                 </span>
               </div>
-              <div style={{ position: "relative", height: 18, borderRadius: 999, background: uiTokens.colors.borderMuted, overflow: "hidden" }}>
-                <div style={{ position: "absolute", left: `${milestoneBar.left}%`, width: `${milestoneBar.width}%`, top: 0, bottom: 0, background: milestoneSchedule.isInvalid ? uiTokens.colors.danger : "#1e3a8a", borderRadius: 999 }} />
+              <div style={{ position: "relative", height: 9, borderRadius: 999, background: uiTokens.colors.borderMuted, overflow: "hidden" }}>
+                <div style={{ position: "absolute", left: `${milestoneBar.left}%`, width: `${milestoneBar.width}%`, top: 0, bottom: 0, background: milestoneSchedule.isInvalid ? uiTokens.colors.danger : uiTokens.stateTones.info.fg, borderRadius: 999 }} />
               </div>
             </div>
             {milestoneGroup.activities.map((item) => {
@@ -190,12 +190,12 @@ export function GanttPreview(props: {
 
               return (
                 <div key={`${item.milestoneTitle}_${item.activityTitle}_${item.startDate}_${item.endDate}`}>
-                  <div style={{ display: "flex", alignItems: "center", gap: uiTokens.spacing.xs, fontSize: 10, color: "#4b5563", marginBottom: 4, paddingLeft: uiTokens.spacing.xl + 4 }}>
-                    <span style={{ minWidth: 0, flex: 1 }}>{item.activityTitle}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: uiTokens.spacing.xs, fontSize: 12, color: uiTokens.colors.text, marginBottom: 5, paddingLeft: uiTokens.spacing.xl + 4 }}>
+                    <span style={{ minWidth: 0, flex: 1, fontSize: 14, fontWeight: uiTokens.typography.mediumWeight }}>{item.activityTitle}</span>
                     <span style={{ marginLeft: "auto", textAlign: "right", color: invalidRange ? uiTokens.colors.danger : uiTokens.colors.textMuted }}>{activityScheduleLabel}</span>
                   </div>
-                  <div style={{ position: "relative", height: 4, borderRadius: 999, background: uiTokens.colors.borderMuted, overflow: "hidden", marginLeft: uiTokens.spacing.xl + 4 }}>
-                    <div style={{ position: "absolute", left: `${activityBar.left}%`, width: `${activityBar.width}%`, top: 0, bottom: 0, background: invalidRange ? uiTokens.colors.danger : "#4b5563", borderRadius: 999 }} />
+                  <div style={{ position: "relative", height: 6, borderRadius: 999, background: uiTokens.colors.borderMuted, overflow: "hidden", marginLeft: uiTokens.spacing.xl + 4 }}>
+                    <div style={{ position: "absolute", left: `${activityBar.left}%`, width: `${activityBar.width}%`, top: 0, bottom: 0, background: invalidRange ? uiTokens.colors.danger : uiTokens.colors.text, borderRadius: 999 }} />
                   </div>
                 </div>
               );
