@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from "react";
+import { type CSSProperties } from "react";
 
 import { Badge } from "../../../../components/ui/Badge";
 import { Field } from "../../../../components/ui/Field";
@@ -136,18 +136,12 @@ export function FieldDate(props: { label: string; value: FieldValue; placeholder
 }
 
 export function FieldSelect(props: { label: string; value: FieldValue; disabled?: boolean; options: Array<{ value: string; label: string; description?: string }>; placeholder?: string; onChange: (v: string) => void }) {
-  const [isHovering, setIsHovering] = useState(false);
-  const selectedOption = props.options.find((option) => option.value === String(props.value ?? ""));
-
   return (
     <Field label={props.label}>
-      <div style={{ position: "relative" }} onMouseEnter={() => setIsHovering(true)} onMouseLeave={() => setIsHovering(false)}>
-        <select value={String(props.value ?? "")} disabled={props.disabled} onChange={(e) => props.onChange(e.target.value)} style={styles.input}>
-          <option value="">{props.placeholder ?? "Selecione..."}</option>
-          {props.options.map((option) => <option key={option.value} value={option.value} title={option.description}>{option.label}</option>)}
-        </select>
-        {isHovering && selectedOption?.description ? <small style={styles.helperText}>{selectedOption.description}</small> : null}
-      </div>
+      <select value={String(props.value ?? "")} disabled={props.disabled} onChange={(e) => props.onChange(e.target.value)} style={styles.input}>
+        <option value="">{props.placeholder ?? "Selecione..."}</option>
+        {props.options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+      </select>
     </Field>
   );
 }
