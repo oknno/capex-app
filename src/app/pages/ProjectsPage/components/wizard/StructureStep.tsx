@@ -305,7 +305,7 @@ export function StructureStep(props: {
         )}
 
         <div style={{ ...wizardLayoutStyles.cardSubtle, background: uiTokens.colors.surface, marginTop: uiTokens.spacing.md }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: uiTokens.colors.textStrong, marginBottom: uiTokens.spacing.sm }}>Pré-visualização do cronograma (Gantt)</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: uiTokens.colors.textStrong, marginBottom: uiTokens.spacing.sm }}>Pré-visualização do Cronograma</div>
           <GanttPreview milestones={props.milestones} activities={props.activities} />
         </div>
       </div>
