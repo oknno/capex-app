@@ -61,7 +61,6 @@ export function ProjectWizardModal(props: {
     errHeader,
     needStructure,
     regenerateSuggestedStructure,
-    structureRegeneratedExplicitly,
     structureInitialized
   } = useWizardInitialLoad({ mode: props.mode, initial: props.initial });
 
@@ -177,8 +176,7 @@ export function ProjectWizardModal(props: {
     onSubmitProject: props.onSubmitProject,
     onClose: props.onClose,
     askConfirm,
-    notify,
-    shouldRefreshStructureSnapshot: structureRegeneratedExplicitly
+    notify
   });
 
   const projectRequiredFields = useMemo(
