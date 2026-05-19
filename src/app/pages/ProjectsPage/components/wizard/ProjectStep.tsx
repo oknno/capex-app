@@ -21,7 +21,7 @@ import {
   UNIT_OPTIONS_BY_CENTER,
   todayIsoDate,
 } from "./wizardOptions";
-import { FieldDate, FieldNumber, FieldSelect, FieldSelectWithOptionTooltip, FieldText, SectionTitle } from "./WizardUi";
+import { FieldDate, FieldNumber, FieldSelect, FieldText, SectionTitle } from "./WizardUi";
 import { wizardLayoutStyles } from "./wizardLayoutStyles";
 import { Field } from "../../../../components/ui/Field";
 import { uiTokens } from "../../../../components/ui/tokens";
@@ -88,14 +88,14 @@ export function ProjectStep(props: { draft: ProjectDraft; readOnly: boolean; onC
           </div>
 
           <div style={wizardLayoutStyles.journeyPairGrid}>
-            <FieldSelectWithOptionTooltip
+            <FieldSelect
               label="Categoria operacional"
               value={(d as { operationalCategory?: string }).operationalCategory ?? ""}
               options={OPERATIONAL_CATEGORY_OPTIONS}
               disabled={props.readOnly}
               onChange={(v) => props.onChange({ operationalCategory: v || undefined } as Partial<ProjectDraft>)}
             />
-            <FieldSelectWithOptionTooltip
+            <FieldSelect
               label="Complexidade"
               value={(d as { complexity?: string }).complexity ?? ""}
               options={OPERATIONAL_COMPLEXITY_OPTIONS}
@@ -144,12 +144,12 @@ export function ProjectStep(props: { draft: ProjectDraft; readOnly: boolean; onC
 
           <div style={wizardLayoutStyles.journeyPairGrid}>
             <FieldText label="C. Custo Depreciação" value={d.depreciationCostCenter ?? ""} placeholder="Ex.: CC-1234" disabled={props.readOnly} onChange={(v) => props.onChange({ depreciationCostCenter: v.toUpperCase() })} />
-            <FieldSelectWithOptionTooltip label="Categoria" value={d.category ?? ""} options={CATEGORY_OPTIONS} disabled={props.readOnly} onChange={(v) => props.onChange({ category: v || undefined })} />
+            <FieldSelect label="Categoria" value={d.category ?? ""} options={CATEGORY_OPTIONS} disabled={props.readOnly} onChange={(v) => props.onChange({ category: v || undefined })} />
           </div>
 
           <div style={wizardLayoutStyles.journeyPairGrid}>
-            <FieldSelectWithOptionTooltip label="Tipo de Investimento" value={d.investmentType ?? ""} options={INVESTMENT_TYPE_OPTIONS} disabled={props.readOnly} onChange={(v) => props.onChange({ investmentType: v || undefined })} />
-            <FieldSelectWithOptionTooltip label="Tipo de Ativo" value={d.assetType ?? ""} options={ASSET_TYPE_OPTIONS} disabled={props.readOnly} onChange={(v) => props.onChange({ assetType: v || undefined })} />
+            <FieldSelect label="Tipo de Investimento" value={d.investmentType ?? ""} options={INVESTMENT_TYPE_OPTIONS} disabled={props.readOnly} onChange={(v) => props.onChange({ investmentType: v || undefined })} />
+            <FieldSelect label="Tipo de Ativo" value={d.assetType ?? ""} options={ASSET_TYPE_OPTIONS} disabled={props.readOnly} onChange={(v) => props.onChange({ assetType: v || undefined })} />
           </div>
 
           <div style={wizardLayoutStyles.journeyPairGrid}>
