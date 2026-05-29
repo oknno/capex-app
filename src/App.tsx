@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import "./index.css";
 import { getProjectsPage, UnitFilterLimitError } from "./services/sharepoint/projectsApi";
@@ -6,6 +6,7 @@ import type { ProjectRow } from "./services/sharepoint/projectsApi";
 import { resolveAuthorization } from "./services/sharepoint/authorizationApi";
 import { ProjectsPage } from "./app/pages/ProjectsPage/ProjectsPage";
 import { BootstrapLoader } from "./app/components/BootstrapLoader";
+import { SplashScreen } from "./app/components/SplashScreen/SplashScreen";
 import { ToastProvider } from "./app/components/notifications/ToastProvider";
 
 type BootState = "loading" | "ready" | "error";
@@ -52,7 +53,17 @@ export default function App() {
   });
   const [bootError, setBootError] = useState("");
   const [loadingTitleIndex, setLoadingTitleIndex] = useState(0);
+  const [showSplash, setShowSplash] = useState(true);
+  const [isAppVisible, setIsAppVisible] = useState(false);
   const minBootDurationMs = getMinBootDurationMs();
+
+  const handleSplashExitStart = useCallback(() => {
+    setIsAppVisible(true);
+  }, []);
+
+  const handleSplashFinish = useCallback(() => {
+    setShowSplash(false);
+  }, []);
 
   useEffect(() => {
     if (bootState !== "loading") return;
@@ -172,9 +183,15 @@ export default function App() {
 
   return (
     <ToastProvider>
-      <div className="capex-app">
-        <main className="capex-container">{mainContent}</main>
+      <div className={`capex-appContent${isAppVisible ? "" : " capex-appContent--hiddenDuringSplash"}`}>
+        <div className="capex-app">
+          <main className="capex-container">{mainContent}</main>
+        </div>
       </div>
+
+      {showSplash ? (
+        <SplashScreen onExitStart={handleSplashExitStart} onFinish={handleSplashFinish} />
+      ) : null}
     </ToastProvider>
   );
 }
