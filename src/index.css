@@ -47,6 +47,37 @@
   color: var(--ui-color-text);
 }
 
+/* Suporte global para a transição entre SplashScreen e app montado. */
+.capex-appContent {
+  min-height: 0;
+  opacity: 1;
+  transform: translateY(0);
+  visibility: visible;
+  transition:
+    opacity 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    visibility 0s linear 0s;
+}
+
+.capex-appContent--hiddenDuringSplash {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(4px);
+  visibility: hidden;
+  transition:
+    opacity 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    visibility 0s linear 420ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .capex-appContent,
+  .capex-appContent--hiddenDuringSplash {
+    transform: none;
+    transition-duration: 1ms;
+  }
+}
+
 /* Uma “tela” do app, com fundo e espaçamento */
 #static-mirror .capex-app {
   width: 100%;
