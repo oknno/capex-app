@@ -3,12 +3,53 @@ import type { CSSProperties } from "react";
 import { uiTokens } from "../../../../components/ui/tokens";
 
 export const wizardLayoutStyles: Record<string, CSSProperties> = {
-  overlay: { position: "fixed", inset: 0, background: uiTokens.colors.overlay, display: "flex", alignItems: "center", justifyContent: "center", padding: uiTokens.spacing.xl, zIndex: 9999 },
-  modal: { width: "min(1100px, 100%)", background: uiTokens.colors.surface, borderRadius: uiTokens.radius.lg, border: `1px solid ${uiTokens.colors.border}`, overflow: "hidden", maxHeight: "92vh", display: "grid", gridTemplateRows: "auto auto 1fr auto" },
-  modalHeader: { padding: uiTokens.spacing.lg, borderBottom: `1px solid ${uiTokens.colors.border}`, display: "flex", justifyContent: "space-between", gap: uiTokens.spacing.md },
-  tabsRow: { padding: 10, borderBottom: `1px solid ${uiTokens.colors.border}`, display: "flex", gap: uiTokens.spacing.sm, flexWrap: "wrap" },
-  body: { overflow: "auto" },
-  footer: { padding: uiTokens.spacing.lg, borderTop: `1px solid ${uiTokens.colors.border}`, display: "flex", justifyContent: "space-between", gap: uiTokens.spacing.md, alignItems: "center" },
+  overlay: {
+    position: "fixed",
+    inset: 0,
+    background: uiTokens.colors.overlay,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: uiTokens.spacing.xl,
+    overflowY: "auto",
+    zIndex: 9999
+  },
+  modal: {
+    width: "min(1100px, 100%)",
+    maxHeight: "calc(100vh - 32px)",
+    background: uiTokens.colors.surface,
+    borderRadius: uiTokens.radius.lg,
+    border: `1px solid ${uiTokens.colors.border}`,
+    overflow: "hidden",
+    display: "flex",
+    flexDirection: "column"
+  },
+  modalHeader: {
+    flexShrink: 0,
+    padding: uiTokens.spacing.lg,
+    borderBottom: `1px solid ${uiTokens.colors.border}`,
+    display: "flex",
+    justifyContent: "space-between",
+    gap: uiTokens.spacing.md
+  },
+  tabsRow: {
+    flexShrink: 0,
+    padding: 10,
+    borderBottom: `1px solid ${uiTokens.colors.border}`,
+    display: "flex",
+    gap: uiTokens.spacing.sm,
+    flexWrap: "wrap"
+  },
+  body: { flex: 1, minHeight: 0, overflowY: "auto" },
+  footer: {
+    flexShrink: 0,
+    padding: uiTokens.spacing.lg,
+    borderTop: `1px solid ${uiTokens.colors.border}`,
+    display: "flex",
+    justifyContent: "space-between",
+    gap: uiTokens.spacing.md,
+    alignItems: "center"
+  },
   sectionStack: { display: "grid", gap: uiTokens.spacing.lg },
   card: {
     display: "grid",
