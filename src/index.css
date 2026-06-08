@@ -47,33 +47,33 @@
   color: var(--ui-color-text);
 }
 
-/* Suporte global para a transição entre SplashScreen e app montado. */
+/* Suporte global para a transição entre SplashScreen e app montado.
+   Evita transform/overflow/height no wrapper para não criar containing block
+   nem recortar modais position: fixed renderizados dentro do app. */
 .capex-appContent {
-  min-height: 0;
+  width: 100%;
+  min-height: 100vh;
   opacity: 1;
-  transform: translateY(0);
   visibility: visible;
+  transform: none;
   transition:
     opacity 420ms cubic-bezier(0.22, 1, 0.36, 1),
-    transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
     visibility 0s linear 0s;
 }
 
 .capex-appContent--hiddenDuringSplash {
   opacity: 0;
   pointer-events: none;
-  transform: translateY(4px);
   visibility: hidden;
+  transform: none;
   transition:
     opacity 420ms cubic-bezier(0.22, 1, 0.36, 1),
-    transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
     visibility 0s linear 420ms;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .capex-appContent,
   .capex-appContent--hiddenDuringSplash {
-    transform: none;
     transition-duration: 1ms;
   }
 }
